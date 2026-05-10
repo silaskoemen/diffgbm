@@ -2,8 +2,8 @@ import argparse
 from pathlib import Path
 
 import numpy as np
-from testbed.data.utils import _assign_k_splits
-from testbed.data.utils import _extract_and_delete_zipfile
+
+from testbed.data.utils import _assign_k_splits, _extract_and_delete_zipfile
 
 
 def main(path_raw_dataset_dir: Path):

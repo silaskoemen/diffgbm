@@ -3,9 +3,11 @@ No explicit loading for now, to avoid errors if not all models are available.
 Only load wrappers and base class for type hinting.
 """
 
-from testbed.models.base_model import BayesOptProbabilisticModel
-from testbed.models.base_model import ProbabilisticModel
-from testbed.models.base_model import make_autoregressive_probabilistic_model
+from testbed.models.base_model import (
+    BayesOptProbabilisticModel,
+    ProbabilisticModel,
+    make_autoregressive_probabilistic_model,
+)
 
 __all__ = [
     "ProbabilisticModel",

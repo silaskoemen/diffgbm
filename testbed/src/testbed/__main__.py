@@ -1,29 +1,22 @@
 # noinspection PyUnresolvedReferences
-import lightgbm as lgb  # noqa F401
-
-# import lightning
-
 import argparse
 import logging
 import os
+import sys
+import time
 import warnings
 from pathlib import Path
-import time
-from typing import Dict
-from typing import List
-from typing import Literal
-from typing import Optional
-from typing import Type
-import sys
-from typing import Tuple
-from typing import Union
+from typing import Dict, List, Literal, Optional, Tuple, Type, Union
 
+import lightgbm as lgb  # noqa F401
 import namesgenerator
 import numpy as np
 import pandas as pd
 from jaxtyping import Float
 from numpy import ndarray
 from sklearn.model_selection import train_test_split
+
+# import lightning
 
 
 current_dir = Path(__file__).resolve().parent
@@ -34,15 +27,17 @@ print(sys.path)
 
 from testbed.data.utils import get_data  # noqa E402
 from testbed.data.utils import list_data  # noqa E402
-from testbed.metrics import AccuracyMetric  # noqa E402
 from testbed.metrics import CRPS  # noqa E402
+from testbed.metrics import AccuracyMetric  # noqa E402
 from testbed.metrics import LogLikelihoodExactMetric  # noqa E402
 from testbed.metrics import LogLikelihoodFromSamplesMetric  # noqa E402
 from testbed.metrics import Metric  # noqa E402
 from testbed.metrics import QuantileCalibrationErrorMetric  # noqa E402
 from testbed.models.base_model import BayesOptProbabilisticModel  # noqa E402
-from testbed.models.base_model import make_autoregressive_probabilistic_model  # noqa E402
 from testbed.models.base_model import ProbabilisticModel  # noqa E402
+from testbed.models.base_model import (  # noqa E402
+    make_autoregressive_probabilistic_model,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -147,9 +142,7 @@ def get_model(
     if return_available_models:
         return available_models
 
-    raise ValueError(
-        f"Model {model_name} is not available. Available models: {available_models}"
-    )
+    raise ValueError(f"Model {model_name} is not available. Available models: {available_models}")
 
 
 ###########################################################
@@ -356,9 +349,7 @@ def format_results(model_name: str, dataset_name: str, results: Dict[str, float]
     """
     results_string = "\n\n"
     results_string += BARS
-    results_string += (
-        f" MODEL: {model_name.capitalize()} | DATASET: {dataset_name.capitalize()}\n"
-    )
+    results_string += f" MODEL: {model_name.capitalize()} | DATASET: {dataset_name.capitalize()}\n"
     results_string += BARS
     for key, value in results.items():
         results_string += f"{key}: {value}\n"
@@ -479,8 +470,7 @@ def make_multi_output_dataset(
 
     if new_n_features < 1:
         raise ValueError(
-            "The number of remaining features of X must be at least 1, "
-            "make sure that append_x_to_y < n_features."
+            "The number of remaining features of X must be at least 1, " "make sure that append_x_to_y < n_features."
         )
 
     # seed with get_default_rng to avoid issues with jax
@@ -522,9 +512,7 @@ def main() -> None:
             data = get_data(dataset_name, verbose=True)
 
             if args.append_x_to_y is not None and args.append_x_to_y > 0:
-                data["x"], data["y"] = make_multi_output_dataset(
-                    data["x"], data["y"], args.dim_output, args.seed
-                )
+                data["x"], data["y"] = make_multi_output_dataset(data["x"], data["y"], args.dim_output, args.seed)
 
             if args.split_idx != -1:
                 X_train = data["x"][data["k_fold_splits"] != args.split_idx]
@@ -557,9 +545,7 @@ def main() -> None:
                     name=f"{model_name}_{dataset_name}",
                     # config=args,
                 )
-                wandb.log(
-                    {"model": model_name, "dataset": dataset_name, "split_idx": args.split_idx}
-                )
+                wandb.log({"model": model_name, "dataset": dataset_name, "split_idx": args.split_idx})
 
             results = run_model_on_dataset(
                 X_train=X_train,

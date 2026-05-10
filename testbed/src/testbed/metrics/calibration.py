@@ -5,9 +5,7 @@ Adapted from: https://tinyurl.com/uncertainty-toolbox-calibration
 """
 
 import warnings
-from typing import Dict
-from typing import List
-from typing import Optional
+from typing import Dict, List, Optional
 
 import numpy as np
 from jaxtyping import Float
@@ -153,9 +151,7 @@ def compute_adversarial_group_calibration_error(
     calibration error for each group size.
     """
     rng = np.random.default_rng(seed)
-    group_size_ratios = (
-        np.linspace(0.1, 0.9, 10) if group_size_ratios is None else group_size_ratios
-    )
+    group_size_ratios = np.linspace(0.1, 0.9, 10) if group_size_ratios is None else group_size_ratios
 
     calibration_results = {
         "group_size_ratios": group_size_ratios,
@@ -180,9 +176,7 @@ def compute_adversarial_group_calibration_error(
                 idx = rng.choice(y_true.shape[0], group_size, replace=False)
                 y_true_group = y_true[idx]
                 y_preds_group = y_preds[:, idx]
-                calibration_error = _compute_quantile_calibration_error(
-                    y_preds_group, y_true_group
-                )[metric_name]
+                calibration_error = _compute_quantile_calibration_error(y_preds_group, y_true_group)[metric_name]
                 worst_calibration = max(worst_calibration, calibration_error)
             worst_calibrations_for_group_size.append(worst_calibration)
         mean_worst_calibration = np.mean(worst_calibrations_for_group_size)

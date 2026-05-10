@@ -1,21 +1,16 @@
-import lightgbm as lgb  # noqa
-
 from typing import Tuple
 
-
+import lightgbm as lgb  # noqa
 import numpy as np
 from jaxtyping import Float
 from numpy import ndarray
 from sklearn.model_selection import train_test_split
-from skopt.space import Integer
-from skopt.space import Real
+from skopt.space import Integer, Real
 
 from .base_model import ProbabilisticModel
 
 
-def pinball_loss(
-    preds, train_data: lgb.Dataset
-) -> Tuple[Float[ndarray, "batch y_dim"], Float[ndarray, "batch y_dim"]]:
+def pinball_loss(preds, train_data: lgb.Dataset) -> Tuple[Float[ndarray, "batch y_dim"], Float[ndarray, "batch y_dim"]]:
     """
     Pinball loss for quantile regression.
 
@@ -130,11 +125,7 @@ class QuantileRegressionTree(ProbabilisticModel):
             "verbose": self.verbose,
         }
 
-        callbacks = [
-            lgb.early_stopping(
-                stopping_rounds=int(self.early_stopping_rounds), verbose=self.verbose
-            )
-        ]
+        callbacks = [lgb.early_stopping(stopping_rounds=int(self.early_stopping_rounds), verbose=self.verbose)]
 
         self.model = lgb.train(
             params,
@@ -147,9 +138,7 @@ class QuantileRegressionTree(ProbabilisticModel):
 
         return self
 
-    def predict(
-        self, X: Float[ndarray, "batch x_dim"], n_quantiles=100
-    ) -> Float[ndarray, "batch y_dim"]:
+    def predict(self, X: Float[ndarray, "batch x_dim"], n_quantiles=100) -> Float[ndarray, "batch y_dim"]:
         q_pred = self._predict_quantile_function(X, n_quantiles)
         mean = q_pred.mean(axis=0)
         return mean
@@ -180,9 +169,7 @@ class QuantileRegressionTree(ProbabilisticModel):
     def sample(
         self, X: Float[ndarray, "batch x_dim"], n_samples=10, n_quantiles=1000, seed=None
     ) -> Float[ndarray, "n_samples batch 1"]:
-        q: Float[ndarray, "n_quantiles+1 batch 1"] = self._predict_quantile_function(
-            X, n_quantiles + 1
-        )
+        q: Float[ndarray, "n_quantiles+1 batch 1"] = self._predict_quantile_function(X, n_quantiles + 1)
         if seed is not None:
             np.random.seed(seed)
 

@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import argparse
 import sys
-from datetime import datetime
-from datetime import timezone
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 
 def main() -> None:
     args = parse_args()

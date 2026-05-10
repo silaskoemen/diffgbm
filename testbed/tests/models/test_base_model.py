@@ -2,9 +2,12 @@ from typing import Type
 
 import numpy as np
 import pytest
-from testbed.models import BayesOptProbabilisticModel
-from testbed.models import ProbabilisticModel
-from testbed.models import make_autoregressive_probabilistic_model
+
+from testbed.models import (
+    BayesOptProbabilisticModel,
+    ProbabilisticModel,
+    make_autoregressive_probabilistic_model,
+)
 from testbed.models.ngboost import NGBoostGaussian
 
 
@@ -26,9 +29,7 @@ def test_bayes_opt_works(model_class: Type[ProbabilisticModel]):
     beta = np.random.rand(n_features, n_targets)
 
     y = X @ beta + epsilon
-    model = BayesOptProbabilisticModel(
-        model_class=model_class, n_iter_bayes_opt=2, cv=2, n_jobs=1
-    )
+    model = BayesOptProbabilisticModel(model_class=model_class, n_iter_bayes_opt=2, cv=2, n_jobs=1)
     model.fit(X, y)
 
     # Check that everything runs
@@ -57,9 +58,7 @@ def test_multioutput_class_factory_works():
 
     y = X @ beta + epsilon
     auto_regressive_model = make_autoregressive_probabilistic_model(NGBoostGaussian)
-    model = BayesOptProbabilisticModel(
-        model_class=auto_regressive_model, n_iter_bayes_opt=2, cv=2, n_jobs=1
-    )
+    model = BayesOptProbabilisticModel(model_class=auto_regressive_model, n_iter_bayes_opt=2, cv=2, n_jobs=1)
     model.fit(X, y)
 
     # Check that everything runs

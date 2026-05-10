@@ -1,14 +1,11 @@
 #!/usr/bin/env python
 from pathlib import Path
 
-from setuptools import find_packages
-from setuptools import setup
+from setuptools import find_packages, setup
 
 
 def read(*names, **kwargs):
-    with Path(__file__).parent.joinpath(*names).open(
-        encoding=kwargs.get("encoding", "utf8")
-    ) as fh:
+    with Path(__file__).parent.joinpath(*names).open(encoding=kwargs.get("encoding", "utf8")) as fh:
         return fh.read()
 
 

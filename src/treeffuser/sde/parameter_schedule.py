@@ -1,10 +1,9 @@
 import abc
-from typing import Union
 
 import numpy as np
 from numpy import ndarray
 
-array_like = Union[ndarray, float]
+array_like = ndarray | float
 
 
 class ParameterSchedule(abc.ABC):
@@ -52,7 +51,7 @@ class LinearSchedule(ParameterSchedule):
     def get_derivative(self, t: array_like) -> array_like:
         if isinstance(t, float):
             return self.max_value - self.min_value
-        return np.broadcast_to(self.max_value - self.min_value, t.shape)
+        return np.broadcast_to(self.max_value - self.min_value, np.asarray(t).shape)
 
     def get_integral(self, t: array_like) -> array_like:
         integral = self.min_value * t

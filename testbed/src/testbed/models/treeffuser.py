@@ -1,11 +1,9 @@
-from typing import List
-from typing import Optional
+from typing import List, Optional
 
 from jaxtyping import Float
 from numpy import ndarray
 from sklearn.base import MultiOutputMixin
-from skopt.space import Integer
-from skopt.space import Real
+from skopt.space import Integer, Real
 
 import treeffuser as tf
 
@@ -78,9 +76,7 @@ class Treeffuser(ProbabilisticModel, MultiOutputMixin):
     def sample(
         self, X: Float[ndarray, "batch x_dim"], n_samples=10, seed=None
     ) -> Float[ndarray, "n_samples batch y_dim"]:
-        return self.model.sample(
-            X, n_samples, n_parallel=10, n_steps=50, seed=seed, verbose=True
-        )
+        return self.model.sample(X, n_samples, n_parallel=10, n_steps=50, seed=seed, verbose=True)
 
     @staticmethod
     def search_space() -> dict:

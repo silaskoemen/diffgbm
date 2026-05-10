@@ -2,8 +2,8 @@ import argparse
 from pathlib import Path
 
 import numpy as np
-from testbed.data.utils import _assign_k_splits
-from testbed.data.utils import _extract_and_delete_zipfile
+
+from testbed.data.utils import _assign_k_splits, _extract_and_delete_zipfile
 
 
 def main(path_raw_dataset_dir: Path):
@@ -11,18 +11,12 @@ def main(path_raw_dataset_dir: Path):
     _extract_and_delete_zipfile(path_raw_dataset_dir)
 
     # import original datasets
-    red = np.genfromtxt(
-        path_raw_dataset_dir / "winequality-red.csv", delimiter=";", skip_header=True
-    )
-    white = np.genfromtxt(
-        path_raw_dataset_dir / "winequality-white.csv", delimiter=";", skip_header=True
-    )
+    red = np.genfromtxt(path_raw_dataset_dir / "winequality-red.csv", delimiter=";", skip_header=True)
+    white = np.genfromtxt(path_raw_dataset_dir / "winequality-white.csv", delimiter=";", skip_header=True)
     x = np.concatenate((red, white), axis=0)
 
     # add covariate for red vs. white
-    red_color = np.array([1] * red.shape[0] + [0] * white.shape[0], dtype=np.float64).reshape(
-        (-1, 1)
-    )
+    red_color = np.array([1] * red.shape[0] + [0] * white.shape[0], dtype=np.float64).reshape((-1, 1))
     x = np.concatenate((x, red_color), axis=1)
 
     # extract outcome and covariates

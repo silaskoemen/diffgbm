@@ -1,10 +1,8 @@
 from .accuracy import AccuracyMetric
 from .base_metric import Metric
-from .calibration import QuantileCalibrationErrorMetric
-from .calibration import SharpnessFromSamplesMetric
+from .calibration import QuantileCalibrationErrorMetric, SharpnessFromSamplesMetric
 from .crps import CRPS
-from .log_likelihood import LogLikelihoodExactMetric
-from .log_likelihood import LogLikelihoodFromSamplesMetric
+from .log_likelihood import LogLikelihoodExactMetric, LogLikelihoodFromSamplesMetric
 
 __all__ = [
     "Metric",

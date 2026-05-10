@@ -5,8 +5,8 @@ Contains all of the test for the different score model classes.
 import numpy as np
 from einops import repeat
 
-from treeffuser._score_models import _make_training_data
 from treeffuser._score_models import LightGBMScoreModel
+from treeffuser._score_models import _make_training_data
 from treeffuser.sde.diffusion_sdes import VESDE
 
 from .utils import generate_bimodal_linear_regression_data

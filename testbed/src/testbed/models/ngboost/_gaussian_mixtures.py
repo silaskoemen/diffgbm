@@ -43,15 +43,9 @@ def _mixture_logpdf(
     return log_probs
 
 
-_mixture_logpdf_grad_mus = jax.jit(
-    jax.vmap(jax.grad(_mixture_logpdf, argnums=1), in_axes=(0, 0, 0, 0))
-)
-_mixture_logpdf_grad_log_scales = jax.jit(
-    jax.vmap(jax.grad(_mixture_logpdf, argnums=2), in_axes=(0, 0, 0, 0))
-)
-_mixture_logpdf_grad_logit_weights = jax.jit(
-    jax.vmap(jax.grad(_mixture_logpdf, argnums=3), in_axes=(0, 0, 0, 0))
-)
+_mixture_logpdf_grad_mus = jax.jit(jax.vmap(jax.grad(_mixture_logpdf, argnums=1), in_axes=(0, 0, 0, 0)))
+_mixture_logpdf_grad_log_scales = jax.jit(jax.vmap(jax.grad(_mixture_logpdf, argnums=2), in_axes=(0, 0, 0, 0)))
+_mixture_logpdf_grad_logit_weights = jax.jit(jax.vmap(jax.grad(_mixture_logpdf, argnums=3), in_axes=(0, 0, 0, 0)))
 
 
 def _sample_mixture(
@@ -77,9 +71,7 @@ def _sample_mixture(
     """
     component_rnd = np.random.uniform(size=(len(mus),))
     component_idx = np.argmax(np.cumsum(weights) > component_rnd[:, None], axis=1)
-    return np.random.normal(
-        mus[np.arange(len(mus)), component_idx], scales[np.arange(len(mus)), component_idx]
-    )
+    return np.random.normal(mus[np.arange(len(mus)), component_idx], scales[np.arange(len(mus)), component_idx])
 
 
 class GaussianMixtureScore(LogScore):
@@ -96,12 +88,8 @@ class GaussianMixtureScore(LogScore):
         D = np.zeros((len(Y), 3 * k))
         # need to use vmap to compute the gradient for each data point
         D[:, :k] = _mixture_logpdf_grad_mus(Y, self.mus, self.log_scales, self.logit_weights)
-        D[:, k : 2 * k] = _mixture_logpdf_grad_log_scales(
-            Y, self.mus, self.log_scales, self.logit_weights
-        )
-        D[:, 2 * k :] = _mixture_logpdf_grad_logit_weights(
-            Y, self.mus, self.log_scales, self.logit_weights
-        )
+        D[:, k : 2 * k] = _mixture_logpdf_grad_log_scales(Y, self.mus, self.log_scales, self.logit_weights)
+        D[:, 2 * k :] = _mixture_logpdf_grad_logit_weights(Y, self.mus, self.log_scales, self.logit_weights)
         return -D
 
 
@@ -137,9 +125,7 @@ def build_gaussian_mixture_model(k: int):
             return np.concatenate([mus, log_scales, logit_weights])
 
         def sample(self, m):
-            return np.array(
-                [_sample_mixture(self.mus, self.scale, self.weights) for _ in range(m)]
-            )
+            return np.array([_sample_mixture(self.mus, self.scale, self.weights) for _ in range(m)])
 
         # @property
         # def params(self):

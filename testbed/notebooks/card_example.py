@@ -2,10 +2,12 @@
 # %load_ext autoreload
 # %autoreload 2
 
+import matplotlib.pyplot as plt
+
 # %%
 import numpy as np
+
 from testbed.models.card import Card
-import matplotlib.pyplot as plt
 
 # %%
 

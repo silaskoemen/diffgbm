@@ -1,11 +1,15 @@
 
 # Run tests
 test:
-	python3 -m pytest -v
+	pixi run -e test test
+
+lint:
+	pixi run -e lint lint
+
+bench-smoke:
+	pixi run -e bench bench-smoke
 
 #creates a virtual environment and installs the required packages
 make-dev:
-	python3 -m venv .venv
-	. .venv/bin/activate
-	pip3 install -r requirements.txt
-	pip3 install -e .
+	pixi install
+	pixi run -e lint pre-commit-install

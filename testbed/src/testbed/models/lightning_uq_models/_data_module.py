@@ -4,9 +4,7 @@ import torch
 from jaxtyping import Float
 from lightning import LightningDataModule
 from numpy import ndarray
-from torch.utils.data import DataLoader
-from torch.utils.data import Dataset
-from torch.utils.data import random_split
+from torch.utils.data import DataLoader, Dataset, random_split
 
 
 def collate_fn_tensordataset(batch):
@@ -73,9 +71,7 @@ class GenericDataModule(LightningDataModule):
         cpu_count = torch.multiprocessing.cpu_count() // 2
         self.num_workers = num_workers if num_workers != -1 else cpu_count
 
-        assert (
-            self.train_split + self.val_split + self.test_split == 1.0
-        ), "Split percentages should sum to 1.0"
+        assert self.train_split + self.val_split + self.test_split == 1.0, "Split percentages should sum to 1.0"
 
     def setup(self, stage=None):
         """Set up the datasets for training, validation, and testing.
@@ -92,9 +88,7 @@ class GenericDataModule(LightningDataModule):
         val_len = int(dataset_len * self.val_split)
         test_len = dataset_len - train_len - val_len
 
-        self.train_dataset, self.val_dataset, self.test_dataset = random_split(
-            dataset, [train_len, val_len, test_len]
-        )
+        self.train_dataset, self.val_dataset, self.test_dataset = random_split(dataset, [train_len, val_len, test_len])
 
     def train_dataloader(self):
         """Return the data loader for the training dataset."""

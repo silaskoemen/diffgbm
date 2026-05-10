@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import abc
-from typing import Callable
+from collections.abc import Callable
 
 from jaxtyping import Float
 from numpy import ndarray
@@ -66,9 +66,7 @@ class ReverseSDE(BaseSDE):
         self,
         sde: BaseSDE,
         t_reverse_origin: float,
-        score_fn: Callable[
-            [Float[ndarray, "batch y_dim"], Float[ndarray, "batch"]], Float[ndarray, "batch"]
-        ],
+        score_fn: Callable[[Float[ndarray, "batch y_dim"], Float[ndarray, "batch"]], Float[ndarray, "batch"]],
     ):
         self.sde = sde
         self.t_reverse_origin = t_reverse_origin

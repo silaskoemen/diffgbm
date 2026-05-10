@@ -68,9 +68,7 @@ class ContinuousDataset:
         y = mean + noise * scale
         return y
 
-    def sample_dataset(
-        self, n_samples: int, seed: int
-    ) -> Tuple[Float[ndarray, "n x_dim"], Float[ndarray, "n y_dim"]]:
+    def sample_dataset(self, n_samples: int, seed: int) -> Tuple[Float[ndarray, "n x_dim"], Float[ndarray, "n y_dim"]]:
 
         rng = np.random.RandomState(seed)
         X = rng.randn(n_samples, self.x_dim)
@@ -82,9 +80,7 @@ class ContinuousDataset:
         y = mean + noise * std
         return X, y
 
-    def score(
-        self, X: Float[ndarray, "batch x_dim"], y: Float[ndarray, "samples batch y_dim"]
-    ) -> Float:
+    def score(self, X: Float[ndarray, "batch x_dim"], y: Float[ndarray, "samples batch y_dim"]) -> Float:
         mean = self._get_mean(X)  # (batch, y_dim)
         scale = self._get_scale(X)
 

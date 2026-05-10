@@ -1,11 +1,9 @@
+from typing import Callable, List, Optional
+
 import numpy as np
+from jaxtyping import Float
 from numpy import ndarray
 from numpy.random import Generator
-
-from typing import List
-from typing import Callable
-from typing import Optional
-from jaxtyping import Float
 
 
 class CustomRandomGenerator(Generator):
@@ -25,9 +23,7 @@ class CustomRandomGenerator(Generator):
         samples = self.normal(np.array(locs)[component], np.array(scales)[component])
         return samples
 
-    def branching_mixture(
-        self, x_splits=[0, 0.33, 0.66], x_max: float = 1.0, scale: float = 0.1, size: int = 1
-    ):
+    def branching_mixture(self, x_splits=[0, 0.33, 0.66], x_max: float = 1.0, scale: float = 0.1, size: int = 1):
         x = self.uniform(low=0, high=x_max, size=size).reshape(-1, 1)
         y = np.zeros_like(x)
 

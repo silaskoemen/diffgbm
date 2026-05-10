@@ -1,6 +1,5 @@
 import warnings
-from typing import Callable
-from typing import Tuple
+from collections.abc import Callable
 
 import numpy as np
 from jaxtyping import Float
@@ -13,7 +12,7 @@ class ConvergenceWarning(Warning):
     pass
 
 
-def initialize_vesde(y0: Float[np.ndarray, "batch y_dim"]) -> Tuple[float, float]:
+def initialize_vesde(y0: Float[np.ndarray, "batch y_dim"]) -> tuple[float, float]:
     hyperparam_min = 0.01
     if y0.shape[1] == 1:
         max_pairwise_difference = y0.max() - y0.min()
@@ -25,7 +24,7 @@ def initialize_vesde(y0: Float[np.ndarray, "batch y_dim"]) -> Tuple[float, float
 
 def initialize_vpsde(
     y0: Float[np.ndarray, "batch y_dim"], T: float = 1, kl_tol: float = 10 ** (-5)
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     hyperparam_min = 0.01
     y0_max = y0.max()
 
@@ -55,7 +54,7 @@ def initialize_vpsde(
 
 def initialize_subvpsde(
     y0: Float[np.ndarray, "batch y_dim"], T: float = 1, kl_tol: float = 10 ** (-5)
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     hyperparam_min = 0.01
     y0_max = y0.max()
 
@@ -63,7 +62,10 @@ def initialize_subvpsde(
         schedule = LinearSchedule(hyperparam_min, hyperparam_max_local)
         hyperparam_integral = schedule.get_integral(T)
         kl = _kl_univariate_gaussians(
-            y0_max * np.exp(-0.5 * hyperparam_integral), 1 - np.exp(-hyperparam_integral), 0, 1
+            float(y0_max * np.exp(-0.5 * hyperparam_integral)),
+            float(1 - np.exp(-hyperparam_integral)),
+            0,
+            1,
         )
         return kl
 
@@ -80,20 +82,14 @@ def initialize_subvpsde(
     return hyperparam_min, hyperparam_max
 
 
-def _kl_univariate_gaussians(
-    loc_1: float, scale_1: float, loc_2: float = 0, scale_2: float = 1
-) -> float:
+def _kl_univariate_gaussians(loc_1: float, scale_1: float, loc_2: float = 0, scale_2: float = 1) -> float:
     """
     Computes the kl divergence between two univariate Gaussians.
 
     The kl divergence between two Gaussians `N(loc_1, scale_1)` and `N(loc_2, scale_2)` is:
     `log (scale_2 / scale_1) + (scale_1^2 + (loc_1 - loc_2) ^ 2) / (2 * scale_2^2) - .5`.
     """
-    return (
-        np.log(scale_2 / scale_1)
-        + (scale_1**2 + (loc_1 - loc_2) ** 2) / (2 * scale_2**2)
-        - 1 / 2
-    )
+    return np.log(scale_2 / scale_1) + (scale_1**2 + (loc_1 - loc_2) ** 2) / (2 * scale_2**2) - 1 / 2
 
 
 def _bisect(

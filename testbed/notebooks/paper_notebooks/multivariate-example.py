@@ -4,16 +4,16 @@
 # %load_ext autoreload
 # %autoreload 2
 
-import numpy as np
-import matplotlib.pyplot as plt
-from PIL import Image
-import numpy as np
-from numpy import ndarray
-from jaxtyping import Float
 from typing import Tuple
-from treeffuser.treeffuser import LightGBMTreeffuser
+
+import matplotlib.pyplot as plt
+import numpy as np
+from jaxtyping import Float
+from numpy import ndarray
+from PIL import Image
 from utils import set_plot_style
 
+from treeffuser.treeffuser import LightGBMTreeffuser
 
 # %%
 set_plot_style()
@@ -109,9 +109,8 @@ plt.ylim(0, 1)
 
 # %%
 
-import numpy as np
 import matplotlib.pyplot as plt
-
+import numpy as np
 
 # Create the 3D Figure
 fig = plt.figure()
@@ -123,9 +122,7 @@ z_coord = samples[0, :, 1].flatten()
 
 
 # Scatter Plot
-ax.scatter(
-    x_coord, y_coord, z_coord, c=x_coord, marker="o", s=1, alpha=0.1
-)  # x, y, z coordinates
+ax.scatter(x_coord, y_coord, z_coord, c=x_coord, marker="o", s=1, alpha=0.1)  # x, y, z coordinates
 
 # Axis Labels
 ax.set_xlabel("X Label")

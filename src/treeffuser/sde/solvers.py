@@ -15,11 +15,9 @@ class EulerMaruyama(BaseSDESolver):
     [1] https://en.wikipedia.org/wiki/Euler%E2%80%93Maruyama_method
     """
 
-    def step(
-        self, y0: Float[np.ndarray, "batch y_dim"], t0: float, t1: float
-    ) -> Float[np.ndarray, "batch y_dim"]:
+    def step(self, y0: Float[np.ndarray, "batch y_dim"], t0: float, t1: float) -> Float[np.ndarray, "batch y_dim"]:
         dt = t1 - t0
-        t0 = np.broadcast_to(t0, (y0.shape[:-1] + (1,)))
-        drift, diffusion = self.sde.drift_and_diffusion(y0, t0)
+        t0_arr = np.broadcast_to(t0, (*y0.shape[:-1], 1))
+        drift, diffusion = self.sde.drift_and_diffusion(y0, t0_arr)
         dW = self._rng.normal(size=y0.shape)
         return y0 + drift * dt + diffusion * np.sqrt(dt) * dW

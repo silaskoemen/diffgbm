@@ -111,12 +111,9 @@ class DiffusionSDE(BaseSDE):
 
         """
 
-        def kernel_density_fn(
-            y: Float[ndarray, "batch_ y_dim"], t: float | Float[np.ndarray, "batch_ 1"]
-        ):
-            if isinstance(t, float):
-                t = np.ones_like(y) * t
-            means, stds = self.get_mean_std_pt_given_y0(y0, t)
+        def kernel_density_fn(y: Float[ndarray, "batch_ y_dim"], t: float | Float[np.ndarray, "batch_ 1"]):
+            t_arr: np.ndarray = np.ones_like(y) * t if isinstance(t, float) else np.asarray(t)
+            means, stds = self.get_mean_std_pt_given_y0(y0, t_arr)
             means = means[:, None, :]
             stds = stds[:, None, :]
 
@@ -182,9 +179,7 @@ def get_diffusion_sde(name: str | None = None) -> type[DiffusionSDE] | dict:
     if name is None:
         return _AVAILABLE_DIFFUSION_SDES
     if name not in _AVAILABLE_DIFFUSION_SDES:
-        raise ValueError(
-            f"Unknown SDE {name}. Available SDEs: {list(_AVAILABLE_DIFFUSION_SDES.keys())}"
-        )
+        raise ValueError(f"Unknown SDE {name}. Available SDEs: {list(_AVAILABLE_DIFFUSION_SDES.keys())}")
     return _AVAILABLE_DIFFUSION_SDES[name]
 
 
@@ -208,7 +203,6 @@ class VESDE(DiffusionSDE):
     """
 
     def __init__(self, hyperparam_min=0.01, hyperparam_max=20):
-        self.hyperparam_schedule = None
         self.hyperparam_min = 0.0
         self.hyperparam_max = 0.0
         self.set_hyperparams(hyperparam_min, hyperparam_max)
@@ -235,10 +229,10 @@ class VESDE(DiffusionSDE):
 
     def drift_and_diffusion(
         self, y: Float[ndarray, "batch y_dim"], t: Float[ndarray, "batch 1"]
-    ) -> tuple[Float[ndarray, "batch y_dim"], float, Float[ndarray, "batch y_dim"], float]:
+    ) -> tuple[Float[ndarray, "batch y_dim"], Float[ndarray, "batch y_dim"]]:
         hyperparam = self.hyperparam_schedule(t)
         hyperparam_prime = self.hyperparam_schedule.get_derivative(t)
-        drift = 0.0
+        drift = np.zeros_like(y)
         diffusion = np.sqrt(2 * hyperparam * hyperparam_prime)
         return drift, diffusion
 
@@ -260,9 +254,7 @@ class VESDE(DiffusionSDE):
             variance: `hyperparam(t)**2 - hyperparam(0)**2`
         """
         mean = y0
-        std = (
-            self.hyperparam_schedule(t) ** 2 - self.hyperparam_schedule(np.zeros_like(t)) ** 2
-        ) ** 0.5
+        std = (self.hyperparam_schedule(t) ** 2 - self.hyperparam_schedule(np.zeros_like(t)) ** 2) ** 0.5
 
         std = np.broadcast_to(std, y0.shape)
         return mean, std
@@ -290,7 +282,6 @@ class VPSDE(DiffusionSDE):
     """
 
     def __init__(self, hyperparam_min=0.01, hyperparam_max=20):
-        self.hyperparam_schedule = None
         self.hyperparam_min = 0.0
         self.hyperparam_max = 0.0
         self.set_hyperparams(hyperparam_min, hyperparam_max)
@@ -371,7 +362,6 @@ class SubVPSDE(DiffusionSDE):
     """
 
     def __init__(self, hyperparam_min=0.01, hyperparam_max=20):
-        self.hyperparam_schedule = None
         self.hyperparam_min = 0.0
         self.hyperparam_max = 0.0
         self.set_hyperparams(hyperparam_min, hyperparam_max)

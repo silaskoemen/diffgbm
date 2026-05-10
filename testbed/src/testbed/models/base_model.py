@@ -1,15 +1,11 @@
-from abc import ABC
-from abc import abstractmethod
-from typing import Optional
-from typing import Tuple
-from typing import Type
+from abc import ABC, abstractmethod
+from typing import Optional, Tuple, Type
 
 import numpy as np
 import wandb
 from jaxtyping import Float
 from numpy import ndarray
-from sklearn.base import BaseEstimator
-from sklearn.base import MultiOutputMixin
+from sklearn.base import BaseEstimator, MultiOutputMixin
 from skopt import BayesSearchCV
 from skopt.utils import use_named_args
 
@@ -342,9 +338,7 @@ def make_autoregressive_probabilistic_model(
             y_i = y[:, i].reshape(-1, 1)
             return X_i, y_i
 
-        def fit(
-            self, X: Float[ndarray, "batch x_dim"], y: Float[ndarray, "batch y_dim"]
-        ) -> ProbabilisticModel:
+        def fit(self, X: Float[ndarray, "batch x_dim"], y: Float[ndarray, "batch y_dim"]) -> ProbabilisticModel:
             for i in range(y.shape[1]):
                 X_i, y_i = self._make_input_for_ith_model(X, y, i)
                 model = model_class(**self.hyperparameters)

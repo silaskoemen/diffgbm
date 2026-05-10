@@ -29,4 +29,3 @@ samplers:
   - n_samples: 100
     n_steps: 30
     n_parallel: 20
-

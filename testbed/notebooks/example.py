@@ -5,8 +5,7 @@
 # %%
 import numpy as np
 import pandas as pd
-from data.utils import get_data
-from data.utils import list_data
+from data.utils import get_data, list_data
 from metrics.accuracy import compare_accuracy
 from metrics.calibration_scalar import compare_calibration
 from ngboost import NGBRegressor
@@ -32,9 +31,7 @@ for data_name in ["protein"]:
     data["x"] = data["x"][:1000]
     data["y"] = data["y"][:1000]
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        data["x"], data["y"], test_size=0.2, random_state=42
-    )
+    X_train, X_test, y_train, y_test = train_test_split(data["x"], data["y"], test_size=0.2, random_state=42)
 
     models = {}
     preds = {}
@@ -77,9 +74,7 @@ for data_name in ["protein"]:
     metrics_calibration = compare_calibration(samples, y_test)
 
     # merge metrics
-    metrics = pd.concat(
-        [pd.DataFrame(metrics_accuracy), pd.DataFrame(metrics_calibration)], axis=0
-    )
+    metrics = pd.concat([pd.DataFrame(metrics_accuracy), pd.DataFrame(metrics_calibration)], axis=0)
 
     break
 
@@ -108,9 +103,7 @@ metrics_accuracy = compare_accuracy(preds, y_test, print_table=False)
 metrics_calibration = compare_calibration(samples, y_test)
 
 # merge metrics
-metrics = pd.concat(
-    [pd.DataFrame(metrics_accuracy), pd.DataFrame(metrics_calibration)], axis=0
-)
+metrics = pd.concat([pd.DataFrame(metrics_accuracy), pd.DataFrame(metrics_calibration)], axis=0)
 
 # %%
 metrics
@@ -136,9 +129,7 @@ y_train = np.concatenate([y_train1, y_train2], axis=0)
 # %%
 N_SAMPLES = 256
 
-X_train, X_test, y_train, y_test = train_test_split(
-    X_train, y_train, test_size=0.2, random_state=42
-)
+X_train, X_test, y_train, y_test = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
 
 model = {}
 preds = {}
@@ -179,9 +170,7 @@ metrics_accuracy = compare_accuracy(preds, y_test, print_table=False)
 metrics_calibration = compare_calibration(samples, y_test)
 
 # merge metrics
-metrics = pd.concat(
-    [pd.DataFrame(metrics_accuracy), pd.DataFrame(metrics_calibration)], axis=0
-)
+metrics = pd.concat([pd.DataFrame(metrics_accuracy), pd.DataFrame(metrics_calibration)], axis=0)
 
 metrics
 
@@ -212,9 +201,7 @@ x = X_test[idx]
 n_bins = 30
 _n = 1000
 y_bins = np.linspace(-2, 2, n_bins)
-ground_truth = (
-    x * (np.random.binomial(1, 0.5, _n) - 0.5) * 2 + np.random.randn(_n) * 0.05 * (x + 1) ** 2
-)
+ground_truth = x * (np.random.binomial(1, 0.5, _n) - 0.5) * 2 + np.random.randn(_n) * 0.05 * (x + 1) ** 2
 sns.histplot(ground_truth, bins=y_bins, color="red", alpha=0.5, stat="density")
 
 sns.histplot(samples["ngb"][:, idx].squeeze(), bins=y_bins, stat="density")
@@ -226,12 +213,8 @@ sns.histplot(samples["ngb"][:, idx].squeeze(), bins=y_bins, stat="density")
 # %%
 ground_truth_x = np.random.uniform(-10, 10, 200)
 ground_truth_y = np.random.normal(ground_truth_x, 1)
-overconfident_model_y = np.random.normal(
-    ground_truth_x, 0.2, size=(1000, ground_truth_x.shape[0])
-)
-underconfident_model_y = np.random.normal(
-    ground_truth_x, 2, size=(1000, ground_truth_x.shape[0])
-)
+overconfident_model_y = np.random.normal(ground_truth_x, 0.2, size=(1000, ground_truth_x.shape[0]))
+underconfident_model_y = np.random.normal(ground_truth_x, 2, size=(1000, ground_truth_x.shape[0]))
 
 # %%
 x = np.linspace(0, 1, ground_truth_y.shape[0])

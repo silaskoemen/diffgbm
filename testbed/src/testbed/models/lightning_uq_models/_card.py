@@ -15,14 +15,11 @@ import torch.nn as nn
 from jaxtyping import Float
 from lightning import Trainer
 from lightning.pytorch.callbacks.early_stopping import EarlyStopping
-from lightning_uq_box.models import MLP
-from lightning_uq_box.models import ConditionalGuidedLinearModel
-from lightning_uq_box.uq_methods import CARDRegression
-from lightning_uq_box.uq_methods import DeterministicRegression
+from lightning_uq_box.models import MLP, ConditionalGuidedLinearModel
+from lightning_uq_box.uq_methods import CARDRegression, DeterministicRegression
 from numpy import ndarray
 from sklearn.base import MultiOutputMixin
-from skopt.space import Integer
-from skopt.space import Real
+from skopt.space import Integer, Real
 from torch.optim import Adam
 from tqdm import tqdm
 
@@ -179,9 +176,7 @@ class Card(ProbabilisticModel, MultiOutputMixin):
         This function should be called only after the conditional model has been trained.
         """
         if self._cond_model is None:
-            raise ValueError(
-                "The conditional model must be trained before the diffusion model."
-            )
+            raise ValueError("The conditional model must be trained before the diffusion model.")
 
         dm = GenericDataModule(X, y, batch_size=self.batch_size)
         early_stop_callback = EarlyStopping(
@@ -290,9 +285,7 @@ class Card(ProbabilisticModel, MultiOutputMixin):
             samples_to_use = min(batch_size, repeated_X.shape[0] - batch_start)
 
             # Update the samples tensor with the generated samples
-            samples[batch_start : batch_start + samples_to_use] = generated_samples[
-                :samples_to_use
-            ]
+            samples[batch_start : batch_start + samples_to_use] = generated_samples[:samples_to_use]
 
             # Update the number of datapoints sampled
             datapoints_sampled += samples_to_use

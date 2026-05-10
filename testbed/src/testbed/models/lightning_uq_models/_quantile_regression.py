@@ -10,8 +10,7 @@ from lightning.pytorch.callbacks.early_stopping import EarlyStopping
 from lightning_uq_box.models import MLP
 from lightning_uq_box.uq_methods import QuantileRegression as QR
 from numpy import ndarray
-from skopt.space import Integer
-from skopt.space import Real
+from skopt.space import Integer, Real
 from torch.optim import Adam
 
 from testbed.models.base_model import ProbabilisticModel
@@ -171,14 +170,10 @@ class QuantileRegression(ProbabilisticModel):
         X = _to_tensor(X)
 
         quantiles = self._model(X)  # shape: (batch, n_quantiles)
-        samples = np.random.default_rng(seed).uniform(
-            0, 1, size=(X.shape[0], n_samples)
-        )  # shape: (batch, n_samples)
+        samples = np.random.default_rng(seed).uniform(0, 1, size=(X.shape[0], n_samples))  # shape: (batch, n_samples)
         samples_lst = []
         for i in range(X.shape[0]):
-            samples_lst.append(
-                np.interp(samples[i, :], self.quantiles, quantiles[i].cpu().numpy())
-            )
+            samples_lst.append(np.interp(samples[i, :], self.quantiles, quantiles[i].cpu().numpy()))
 
         samples = np.array(samples_lst).T
         samples = samples[:, :, np.newaxis]

@@ -3,8 +3,7 @@
 import json
 import zipfile
 from pathlib import Path
-from typing import List
-from typing import Union
+from typing import List, Union
 
 import numpy as np
 import requests
@@ -57,9 +56,7 @@ def _load_data(path_dataset_file: Path, verbose: bool = False) -> np.ndarray:
             data["y"] = data["y"].reshape((-1, 1))
 
         y_dim = data["y"].shape[1]
-        print(
-            f"# of observations: {n_obs}, # of covariates: {n_cov}, dimension of outcome: {y_dim}"
-        )
+        print(f"# of observations: {n_obs}, # of covariates: {n_cov}, dimension of outcome: {y_dim}")
 
     return data
 
@@ -78,9 +75,7 @@ def list_data(verbose: bool = False) -> dict:
             subdirs = [
                 subdir
                 for subdir in d.iterdir()
-                if subdir.is_dir()
-                and subdir.name != "raw"
-                and not subdir.name.startswith((".", "_"))
+                if subdir.is_dir() and subdir.name != "raw" and not subdir.name.startswith((".", "_"))
             ]
             if len(subdirs) == 0:
                 datasets.append(d)
@@ -104,9 +99,7 @@ def _get_data_path(dataset: str, verbose: bool = False) -> Path:
         )
 
 
-def get_data(
-    datasets: Union[str, List[str]], verbose: bool = False
-) -> Union[dict, List[dict]]:
+def get_data(datasets: Union[str, List[str]], verbose: bool = False) -> Union[dict, List[dict]]:
     """
     Download or retrieve data files for one or multiple datasets. For each dataset, it checks if the
     preprocessed data file exists; if not, it downloads the raw data and then preprocesses it. Each dataset
@@ -142,9 +135,7 @@ def get_data(
             # download raw files
             links = _get_links()
             if dataset not in links:
-                raise Exception(
-                    f"Cannot download {dataset} dataset: no download link available."
-                )
+                raise Exception(f"Cannot download {dataset} dataset: no download link available.")
 
             _download_raw_data(links[dataset], path_raw_dataset_dir, verbose)
 

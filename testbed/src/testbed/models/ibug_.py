@@ -48,9 +48,7 @@ class IBugXGBoost(ProbabilisticModel):
         ).fit(X_train, y_train)
 
         # extend GBRT model into a probabilistic estimator
-        self.model = IBUGWrapper(k=self.k).fit(
-            self.gbrt_model, X_train, y_train, X_val=X_val, y_val=y_val
-        )
+        self.model = IBUGWrapper(k=self.k).fit(self.gbrt_model, X_train, y_train, X_val=X_val, y_val=y_val)
         return self
 
     def predict(self, X: Float[ndarray, "batch x_dim"]) -> Float[ndarray, "batch y_dim"]:

@@ -138,9 +138,7 @@ def test_samples_confidence_interval_and_quantiles(normal_samples):
     for i in range(samples.batch):
         assert np.allclose(sample_q_975[:, i, :], true_q_975, atol=0.3)
         assert np.allclose(sample_q_025[:, i, :], true_q_025, atol=0.3)
-        assert np.allclose(
-            sample_confidence_interval[:, i, :].reshape(-1), true_confidence_interval, atol=0.3
-        )
+        assert np.allclose(sample_confidence_interval[:, i, :].reshape(-1), true_confidence_interval, atol=0.3)
 
 
 def test_samples_correlation(multivariate_normal_samples):

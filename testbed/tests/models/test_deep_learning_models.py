@@ -7,10 +7,9 @@ from typing import Type
 import numpy as np
 import pytest
 from sklearn.metrics import r2_score
+
 from testbed.models import ProbabilisticModel
-from testbed.models.lightning_uq_models import Card
-from testbed.models.lightning_uq_models import DeepEnsemble
-from testbed.models.lightning_uq_models import MCDropout
+from testbed.models.lightning_uq_models import Card, DeepEnsemble, MCDropout
 from testbed.models.nnffuser import NNffuser
 
 
@@ -23,9 +22,7 @@ from testbed.models.nnffuser import NNffuser
         (Card, 10_000, 0.99),  # Card needs more samples to work properly
     ],
 )
-def test_deep_model_work(
-    model_class: Type[ProbabilisticModel], n_samples: int, p_train: float
-):
+def test_deep_model_work(model_class: Type[ProbabilisticModel], n_samples: int, p_train: float):
     """
     Simple test to check that card works
     """

@@ -1,8 +1,6 @@
 import tempfile
 from functools import partial
-from typing import Callable
-from typing import List
-from typing import Tuple
+from typing import Callable, List, Tuple
 
 import lightning as L
 import numpy as np
@@ -12,10 +10,8 @@ from lightning import Trainer
 from lightning.pytorch.callbacks.early_stopping import EarlyStopping
 from numpy import ndarray
 from sklearn.base import MultiOutputMixin
-from skopt.space import Integer
-from skopt.space import Real
-from torch import Tensor
-from torch import nn
+from skopt.space import Integer, Real
+from torch import Tensor, nn
 from torch.optim import Adam
 
 from testbed.models.base_model import ProbabilisticModel
@@ -104,9 +100,7 @@ class MVERegression(L.LightningModule):
         log_likelihood = dist.log_prob(y).mean()
         return -log_likelihood
 
-    def sample(
-        self, x: Float[ndarray, "batch x_dim"], n_samples: int
-    ) -> Float[ndarray, "n_samples batch y_dim"]:
+    def sample(self, x: Float[ndarray, "batch x_dim"], n_samples: int) -> Float[ndarray, "n_samples batch y_dim"]:
         mean, var = self(x)
         samples = torch.randn(n_samples, *mean.shape)
         samples = samples * torch.sqrt(var) + mean
@@ -231,9 +225,7 @@ class DeepEnsemble(ProbabilisticModel, MultiOutputMixin):
         """
         X = self.scaler_x.transform(X)
         X_tensor = torch.tensor(X, dtype=torch.float)
-        predictions = [
-            model(X_tensor)[0].detach().numpy() for model in self._models
-        ]  # Only extracting means
+        predictions = [model(X_tensor)[0].detach().numpy() for model in self._models]  # Only extracting means
         mean_predictions = np.mean(predictions, axis=0)
         return self.scaler_y.inverse_transform(mean_predictions)
 
@@ -272,9 +264,7 @@ class DeepEnsemble(ProbabilisticModel, MultiOutputMixin):
         samples = samples.reshape(n_samples, -1, self.y_dim)
         return samples
 
-    def log_likelihood(
-        self, X: Float[ndarray, "batch x_dim"], y: Float[ndarray, "batch y_dim"]
-    ) -> float:
+    def log_likelihood(self, X: Float[ndarray, "batch x_dim"], y: Float[ndarray, "batch y_dim"]) -> float:
         """
         Computes the log likelihood of the observed data under the predictive distribution of the ensemble.
         The log-likelihood is under the scaled data
@@ -299,11 +289,7 @@ class DeepEnsemble(ProbabilisticModel, MultiOutputMixin):
             mean, var = model(X_tensor)
             dist = torch.distributions.Normal(mean, var.sqrt())
             # using jacobian to calculate the log likelihood
-            log_likelihood = (
-                dist.log_prob(y_tensor).mean().detach().numpy()
-                - log_sum_std
-                - np.log(y.shape[0])
-            )
+            log_likelihood = dist.log_prob(y_tensor).mean().detach().numpy() - log_sum_std - np.log(y.shape[0])
             log_likelihoods.append(log_likelihood)
 
         return np.sum(log_likelihoods)

@@ -3,27 +3,24 @@ This notebook contains the code neccesary for generating plots and tables needed
 for the run-time analysis of the algorithm.
 """
 
+import os
+import pickle
+import time
+from argparse import ArgumentParser
+from dataclasses import dataclass
+from typing import List
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from jaxtyping import Float
+from matplotlib import rcParams
+from numpy import ndarray
+
 from testbed.data.utils import get_data  # noqa E402
 from testbed.data.utils import list_data  # noqa E402
 from testbed.models.treeffuser import Treeffuser  # noqa E402
-
-
-from dataclasses import dataclass
-from argparse import ArgumentParser
-from typing import List
-import numpy as np
-from numpy import ndarray
-import matplotlib.pyplot as plt
-import seaborn as sns
-import os
-
-import time
-from jaxtyping import Float
-import pandas as pd
-import pickle
-
-from matplotlib import rcParams
-
 
 # make plots pretty
 sns.set(style="whitegrid")
@@ -240,9 +237,7 @@ def make_table_for_sample_times(datapoints: List[_Datapoint], save_pth: str):
     df = pd.DataFrame(
         {
             "Dataset": [dp.dataset_name for dp in datapoints],
-            "Time per sample (seconds)": [
-                dp.sample_time_mean / dp.n_samples for dp in datapoints
-            ],
+            "Time per sample (seconds)": [dp.sample_time_mean / dp.n_samples for dp in datapoints],
         }
     )
     df.to_csv(save_pth, index=False, sep=",")
@@ -261,9 +256,7 @@ def create_a_datapoint_per_dataset(
     return datapoints
 
 
-def create_a_datapoint_per_fraction_of_dataset(
-    dataset_name: str, n_fractions: int
-) -> List[_Datapoint]:
+def create_a_datapoint_per_fraction_of_dataset(dataset_name: str, n_fractions: int) -> List[_Datapoint]:
     dataset = get_data(dataset_name)
     x, y = dataset["x"], dataset["y"]
 
@@ -308,9 +301,7 @@ if __name__ == "__main__":
         datapoints = create_a_datapoint_per_dataset(dataset_names)
         save_pkls(os.path.join(args.out_dir, FILE_NAME_DATAPOINT_PER_DATASET), datapoints)
 
-    plot_train_times(
-        datapoints, os.path.join(args.out_dir, FILE_NAME_TRAIN_TIMES), annotate=False
-    )
+    plot_train_times(datapoints, os.path.join(args.out_dir, FILE_NAME_TRAIN_TIMES), annotate=False)
     make_table_for_sample_times(datapoints, os.path.join(args.out_dir, FILE_NAME_SAMPLE_TIMES))
 
     datapoints = get_pkls(os.path.join(args.out_dir, FILE_NAME_DATAPOINT_PER_FRACTION))
@@ -318,6 +309,4 @@ if __name__ == "__main__":
         datapoints = create_a_datapoint_per_fraction_of_dataset("m5_subset", N_SUBSETS)
         save_pkls(os.path.join(args.out_dir, FILE_NAME_DATAPOINT_PER_FRACTION), datapoints)
 
-    plot_train_times(
-        datapoints, os.path.join(args.out_dir, FILE_NAME_M5_SUBSET), annotate=True
-    )
+    plot_train_times(datapoints, os.path.join(args.out_dir, FILE_NAME_M5_SUBSET), annotate=True)

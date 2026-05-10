@@ -5,26 +5,24 @@ is happening as the two models are not related.
 Therefore both models can't be run in the same script.
 """
 
-import lightgbm as lgb  # noqa F401
 from collections import defaultdict
 
+import lightgbm as lgb  # noqa F401
 import pandas as pd
+from sklearn.model_selection import train_test_split
+
+from testbed.data.utils import get_data, list_data
+from testbed.metrics import CRPS
+from testbed.metrics.accuracy import AccuracyMetric
+
+# %%
+from testbed.models.ngboost import NGBoostGaussian
+from testbed.models.treeffuser import Treeffuser  # (causes segmentation fault ????)
 
 # %%
 # uncomment for interactivity
 # %load_ext autoreload
 # %autoreload 2
-
-from testbed.data.utils import get_data
-from testbed.data.utils import list_data
-from sklearn.model_selection import train_test_split
-
-# %%
-from testbed.models.ngboost import NGBoostGaussian
-
-from testbed.models.treeffuser import Treeffuser  # (causes segmentation fault ????)
-from testbed.metrics.accuracy import AccuracyMetric
-from testbed.metrics import CRPS
 
 
 # %%
@@ -39,9 +37,7 @@ data = get_data("bike", verbose=True)
 data["x"] = data["x"]
 data["y"] = data["y"]
 
-X_train, X_test, y_train, y_test = train_test_split(
-    data["x"], data["y"], test_size=0.2, random_state=0
-)
+X_train, X_test, y_train, y_test = train_test_split(data["x"], data["y"], test_size=0.2, random_state=0)
 
 
 # %%

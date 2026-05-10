@@ -24,7 +24,7 @@ from treeffuser.sde import sdeint
 ###################################################
 
 
-def _check_array(array: ndarray[float]):
+def _check_array(array: ndarray):
     if not isinstance(array, np.ndarray):
         raise TypeError("Input must be a numpy array.")
 
@@ -61,9 +61,7 @@ def _ensure_numerical_columns(X: pd.DataFrame):
     """
     X_has_been_copied = False
     for c in X.columns:
-        if not isinstance(X[c].dtype, pd.CategoricalDtype) and not np.issubdtype(
-            X[c].dtype, np.number
-        ):
+        if not isinstance(X[c].dtype, pd.CategoricalDtype) and not np.issubdtype(X[c].dtype, np.number):
             raise ValueError(
                 f"Dtypes of columns in `X` must be int, float, bool or category. "
                 f"Column {c} has dtype {X[c].dtype}."
@@ -121,9 +119,7 @@ class BaseTabularDiffusion(BaseEstimator, abc.ABC):
         validate_X: bool = True,
         validate_y: bool = True,
         reset_data_schema: bool = False,
-    ) -> tuple[
-        Float[ndarray, "batch x_dim"] | None, Float[ndarray, "batch y_dim"] | None, list[int]
-    ]:
+    ) -> tuple[ndarray | pd.DataFrame | None, ndarray | pd.Series | pd.DataFrame | None, list[int] | None]:
         """
         Preprocess and validate the input data by methods like `fit`, `predict`, `sample`, ...
         (1) It transforms the different possible inputs (pandas, numpy) into numpy arrays.
@@ -166,9 +162,7 @@ class BaseTabularDiffusion(BaseEstimator, abc.ABC):
                         "Instead, ensure that the categorical columns have dtype `category`."
                         "E.g., X['column_name'] = X['column_name'].astype('category')."
                     )
-                cat_idx = [
-                    X.columns.get_loc(col) for col in X.select_dtypes("category").columns
-                ]
+                cat_idx = [X.columns.get_loc(col) for col in X.select_dtypes("category").columns]
                 # check dtype of columns and convert categorical columns to numerical
                 X = _ensure_numerical_columns(X)
                 # at that point, X contains only numerical columns
@@ -180,6 +174,7 @@ class BaseTabularDiffusion(BaseEstimator, abc.ABC):
                 else:
                     # check coherence of the input data with the training data
                     # ensure the columns of the DataFrame are the same as the ones used during training
+                    assert self._x_dataframe_columns is not None
                     if not all(col in X.columns for col in self._x_dataframe_columns):
                         raise ValueError(
                             "Column names in `X` are not present in the DataFrame but were present during training."
@@ -204,8 +199,7 @@ class BaseTabularDiffusion(BaseEstimator, abc.ABC):
                     self._x_cat_idx = cat_idx
             else:
                 raise TypeError(
-                    "Input data `X` must be a numpy array or a pandas DataFrame."
-                    f"Received {type(X).__name__}."
+                    "Input data `X` must be a numpy array or a pandas DataFrame." f"Received {type(X).__name__}."
                 )
             X = _check_array(X)
 
@@ -269,12 +263,12 @@ class BaseTabularDiffusion(BaseEstimator, abc.ABC):
         # store the original number of dimensions of the response
         # before reshaping the data so as to ensure that predictions
         # have the same shape as the user-inputted response
-        X, y, cat_idx = self._preprocess_and_validate_data(
-            X=X, y=y, cat_idx=cat_idx, reset_data_schema=True
-        )
+        X_proc, y_proc, cat_idx = self._preprocess_and_validate_data(X=X, y=y, cat_idx=cat_idx, reset_data_schema=True)
+        assert isinstance(X_proc, np.ndarray)
+        assert isinstance(y_proc, np.ndarray)
 
-        x_transformed = self._x_scaler.fit_transform(X, cat_idx=cat_idx)
-        y_transformed = self._y_scaler.fit_transform(y)
+        x_transformed = self._x_scaler.fit_transform(X_proc, cat_idx=cat_idx)
+        y_transformed = self._y_scaler.fit_transform(y_proc)
 
         if self.sde_initialize_from_data:
             self.sde.initialize_hyperparams_from_data(y_transformed)
@@ -328,10 +322,11 @@ class BaseTabularDiffusion(BaseEstimator, abc.ABC):
         if not self._is_fitted:
             raise ValueError("The model has not been fitted yet.")
 
-        X, _, _ = self._preprocess_and_validate_data(X=X, validate_y=False)
+        X_proc, _, _ = self._preprocess_and_validate_data(X=X, validate_y=False)
+        assert isinstance(X_proc, np.ndarray)
 
         y_samples = self._sample_without_validation(
-            X, n_samples, n_parallel=n_parallel, n_steps=n_steps, seed=seed, verbose=verbose
+            X_proc, n_samples, n_parallel=n_parallel, n_steps=n_steps, seed=seed, verbose=verbose
         )
 
         # Ensure output aligns with original shape provided by user
@@ -352,6 +347,12 @@ class BaseTabularDiffusion(BaseEstimator, abc.ABC):
         """
         Sampling method that preserves shape conventions.
         """
+        assert self._x_scaler is not None
+        assert self.sde is not None
+        assert self.score_model is not None
+        assert self._y_dim is not None
+        assert self._y_scaler is not None
+        score_model = self.score_model
         x_transformed = self._x_scaler.transform(X)
         batch_size_x = x_transformed.shape[0]
         y_dim = self._y_dim
@@ -372,7 +373,7 @@ class BaseTabularDiffusion(BaseEstimator, abc.ABC):
                 x_batched = np.tile(x_transformed, [batch_size_samples, 1])
 
             def _score_fn(y, t):
-                return self.score_model.score(y=y, X=x_batched, t=t)  # noqa: B023
+                return score_model.score(y=y, X=x_batched, t=t)  # noqa: B023
                 # B023 highlights that x_batched might change in the future. But we
                 # use _score_fn immediately inside the loop, so there are no risks.
 
@@ -444,8 +445,9 @@ class BaseTabularDiffusion(BaseEstimator, abc.ABC):
         if not self._is_fitted:
             raise ValueError("The model has not been fitted yet.")
 
-        X, _, _ = self._preprocess_and_validate_data(X=X, validate_y=False)
-        y_preds = self._predict_from_sample(X, tol, max_samples, verbose)
+        X_proc, _, _ = self._preprocess_and_validate_data(X=X, validate_y=False)
+        assert isinstance(X_proc, np.ndarray)
+        y_preds = self._predict_from_sample(X_proc, tol, max_samples, verbose)
 
         if self._y_original_ndim == 1:
             y_preds = y_preds.squeeze(axis=-1)
@@ -467,9 +469,7 @@ class BaseTabularDiffusion(BaseEstimator, abc.ABC):
         """
         n_samples = n_samples_increment = 10
 
-        mean_prev = self._sample_without_validation(
-            X=X, n_samples=n_samples, verbose=verbose
-        ).mean(axis=0)
+        mean_prev = self._sample_without_validation(X=X, n_samples=n_samples, verbose=verbose).mean(axis=0)
         norm_prev = np.sqrt((mean_prev**2).sum(axis=1))
         max_change = np.inf
 
@@ -536,9 +536,10 @@ class BaseTabularDiffusion(BaseEstimator, abc.ABC):
         if not self._is_fitted:
             raise ValueError("The model has not been fitted yet.")
 
-        X, _, _ = self._preprocess_and_validate_data(X=X, validate_y=False)
+        X_proc, _, _ = self._preprocess_and_validate_data(X=X, validate_y=False)
+        assert isinstance(X_proc, np.ndarray)
 
-        y_samples = self._sample_without_validation(X=X, n_samples=n_samples, verbose=verbose)
+        y_samples = self._sample_without_validation(X=X_proc, n_samples=n_samples, verbose=verbose)
 
         batch = y_samples.shape[1]
 
@@ -589,9 +590,11 @@ class BaseTabularDiffusion(BaseEstimator, abc.ABC):
         if not self._is_fitted:
             raise ValueError("The model has not been fitted yet.")
 
-        X, y, _ = self._preprocess_and_validate_data(X=X, y=y)
+        X_proc, y_proc, _ = self._preprocess_and_validate_data(X=X, y=y)
+        assert isinstance(X_proc, np.ndarray)
+        assert isinstance(y_proc, np.ndarray)
 
-        return self._compute_nll_from_sample(X, y, n_samples, bandwidth, verbose)
+        return self._compute_nll_from_sample(X_proc, y_proc, n_samples, bandwidth, verbose)
 
     def _compute_nll_from_sample(
         self,

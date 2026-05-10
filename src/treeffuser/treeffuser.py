@@ -108,6 +108,7 @@ class Treeffuser(BaseTabularDiffusion):
 
     def get_new_sde(self) -> DiffusionSDE:
         sde_cls = get_diffusion_sde(self.sde_name)
+        assert not isinstance(sde_cls, dict)
         sde_kwargs = {}
         if self.sde_hyperparam_min is not None:
             sde_kwargs["hyperparam_min"] = self.sde_hyperparam_min
@@ -143,4 +144,6 @@ class Treeffuser(BaseTabularDiffusion):
         The number of estimators that are actually used in the models (after early stopping),
         one for each dimension of the score (i.e. the dimension of y).
         """
+        assert isinstance(self.score_model, LightGBMScoreModel)
+        assert self.score_model.n_estimators_true is not None
         return self.score_model.n_estimators_true

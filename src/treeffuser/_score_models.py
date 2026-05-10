@@ -3,8 +3,9 @@ Contains different score models to be used to approximate the score of a given S
 """
 
 import abc
-from typing import List
-from typing import Optional
+import warnings
+from typing import Any
+from typing import cast
 
 import lightgbm as lgb
 import numpy as np
@@ -22,13 +23,13 @@ from treeffuser.sde import DiffusionSDE
 def _fit_one_lgbm_model(
     X: Float[np.ndarray, "batch x_dim"],
     y: Float[np.ndarray, "batch y_dim"],
-    X_val: Float[np.ndarray, "batch x_dim"],
-    y_val: Float[np.ndarray, "batch y_dim"],
-    seed: int,
+    X_val: Float[np.ndarray, "batch x_dim"] | None,
+    y_val: Float[np.ndarray, "batch y_dim"] | None,
+    seed: int | None,
     verbose: int,
-    cat_idx: Optional[List[int]] = None,
-    n_jobs: int = -1,
-    early_stopping_rounds: Optional[int] = None,
+    cat_idx: list[int] | None = None,
+    n_jobs: int | None = -1,
+    early_stopping_rounds: int | None = None,
     **lgbm_args,
 ) -> lgb.LGBMRegressor:
     """
@@ -46,15 +47,17 @@ def _fit_one_lgbm_model(
         linear_tree=False,
         **lgbm_args,
     )
-    eval_set = None if X_val is None else (X_val, y_val)
-    if cat_idx is None:
-        cat_idx = "auto"
+    if X_val is not None and y_val is not None:
+        eval_set = [(X_val, y_val)]
+    else:
+        eval_set = None
+    categorical_feature: list[int] | str = "auto" if cat_idx is None else cat_idx
     model.fit(
         X=X,
         y=y,
-        eval_set=eval_set,
-        callbacks=callbacks,
-        categorical_feature=cat_idx,
+        eval_set=cast(Any, eval_set),
+        callbacks=cast(Any, callbacks),
+        categorical_feature=categorical_feature,
     )
     return model
 
@@ -63,10 +66,10 @@ def _make_training_data(
     X: Float[np.ndarray, "batch x_dim"],
     y: Float[np.ndarray, "batch y_dim"],
     sde: DiffusionSDE,
-    n_repeats: int,
-    eval_percent: Optional[float],
-    cat_idx: Optional[List[int]] = None,
-    seed: Optional[int] = None,
+    n_repeats: int | None,
+    eval_percent: float | None,
+    cat_idx: list[int] | None = None,
+    seed: int | None = None,
 ):
     """
     Creates the training data for the score model. This functions assumes that
@@ -93,13 +96,12 @@ def _make_training_data(
     predicted_train, predicted_val = None, None
 
     if eval_percent is not None:
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=eval_percent, random_state=seed
-        )
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=eval_percent, random_state=seed)
 
     # TRAINING DATA
-    X_train = np.tile(X_train, (n_repeats, 1))
-    y_train = np.tile(y_train, (n_repeats, 1))
+    n_reps = n_repeats if n_repeats is not None else 1
+    X_train = np.tile(X_train, (n_reps, 1))
+    y_train = np.tile(y_train, (n_reps, 1))
     t_train = rng.uniform(0, 1, size=(y_train.shape[0], 1)) * (T - EPS) + EPS
     z_train = rng.normal(size=y_train.shape)
 
@@ -110,14 +112,14 @@ def _make_training_data(
 
     # VALIDATION DATA
     if eval_percent is not None:
+        assert y_test is not None
+        assert X_test is not None
         t_val = rng.uniform(0, 1, size=(y_test.shape[0], 1)) * (T - EPS) + EPS
         z_val = rng.normal(size=(y_test.shape[0], y_test.shape[1]))
 
         val_mean, val_std = sde.get_mean_std_pt_given_y0(y_test, t_val)
         perturbed_y_val = val_mean + val_std * z_val
-        predictors_val = np.concatenate(
-            [perturbed_y_val, X_test, t_val.reshape(-1, 1)], axis=1
-        )
+        predictors_val = np.concatenate([perturbed_y_val, X_test, t_val.reshape(-1, 1)], axis=1)
         predicted_val = -1.0 * z_val
 
     cat_idx = [c + y_train.shape[1] for c in cat_idx] if cat_idx is not None else None
@@ -147,7 +149,7 @@ class ScoreModel(abc.ABC):
         X: Float[np.ndarray, "batch x_dim"],
         y: Float[np.ndarray, "batch y_dim"],
         sde: DiffusionSDE,
-        cat_idx: Optional[List[int]] = None,
+        cat_idx: list[int] | None = None,
     ):
         pass
 
@@ -182,10 +184,10 @@ class LightGBMScoreModel(ScoreModel):
 
     def __init__(
         self,
-        n_repeats: Optional[int] = 10,
+        n_repeats: int | None = 10,
         eval_percent: float = 0.1,
-        n_jobs: Optional[int] = -1,
-        seed: Optional[int] = None,
+        n_jobs: int | None = -1,
+        seed: int | None = None,
         **lgbm_args,
     ) -> None:
         self.n_repeats = n_repeats
@@ -206,13 +208,20 @@ class LightGBMScoreModel(ScoreModel):
     ) -> Float[np.ndarray, "batch y_dim"]:
         if self.sde is None:
             raise ValueError("The model has not been fitted yet.")
+        assert self.models is not None
 
         scores = []
         predictors = np.concatenate([y, X, t], axis=1)
         _, std = self.sde.get_mean_std_pt_given_y0(y, t)
         for i in range(y.shape[-1]):
             # The score is parametrized: score(y, x, t) = GBT(y, x, t) / std(t)
-            score_p = self.models[i].predict(predictors, num_threads=self.n_jobs)
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore",
+                    message="X does not have valid feature names.*",
+                    category=UserWarning,
+                )
+                score_p = self.models[i].predict(predictors, num_threads=self.n_jobs)
             score = score_p / std[:, i]
             scores.append(score)
         return np.array(scores).T
@@ -222,7 +231,7 @@ class LightGBMScoreModel(ScoreModel):
         X: Float[np.ndarray, "batch x_dim"],
         y: Float[np.ndarray, "batch y_dim"],
         sde: DiffusionSDE,
-        cat_idx: Optional[List[int]] = None,
+        cat_idx: list[int] | None = None,
     ):
         """
         Fit the score model to the data and the given SDE.
@@ -245,7 +254,7 @@ class LightGBMScoreModel(ScoreModel):
         lgb_X_train, lgb_X_val, lgb_y_train, lgb_y_val, cat_idx = _make_training_data(
             X=X,
             y=y,
-            sde=self.sde,
+            sde=sde,
             n_repeats=self.n_repeats,
             eval_percent=self.eval_percent,
             cat_idx=cat_idx,

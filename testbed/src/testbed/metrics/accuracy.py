@@ -8,10 +8,12 @@ from typing import Dict
 import numpy as np
 from jaxtyping import Float
 from numpy import ndarray
-from sklearn.metrics import mean_absolute_error
-from sklearn.metrics import mean_squared_error
-from sklearn.metrics import median_absolute_error
-from sklearn.metrics import r2_score
+from sklearn.metrics import (
+    mean_absolute_error,
+    mean_squared_error,
+    median_absolute_error,
+    r2_score,
+)
 
 from testbed.metrics.base_metric import Metric
 from testbed.models.base_model import ProbabilisticModel
@@ -53,9 +55,7 @@ class AccuracyMetric(Metric):
 
         # Check shapes
         if y_pred.shape != y_test.shape:
-            raise ValueError(
-                f"Mismatch in shape between predicted and true values: {y_pred.shape} != {y_test.shape}"
-            )
+            raise ValueError(f"Mismatch in shape between predicted and true values: {y_pred.shape} != {y_test.shape}")
 
         # Compute metrics
         mae = mean_absolute_error(y_test, y_pred)

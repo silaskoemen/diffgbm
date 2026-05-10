@@ -2,19 +2,15 @@
 This should be the main file corresponding to the project.
 """
 
-from typing import Dict
-from typing import List
-from typing import Optional
+from typing import Dict, List, Optional
 
 from jaxtyping import Float
 from ml_collections import ConfigDict
 from numpy import ndarray
-from skopt.space import Integer
-from skopt.space import Real
+from skopt.space import Integer, Real
 
 import testbed.models.nnfuser._score as _score
-from testbed.models.base_model import ProbabilisticModel
-from testbed.models.base_model import SupportsMultioutput
+from testbed.models.base_model import ProbabilisticModel, SupportsMultioutput
 from treeffuser.treeffuser import Treeffuser
 
 
@@ -58,9 +54,7 @@ class _NNffuser(Treeffuser):
         -------------------------------
         """
         if sde_initialize_with_data and sde_manual_hyperparams is not None:
-            raise Warning(
-                "Manual hypeparameter setting will override data-based initialization."
-            )
+            raise Warning("Manual hypeparameter setting will override data-based initialization.")
 
         super().__init__(
             sde_name=sde_name,

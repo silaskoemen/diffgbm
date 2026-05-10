@@ -1,7 +1,5 @@
-from typing import Callable
-from typing import List
+from collections.abc import Callable
 from typing import Literal
-from typing import Union
 
 import numpy as np
 from jaxtyping import Float
@@ -56,9 +54,7 @@ class Samples:
         self.shape = input_array.shape
         self.ndim = input_array.ndim
 
-    def sample_apply(
-        self, fun: Callable[[np.ndarray], np.ndarray]
-    ) -> Float[np.ndarray, "batch y_dim"]:
+    def sample_apply(self, fun: Callable[[np.ndarray], np.ndarray]) -> Float[np.ndarray, "batch y_dim"]:
         """
         Apply a function to the samples for each `x`.
 
@@ -76,9 +72,7 @@ class Samples:
         result = np.apply_along_axis(fun, 0, self._samples)
         return result
 
-    def sample_confidence_interval(
-        self, confidence: float = 0.95
-    ) -> Float[np.ndarray, "2 batch y_dim"]:
+    def sample_confidence_interval(self, confidence: float = 0.95) -> Float[np.ndarray, "2 batch y_dim"]:
         """
         Estimate the confidence interval of the samples for each `x` using
         the empirical quantiles of the samples.
@@ -116,9 +110,9 @@ class Samples:
 
     def sample_kde(
         self,
-        bandwidth: Union[float, Literal["scott", "silverman"]] = 1.0,
+        bandwidth: float | Literal["scott", "silverman"] = 1.0,
         verbose: bool = False,
-    ) -> List[KernelDensity]:
+    ) -> list[KernelDensity]:
         """
         Compute the Kernel Density Estimate (KDE) for each `x`.
         Estimate: `KDE[Y | X = x]` for each `x` using Gaussian kernels from `sklearn.neighbors`.
@@ -208,7 +202,7 @@ class Samples:
 
     def sample_mode(
         self,
-        bandwidth: Union[float, Literal["scott", "silverman"]] = 1.0,
+        bandwidth: float | Literal["scott", "silverman"] = 1.0,
         verbose: bool = False,
     ) -> Float[np.ndarray, "batch"]:
         """
@@ -254,9 +248,7 @@ class Samples:
         modes = np.array(modes)
         return modes
 
-    def sample_quantile(
-        self, q: Union[float, List[float]]
-    ) -> Float[np.ndarray, "q_dim batch y_dim"]:
+    def sample_quantile(self, q: float | list[float]) -> Float[np.ndarray, "q_dim batch y_dim"]:
         """
         Compute the quantiles of the samples for each `x`.
         Estimate: `q-th quantile[Y | X = x]` for each `x`.
@@ -268,11 +260,7 @@ class Samples:
             Quantile or sequence of quantiles to compute.
         """
         quantiles = np.quantile(self._samples, q, axis=0)
-        return (
-            quantiles
-            if isinstance(q, list)
-            else quantiles.reshape((1, self.batch, self.y_dim))
-        )
+        return quantiles if isinstance(q, list) else quantiles.reshape((1, self.batch, self.y_dim))
 
     def sample_range(self) -> Float[np.ndarray, "batch 2"]:
         """
@@ -326,7 +314,10 @@ class Samples:
         Prevent the user from removing the first or second dimension of the samples.
         """
         if isinstance(key, int):
-            key = (key,)
+            raise ValueError(
+                f"Accessing `my_samples[{key}]` would remove the first dimension of the samples,"
+                f" which is forbidden. Instead, use `my_samples.samples[{key}]`."
+            )
         if isinstance(key[0], int):
             raise ValueError(
                 f"Accessing `my_samples[{key}] would remove the first dimension of the samples,"

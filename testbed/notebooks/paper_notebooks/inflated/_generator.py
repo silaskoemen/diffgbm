@@ -1,9 +1,8 @@
+from typing import Callable, List
+
 import numpy as np
 from numpy.random import Generator
 from scipy.special import loggamma
-
-from typing import Callable
-from typing import List
 
 
 class CustomRandomGenerator(Generator):
@@ -28,13 +27,11 @@ class CustomRandomGenerator(Generator):
 
         sample = np.zeros(size)
         if (is_discrete == False).any():
-            sample[is_discrete == False] = continuous_shift + getattr(
-                self, continuous_distr_name
-            )(**continuous_distr_params, size=size - n_discrete)
-        if is_discrete.any():
-            sample[is_discrete] = self.choice(
-                loc_atoms, p=p_atoms / (1 - p_continuous), size=n_discrete
+            sample[is_discrete == False] = continuous_shift + getattr(self, continuous_distr_name)(
+                **continuous_distr_params, size=size - n_discrete
             )
+        if is_discrete.any():
+            sample[is_discrete] = self.choice(loc_atoms, p=p_atoms / (1 - p_continuous), size=n_discrete)
 
         return sample
 

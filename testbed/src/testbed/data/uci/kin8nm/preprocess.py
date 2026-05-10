@@ -20,9 +20,7 @@ def main(path_raw_dataset_dir: Path):
     categorical = []
 
     # Save preprocessed data
-    np.save(
-        path_raw_dataset_dir.parent / "data.npy", {"x": x, "y": y, "categorical": categorical}
-    )
+    np.save(path_raw_dataset_dir.parent / "data.npy", {"x": x, "y": y, "categorical": categorical})
 
 
 if __name__ == "__main__":

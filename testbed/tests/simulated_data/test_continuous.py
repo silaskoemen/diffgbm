@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
-from testbed.simulated_data.continuous import NormalDataset
-from testbed.simulated_data.continuous import StudentTDataset
+
+from testbed.simulated_data.continuous import NormalDataset, StudentTDataset
 
 
 def test_normal_linear():
@@ -40,10 +40,7 @@ def test_normal_linear():
     # check that the log likelihood is correct
     score = dataset.score(X_ones, y_ones_samples)
     real_score = np.mean(
-        np.log(
-            np.exp(-0.5 * ((y_mean - y_ones_samples) / y_std) ** 2)
-            / np.sqrt(2 * np.pi * y_std**2)
-        )
+        np.log(np.exp(-0.5 * ((y_mean - y_ones_samples) / y_std) ** 2) / np.sqrt(2 * np.pi * y_std**2))
     )
     assert np.isclose(score, real_score)
 

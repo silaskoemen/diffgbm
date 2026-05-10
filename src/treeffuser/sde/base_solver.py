@@ -1,5 +1,4 @@
 import abc
-from typing import Optional
 
 import numpy as np
 from jaxtyping import Float
@@ -75,15 +74,13 @@ class BaseSDESolver(abc.ABC):
         Random seed.
     """
 
-    def __init__(self, sde: BaseSDE, n_steps: int, seed: Optional[int] = None):
+    def __init__(self, sde: BaseSDE, n_steps: int, seed: int | None = None):
         self.sde = sde
         self.n_steps = n_steps
         self._rng = np.random.default_rng(seed)
 
     @abc.abstractmethod
-    def step(
-        self, y0: Float[ndarray, "batch y_dim"], t0: float, t1: float
-    ) -> Float[ndarray, "batch y_dim"]:
+    def step(self, y0: Float[ndarray, "batch y_dim"], t0: float, t1: float) -> Float[ndarray, "batch y_dim"]:
         """
         Perform a single discrete step of the SDE solver from time t0 to time t1.
 
@@ -98,9 +95,7 @@ class BaseSDESolver(abc.ABC):
         """
         raise NotImplementedError
 
-    def integrate(
-        self, y0: Float[ndarray, "batch y_dim"], t0: float, t1: float
-    ) -> Float[ndarray, "batch y_dim"]:
+    def integrate(self, y0: Float[ndarray, "batch y_dim"], t0: float, t1: float) -> Float[ndarray, "batch y_dim"]:
         """
         Integrate the SDE from time t0 to time t1 using `self.n_steps` steps.
 
@@ -170,7 +165,5 @@ def get_solver(name):
         >>> solver_instance = solver_class()
     """
     if name not in _AVAILABLE_SOLVERS:
-        raise ValueError(
-            f"Unknown solver {name}. Available solvers: {list(_AVAILABLE_SOLVERS.keys())}"
-        )
+        raise ValueError(f"Unknown solver {name}. Available solvers: {list(_AVAILABLE_SOLVERS.keys())}")
     return _AVAILABLE_SOLVERS[name]

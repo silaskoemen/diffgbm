@@ -3,7 +3,6 @@ from __future__ import annotations
 import numpy as np
 from jaxtyping import Float
 
-
 DEFAULT_COVERAGE_LEVELS = (0.50, 0.80, 0.90, 0.95)
 
 
@@ -132,4 +131,3 @@ def coverage_by_x_bin(
         "mace": float(np.mean(errors)),
         "max_error": float(np.max(errors)),
     }
-

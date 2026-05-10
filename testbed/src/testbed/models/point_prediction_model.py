@@ -3,9 +3,7 @@ import abc
 import numpy as np
 from jaxtyping import Float
 from numpy import ndarray
-from skopt.space import Categorical
-from skopt.space import Integer
-from skopt.space import Real
+from skopt.space import Categorical, Integer, Real
 
 from testbed.models import ProbabilisticModel
 
@@ -39,11 +37,7 @@ class PointPredictionModel(ProbabilisticModel, abc.ABC):
         model_class = self.get_model_class()
         # filter out hyperparameters that are not valid for the model
         tmp_model_hyperparameters = model_class().get_params()
-        valid_hyperparameters = {
-            k: v
-            for k, v in self.model_hyperparameters.items()
-            if k in tmp_model_hyperparameters
-        }
+        valid_hyperparameters = {k: v for k, v in self.model_hyperparameters.items() if k in tmp_model_hyperparameters}
         self.model = self.get_model_class()(**valid_hyperparameters)
         self.model.fit(X, y)
         return self
@@ -120,9 +114,7 @@ class PPMMLP(PointPredictionModel):
 
         return MLPRegressor
 
-    def score(
-        self, X: Float[ndarray, "batch x_dim"], y: Float[ndarray, "batch y_dim"], **kwargs
-    ) -> float:
+    def score(self, X: Float[ndarray, "batch x_dim"], y: Float[ndarray, "batch y_dim"], **kwargs) -> float:
         """
         Return the negative RMSE score for the model.
         The higher the score, the better the model.

@@ -3,9 +3,10 @@
 
 # %%
 
-import pandas as pd
 from pathlib import Path
+
 import numpy as np
+import pandas as pd
 
 # %%
 path = Path("uci_results")
@@ -85,7 +86,9 @@ tmp_results = pd.pivot_table(
     columns=["model"],
     values=[metric],
     aggfunc="mean",
-)[metric]["treeffuser"]
+)[
+    metric
+]["treeffuser"]
 
 log10_per_dataset = tmp_results.apply(lambda x: np.floor(np.log10(x)))
 
@@ -114,11 +117,7 @@ results = pd.pivot_table(
 
 # find the best 2 method for each dataset, set the boolean (cell[2]) to True if it is one of the best 2
 for dataset in results.index:
-    best_2 = (
-        results.loc[dataset]
-        .apply(lambda x: x[0] if isinstance(x, list) else np.inf)
-        .nsmallest(2)
-    )
+    best_2 = results.loc[dataset].apply(lambda x: x[0] if isinstance(x, list) else np.inf).nsmallest(2)
     print(best_2)
     results.loc[dataset] = results.loc[dataset].apply(
         lambda x: [x[0], x[1], x[0] in best_2.values] if isinstance(x, list) else x
@@ -141,13 +140,9 @@ def format_cell(x):
 results = results.map(format_cell)
 
 # energy has multivariate y so some methods cannot run
-results.loc["energy"] = results.loc["energy"].apply(
-    lambda x: r"\texttt{NA}" if x == "--" else x
-)
+results.loc["energy"] = results.loc["energy"].apply(lambda x: r"\texttt{NA}" if x == "--" else x)
 # ngboost fails sometimes
-results.loc[:, "ngboost"] = results.loc[:, "ngboost"].apply(
-    lambda x: r"$\times$" if x == "--" else x
-)
+results.loc[:, "ngboost"] = results.loc[:, "ngboost"].apply(lambda x: r"$\times$" if x == "--" else x)
 results.loc["news", "ngboost"] = r"$\times$"
 
 results[" "] = log10_per_dataset.apply(lambda x: rf"$\scriptstyle\times 10^{{{int(x)}}}$")
@@ -175,9 +170,7 @@ results = results[["$N, d_x, d_y$"] + list(methods.keys()) + [" "]]
 results = results.rename(columns=methods)
 results = results.rename(index={"superconductor": "superc."})
 
-latex_table = results.to_latex(
-    escape=False, column_format="l" + "c" * len(results.columns), index=True
-)
+latex_table = results.to_latex(escape=False, column_format="l" + "c" * len(results.columns), index=True)
 latex_table = "\\resizebox{\\columnwidth}{!}{% \n " + latex_table + "}"
 
 
@@ -244,11 +237,7 @@ results = pd.pivot_table(
 
 # find the best 2 method for each dataset, set the boolean (cell[2]) to True if it is one of the best 2
 for dataset in results.index:
-    best_2 = (
-        results.loc[dataset]
-        .apply(lambda x: x[0] if isinstance(x, list) else np.inf)
-        .nsmallest(2)
-    )
+    best_2 = results.loc[dataset].apply(lambda x: x[0] if isinstance(x, list) else np.inf).nsmallest(2)
     print(best_2)
     results.loc[dataset] = results.loc[dataset].apply(
         lambda x: [x[0], x[1], x[0] in best_2.values] if isinstance(x, list) else x
@@ -291,18 +280,14 @@ results = results.rename(columns=methods)
 # results = results.rename(index={"superconductor": "superc."})
 results = results.drop("dataset", axis=1)
 
-latex_table = results.to_latex(
-    escape=False, column_format="l" + "c" * len(results.columns), index=False
-)
+latex_table = results.to_latex(escape=False, column_format="l" + "c" * len(results.columns), index=False)
 latex_table = "\\resizebox{\\columnwidth}{!}{% \n " + latex_table + "}"
 
 
 print(latex_table)
 
 # %%
-df["Runtime"].sum() // 3600, df["Runtime"].sum() // 60 % 60, df["Runtime"].sum() % 60, df[
-    "Runtime"
-].shape
+df["Runtime"].sum() // 3600, df["Runtime"].sum() // 60 % 60, df["Runtime"].sum() % 60, df["Runtime"].shape
 
 # %%
 
@@ -335,7 +320,9 @@ tmp_results = pd.pivot_table(
     columns=["model"],
     values=[metric],
     aggfunc="mean",
-)[metric]["treeffuser"]
+)[
+    metric
+]["treeffuser"]
 
 log10_per_dataset = tmp_results.apply(lambda x: np.floor(np.log10(x)))
 
@@ -375,11 +362,7 @@ results = results.reset_index(drop=True).set_index("metric")
 
 # find the best 2 method for each dataset, set the boolean (cell[2]) to True if it is one of the best 2
 for dataset in results.index:
-    best_2 = (
-        results.loc[dataset]
-        .apply(lambda x: x[0] if isinstance(x, list) else np.inf)
-        .nsmallest(2)
-    )
+    best_2 = results.loc[dataset].apply(lambda x: x[0] if isinstance(x, list) else np.inf).nsmallest(2)
     print(best_2)
     results.loc[dataset] = results.loc[dataset].apply(
         lambda x: [x[0], x[1], x[0] in best_2.values] if isinstance(x, list) else x
@@ -427,9 +410,7 @@ results = results.rename(columns=methods)
 results = results.set_index(["metric"])
 
 
-latex_table = results.to_latex(
-    escape=False, column_format="l" + "c" * len(results.columns), index=True
-)
+latex_table = results.to_latex(escape=False, column_format="l" + "c" * len(results.columns), index=True)
 latex_table = "\\resizebox{\\columnwidth}{!}{% \n " + latex_table + "}"
 
 

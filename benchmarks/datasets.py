@@ -87,18 +87,14 @@ def _student_t_heavy_tail(
     return mean + scale * noise
 
 
-def _skewed_noise(
-    X: Float[np.ndarray, "batch x_dim"], rng: np.random.Generator
-) -> Float[np.ndarray, "batch 1"]:
+def _skewed_noise(X: Float[np.ndarray, "batch x_dim"], rng: np.random.Generator) -> Float[np.ndarray, "batch 1"]:
     mean = _nonlinear_signal(X)
     noise = rng.exponential(scale=1.0, size=mean.shape) - 1.0
     scale = _heteroscedastic_scale(X)
     return mean + scale * noise
 
 
-def _bimodal_mixture(
-    X: Float[np.ndarray, "batch x_dim"], rng: np.random.Generator
-) -> Float[np.ndarray, "batch 1"]:
+def _bimodal_mixture(X: Float[np.ndarray, "batch x_dim"], rng: np.random.Generator) -> Float[np.ndarray, "batch 1"]:
     base = _linear_signal(X)
     mode = np.where(rng.uniform(size=base.shape) < 0.5, -1.0, 1.0)
     separation = 0.75 + 0.25 * np.tanh(X[:, :1])
@@ -124,4 +120,3 @@ DATASETS: dict[str, Callable[[np.ndarray, np.random.Generator], np.ndarray]] = {
     "bimodal_mixture": _bimodal_mixture,
     "correlated_multioutput": _correlated_multioutput,
 }
-

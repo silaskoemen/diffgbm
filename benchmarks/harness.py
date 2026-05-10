@@ -10,8 +10,7 @@ from typing import Any
 
 from benchmarks.datasets import make_dataset
 from benchmarks.metrics import evaluate_samples
-from benchmarks.variants import Variant
-from benchmarks.variants import make_variants
+from benchmarks.variants import Variant, make_variants
 
 
 @dataclass(frozen=True)

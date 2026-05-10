@@ -9,12 +9,10 @@ from jaxtyping import Float
 from lightning import Trainer
 from lightning.pytorch.callbacks.early_stopping import EarlyStopping
 from lightning_uq_box.models import MLP
-from lightning_uq_box.uq_methods import NLL
-from lightning_uq_box.uq_methods import MCDropoutRegression
+from lightning_uq_box.uq_methods import NLL, MCDropoutRegression
 from numpy import ndarray
 from sklearn.base import MultiOutputMixin
-from skopt.space import Integer
-from skopt.space import Real
+from skopt.space import Integer, Real
 from torch.optim import Adam
 
 from testbed.models.base_model import ProbabilisticModel
@@ -175,9 +173,7 @@ class MCDropout(ProbabilisticModel, MultiOutputMixin):
         mean = preds["pred"]
         std = preds["pred_uct"].reshape(-1, self._y_dim)
 
-        samples = (
-            t.distributions.Normal(mean, std).sample((n_samples, 1)).squeeze()
-        )  # batch, num_samples
+        samples = t.distributions.Normal(mean, std).sample((n_samples, 1)).squeeze()  # batch, num_samples
         samples = samples.unsqueeze(-1)
         samples = samples.cpu().numpy()
 

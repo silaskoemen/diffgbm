@@ -1,6 +1,3 @@
-from typing import List
-from typing import Optional
-
 from jaxtyping import Float
 from numpy import ndarray
 from sklearn.preprocessing import StandardScaler
@@ -27,13 +24,13 @@ class ScalerMixedTypes:
         self,
         scaler=None,
     ) -> None:
-        self._cat_idx = None
+        self._cat_idx: list[int] = []
         self._is_fitted = False
         self._x_dim = None
         if scaler is None:
             self._scaler = StandardScaler()
 
-    def fit(self, X: Float[ndarray, "batch x_dim"], cat_idx: Optional[List[int]] = None):
+    def fit(self, X: Float[ndarray, "batch x_dim"], cat_idx: list[int] | None = None):
         """
         Fit the scaler provided at initialization to the data.
 
@@ -83,7 +80,7 @@ class ScalerMixedTypes:
         return X
 
     def fit_transform(
-        self, X: Float[ndarray, "batch x_dim"], cat_idx: Optional[List[int]] = None
+        self, X: Float[ndarray, "batch x_dim"], cat_idx: list[int] | None = None
     ) -> Float[ndarray, "batch x_dim"]:
         """
         Fit the scaler and transform the data in one step.
@@ -108,9 +105,7 @@ class ScalerMixedTypes:
         self.fit(X, cat_idx)
         return self.transform(X)
 
-    def inverse_transform(
-        self, X: Float[ndarray, "batch x_dim"]
-    ) -> Float[ndarray, "batch x_dim"]:
+    def inverse_transform(self, X: Float[ndarray, "batch x_dim"]) -> Float[ndarray, "batch x_dim"]:
         """
         Takes the data back to the original scale.
 
@@ -142,7 +137,7 @@ class ScalerMixedTypes:
         Resets the state of the preprocessor.
         """
         self._scaler = self._scaler.__class__()
-        self._cat_idx = None
+        self._cat_idx = []
         self._is_fitted = False
         self._x_dim = None
         return self

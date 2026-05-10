@@ -28,4 +28,3 @@ def make_variants(config: list[dict[str, Any]]) -> list[Variant]:
     if not variants:
         raise ValueError("Benchmark config must enable at least one variant.")
     return variants
-

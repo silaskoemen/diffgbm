@@ -2,12 +2,10 @@ import numpy as np
 import torch
 from jaxtyping import Float
 from ngboost import NGBRegressor
-from ngboost.distns import MultivariateNormal
-from ngboost.distns import Poisson
+from ngboost.distns import MultivariateNormal, Poisson
 from numpy import ndarray
 from sklearn.base import MultiOutputMixin
-from skopt.space import Integer
-from skopt.space import Real
+from skopt.space import Integer, Real
 
 from testbed.models.base_model import ProbabilisticModel
 from testbed.models.ngboost._gaussian_mixtures import build_gaussian_mixture_model

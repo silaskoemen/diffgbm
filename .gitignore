@@ -13,6 +13,7 @@ plans
 *.so
 
 # Build and package files
+.pixi/
 *.egg
 *.egg-info
 .bootstrap

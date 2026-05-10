@@ -6,11 +6,127 @@ import numpy as np
 from einops import repeat
 
 from treeffuser._score_models import LightGBMScoreModel
+from treeffuser._score_models import NoiseParameterization
+from treeffuser._score_models import RawTimeFeatureBuilder
 from treeffuser._score_models import _make_training_data
 from treeffuser.sde.diffusion_sdes import VESDE
 
 from .utils import generate_bimodal_linear_regression_data
 from .utils import r2_score
+
+
+def test_noise_parameterization_matches_current_behavior():
+    parameterization = NoiseParameterization()
+    z = np.array([[1.0, -2.0], [0.5, 4.0]])
+    std = np.array([0.25, 2.0])
+    prediction = np.array([-0.5, 1.0])
+    t = np.array([[0.1], [0.2]])
+
+    target = parameterization.make_target(
+        y0=np.zeros_like(z),
+        perturbed_y=np.zeros_like(z),
+        z=z,
+        mean=np.zeros_like(z),
+        std=np.ones_like(z),
+        t=t,
+    )
+    score = parameterization.reconstruct_score(
+        prediction=prediction,
+        perturbed_y=np.zeros_like(prediction),
+        std=std,
+        t=t,
+    )
+
+    assert np.allclose(target, -z)
+    assert np.allclose(score, prediction / std)
+
+
+def test_raw_time_feature_builder_matches_concatenation():
+    perturbed_y = np.array([[0.1, -0.2], [0.3, 0.4], [-0.5, 0.6]])
+    X = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]])
+    t = np.array([[0.1], [0.5], [0.9]])
+    sde = VESDE(hyperparam_min=0.01, hyperparam_max=1.0)
+
+    builder = RawTimeFeatureBuilder()
+    features = builder.make_features(perturbed_y=perturbed_y, X=X, t=t, sde=sde)
+
+    expected = np.concatenate([perturbed_y, X, t], axis=1)
+    assert features.shape == expected.shape
+    assert np.array_equal(features, expected)
+
+
+def test_make_training_data_with_raw_time_preserves_shape_and_cat_idx():
+    n, x_dim, y_dim = 30, 4, 2
+    rng = np.random.default_rng(0)
+    X = rng.normal(size=(n, x_dim))
+    y = rng.normal(size=(n, y_dim))
+    sde = VESDE(hyperparam_min=0.01, hyperparam_max=1.0)
+    cat_idx = [1, 3]
+    n_repeats = 2
+    eval_percent = 0.2
+
+    baseline = _make_training_data(
+        X=X,
+        y=y,
+        sde=sde,
+        n_repeats=n_repeats,
+        eval_percent=eval_percent,
+        cat_idx=list(cat_idx),
+        seed=0,
+    )
+    explicit = _make_training_data(
+        X=X,
+        y=y,
+        sde=sde,
+        n_repeats=n_repeats,
+        eval_percent=eval_percent,
+        cat_idx=list(cat_idx),
+        seed=0,
+        noise_feature_builder=RawTimeFeatureBuilder(),
+    )
+
+    pred_train_b, pred_val_b, target_train_b, target_val_b, cat_idx_b = baseline
+    pred_train_e, pred_val_e, target_train_e, target_val_e, cat_idx_e = explicit
+
+    assert np.array_equal(pred_train_b, pred_train_e)
+    assert np.array_equal(pred_val_b, pred_val_e)
+    assert np.array_equal(target_train_b, target_train_e)
+    assert np.array_equal(target_val_b, target_val_e)
+
+    assert pred_train_b.shape[1] == y_dim + x_dim + 1
+    assert cat_idx_b == [c + y_dim for c in cat_idx]
+    assert cat_idx_e == cat_idx_b
+
+
+def test_lightgbm_score_model_with_raw_time_matches_default():
+    n, x_dim, y_dim = 200, 1, 1
+    sigma = 0.00001
+    X, y = generate_bimodal_linear_regression_data(n, x_dim, sigma, bimodal=False, seed=0)
+    sde = VESDE(hyperparam_min=0.01, hyperparam_max=float(y.std()))
+
+    common = {
+        "verbose": -1,
+        "n_estimators": 20,
+        "learning_rate": 0.1,
+        "n_repeats": 1,
+        "seed": 0,
+    }
+    default_model = LightGBMScoreModel(**common)
+    explicit_model = LightGBMScoreModel(noise_features="raw_time", **common)
+
+    default_model.fit(X, y, sde)
+    explicit_model.fit(X, y, sde)
+
+    rng = np.random.default_rng(0)
+    random_t = rng.uniform(1e-5, sde.T / 2, size=n).reshape(-1, 1)
+    z = rng.normal(size=(n, y_dim))
+    mean, std = sde.get_mean_std_pt_given_y0(y, random_t)
+    y_perturbed = mean + z * std
+
+    scores_default = default_model.score(y=y_perturbed, X=X, t=random_t)
+    scores_explicit = explicit_model.score(y=y_perturbed, X=X, t=random_t)
+
+    assert np.allclose(scores_default, scores_explicit)
 
 
 def test_linear_regression():

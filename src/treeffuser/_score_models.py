@@ -16,6 +16,143 @@ from sklearn.model_selection import train_test_split
 from treeffuser.sde import DiffusionSDE
 
 ###################################################
+# Score parameterizations
+###################################################
+
+
+class ScoreParameterization(abc.ABC):
+    """
+    Defines the regression target used to train a score model and how model predictions
+    are converted back into a score during reverse-time sampling.
+    """
+
+    @property
+    @abc.abstractmethod
+    def name(self) -> str:
+        pass
+
+    @abc.abstractmethod
+    def make_target(
+        self,
+        y0: Float[np.ndarray, "batch y_dim"],
+        perturbed_y: Float[np.ndarray, "batch y_dim"],
+        z: Float[np.ndarray, "batch y_dim"],
+        mean: Float[np.ndarray, "batch y_dim"],
+        std: Float[np.ndarray, "batch y_dim"],
+        t: Float[np.ndarray, "batch 1"],
+    ) -> Float[np.ndarray, "batch y_dim"]:
+        pass
+
+    @abc.abstractmethod
+    def reconstruct_score(
+        self,
+        prediction: Float[np.ndarray, "batch"],
+        perturbed_y: Float[np.ndarray, "batch"],
+        std: Float[np.ndarray, "batch"],
+        t: Float[np.ndarray, "batch 1"],
+    ) -> Float[np.ndarray, "batch"]:
+        pass
+
+
+class NoiseParameterization(ScoreParameterization):
+    """
+    Current Treeffuser behavior: train LightGBM to predict the added negative noise and
+    reconstruct the score by dividing the prediction by the perturbation standard deviation.
+    """
+
+    @property
+    def name(self) -> str:
+        return "noise"
+
+    def make_target(
+        self,
+        y0: Float[np.ndarray, "batch y_dim"],
+        perturbed_y: Float[np.ndarray, "batch y_dim"],
+        z: Float[np.ndarray, "batch y_dim"],
+        mean: Float[np.ndarray, "batch y_dim"],
+        std: Float[np.ndarray, "batch y_dim"],
+        t: Float[np.ndarray, "batch 1"],
+    ) -> Float[np.ndarray, "batch y_dim"]:
+        return -1.0 * z
+
+    def reconstruct_score(
+        self,
+        prediction: Float[np.ndarray, "batch"],
+        perturbed_y: Float[np.ndarray, "batch"],
+        std: Float[np.ndarray, "batch"],
+        t: Float[np.ndarray, "batch 1"],
+    ) -> Float[np.ndarray, "batch"]:
+        return prediction / std
+
+
+def get_score_parameterization(
+    parameterization: str | ScoreParameterization,
+) -> ScoreParameterization:
+    if isinstance(parameterization, ScoreParameterization):
+        return parameterization
+    if parameterization == "noise":
+        return NoiseParameterization()
+    raise ValueError(f"Unknown score parameterization: {parameterization}")
+
+
+###################################################
+# Noise feature builders
+###################################################
+
+
+class NoiseFeatureBuilder(abc.ABC):
+    """
+    Builds the feature matrix passed to the underlying regressor from the perturbed
+    sample, side information, and time. Centralizing this lets training and inference
+    share one definition so the two paths cannot drift apart.
+    """
+
+    @property
+    @abc.abstractmethod
+    def name(self) -> str:
+        pass
+
+    @abc.abstractmethod
+    def make_features(
+        self,
+        perturbed_y: Float[np.ndarray, "batch y_dim"],
+        X: Float[np.ndarray, "batch x_dim"],
+        t: Float[np.ndarray, "batch 1"],
+        sde: DiffusionSDE,
+    ) -> Float[np.ndarray, "batch feat_dim"]:
+        pass
+
+
+class RawTimeFeatureBuilder(NoiseFeatureBuilder):
+    """
+    Current Treeffuser feature layout: [perturbed_y, X, t].
+    """
+
+    @property
+    def name(self) -> str:
+        return "raw_time"
+
+    def make_features(
+        self,
+        perturbed_y: Float[np.ndarray, "batch y_dim"],
+        X: Float[np.ndarray, "batch x_dim"],
+        t: Float[np.ndarray, "batch 1"],
+        sde: DiffusionSDE,
+    ) -> Float[np.ndarray, "batch feat_dim"]:
+        return np.concatenate([perturbed_y, X, t], axis=1)
+
+
+def get_noise_feature_builder(
+    feature_builder: str | NoiseFeatureBuilder,
+) -> NoiseFeatureBuilder:
+    if isinstance(feature_builder, NoiseFeatureBuilder):
+        return feature_builder
+    if feature_builder == "raw_time":
+        return RawTimeFeatureBuilder()
+    raise ValueError(f"Unknown noise feature builder: {feature_builder}")
+
+
+###################################################
 # Helper functions
 ###################################################
 
@@ -70,6 +207,8 @@ def _make_training_data(
     eval_percent: float | None,
     cat_idx: list[int] | None = None,
     seed: int | None = None,
+    score_parameterization: ScoreParameterization | None = None,
+    noise_feature_builder: NoiseFeatureBuilder | None = None,
 ):
     """
     Creates the training data for the score model. This functions assumes that
@@ -87,6 +226,10 @@ def _make_training_data(
     - predicted_train: y_train=[-z_train] for lgbm
     - predicted_val: y_val=[-z_val] for lgbm
     """
+    if score_parameterization is None:
+        score_parameterization = NoiseParameterization()
+    if noise_feature_builder is None:
+        noise_feature_builder = RawTimeFeatureBuilder()
     EPS = 1e-5  # smallest step we can sample from
     T = sde.T
     rng = np.random.default_rng(seed)
@@ -107,8 +250,20 @@ def _make_training_data(
 
     train_mean, train_std = sde.get_mean_std_pt_given_y0(y_train, t_train)
     perturbed_y_train = train_mean + train_std * z_train
-    predictors_train = np.concatenate([perturbed_y_train, X_train, t_train], axis=1)
-    predicted_train = -1.0 * z_train
+    predictors_train = noise_feature_builder.make_features(
+        perturbed_y=perturbed_y_train,
+        X=X_train,
+        t=t_train,
+        sde=sde,
+    )
+    predicted_train = score_parameterization.make_target(
+        y0=y_train,
+        perturbed_y=perturbed_y_train,
+        z=z_train,
+        mean=train_mean,
+        std=train_std,
+        t=t_train,
+    )
 
     # VALIDATION DATA
     if eval_percent is not None:
@@ -119,8 +274,20 @@ def _make_training_data(
 
         val_mean, val_std = sde.get_mean_std_pt_given_y0(y_test, t_val)
         perturbed_y_val = val_mean + val_std * z_val
-        predictors_val = np.concatenate([perturbed_y_val, X_test, t_val.reshape(-1, 1)], axis=1)
-        predicted_val = -1.0 * z_val
+        predictors_val = noise_feature_builder.make_features(
+            perturbed_y=perturbed_y_val,
+            X=X_test,
+            t=t_val,
+            sde=sde,
+        )
+        predicted_val = score_parameterization.make_target(
+            y0=y_test,
+            perturbed_y=perturbed_y_val,
+            z=z_val,
+            mean=val_mean,
+            std=val_std,
+            t=t_val,
+        )
 
     cat_idx = [c + y_train.shape[1] for c in cat_idx] if cat_idx is not None else None
 
@@ -188,12 +355,16 @@ class LightGBMScoreModel(ScoreModel):
         eval_percent: float = 0.1,
         n_jobs: int | None = -1,
         seed: int | None = None,
+        score_parameterization: str | ScoreParameterization = "noise",
+        noise_features: str | NoiseFeatureBuilder = "raw_time",
         **lgbm_args,
     ) -> None:
         self.n_repeats = n_repeats
         self.eval_percent = eval_percent
         self.n_jobs = n_jobs
         self.seed = seed
+        self.score_parameterization = get_score_parameterization(score_parameterization)
+        self.noise_feature_builder = get_noise_feature_builder(noise_features)
 
         self._lgbm_args = lgbm_args
         self.sde = None
@@ -211,10 +382,9 @@ class LightGBMScoreModel(ScoreModel):
         assert self.models is not None
 
         scores = []
-        predictors = np.concatenate([y, X, t], axis=1)
+        predictors = self.noise_feature_builder.make_features(perturbed_y=y, X=X, t=t, sde=self.sde)
         _, std = self.sde.get_mean_std_pt_given_y0(y, t)
         for i in range(y.shape[-1]):
-            # The score is parametrized: score(y, x, t) = GBT(y, x, t) / std(t)
             with warnings.catch_warnings():
                 warnings.filterwarnings(
                     "ignore",
@@ -222,7 +392,12 @@ class LightGBMScoreModel(ScoreModel):
                     category=UserWarning,
                 )
                 score_p = self.models[i].predict(predictors, num_threads=self.n_jobs)
-            score = score_p / std[:, i]
+            score = self.score_parameterization.reconstruct_score(
+                prediction=score_p,
+                perturbed_y=y[:, i],
+                std=std[:, i],
+                t=t,
+            )
             scores.append(score)
         return np.array(scores).T
 
@@ -259,6 +434,8 @@ class LightGBMScoreModel(ScoreModel):
             eval_percent=self.eval_percent,
             cat_idx=cat_idx,
             seed=self.seed,
+            score_parameterization=self.score_parameterization,
+            noise_feature_builder=self.noise_feature_builder,
         )
 
         models = []

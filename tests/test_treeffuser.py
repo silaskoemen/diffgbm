@@ -4,6 +4,7 @@ import pytest
 from scipy.stats import ks_2samp
 
 from treeffuser import Treeffuser
+from treeffuser._score_models import LightGBMScoreModel
 
 from .utils import gaussian_mixture_pdf
 from .utils import train_test_split
@@ -107,6 +108,28 @@ def test_categorical():
     for cat_idx in [None, [1]]:
         model = Treeffuser()
         model.fit(X=X, y=y, cat_idx=cat_idx)
+
+
+def test_treeffuser_exposes_noise_feature_axis():
+    rng = np.random.default_rng(seed=0)
+    X = rng.normal(size=(60, 2))
+    y = (X[:, :1] - X[:, 1:] + rng.normal(scale=0.1, size=(60, 1))).reshape(-1, 1)
+
+    model = Treeffuser(
+        n_repeats=1,
+        n_estimators=2,
+        early_stopping_rounds=None,
+        score_parameterization="noise",
+        noise_features="raw_time_log_std",
+        seed=0,
+        verbose=-1,
+    )
+    model.fit(X=X, y=y)
+
+    assert model.score_parameterization == "noise"
+    assert model.noise_features == "raw_time_log_std"
+    assert isinstance(model.score_model, LightGBMScoreModel)
+    assert model.score_model.noise_feature_builder.name == "raw_time_log_std"
 
 
 def test_dataframe_input():

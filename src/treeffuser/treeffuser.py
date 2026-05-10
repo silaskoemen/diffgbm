@@ -29,6 +29,8 @@ class Treeffuser(BaseTabularDiffusion):
         sde_initialize_from_data: bool = False,
         sde_hyperparam_min: float | Literal["default"] | None = None,
         sde_hyperparam_max: float | Literal["default"] | None = None,
+        score_parameterization: str = "noise",
+        noise_features: str = "raw_time",
         seed: int | None = None,
         verbose: int = 0,
         extra_lightgbm_params: dict | None = None,
@@ -77,6 +79,12 @@ class Treeffuser(BaseTabularDiffusion):
             SDE: The scale of the SDE at t=0 (see `VESDE`, `VPSDE`, `SubVPSDE`).
         sde_hyperparam_max : float or "default"
             SDE: The scale of the SDE at t=T (see `VESDE`, `VPSDE`, `SubVPSDE`).
+        score_parameterization : str
+            Score-model regression target and score reconstruction strategy. Currently supported:
+            "noise".
+        noise_features : str
+            Noise/time feature representation passed to LightGBM. Currently supported:
+            "raw_time" and "raw_time_log_std".
         seed : int
             Random seed for generating the training data and fitting the model.
         verbose : int
@@ -104,6 +112,8 @@ class Treeffuser(BaseTabularDiffusion):
         self.sde_initialize_from_data = sde_initialize_from_data
         self.sde_hyperparam_min = sde_hyperparam_min
         self.sde_hyperparam_max = sde_hyperparam_max
+        self.score_parameterization = score_parameterization
+        self.noise_features = noise_features
         self.extra_lightgbm_params = extra_lightgbm_params or {}
 
     def get_new_sde(self) -> DiffusionSDE:
@@ -134,6 +144,8 @@ class Treeffuser(BaseTabularDiffusion):
             verbose=self.verbose,
             seed=self.seed,
             n_jobs=self.n_jobs,
+            score_parameterization=self.score_parameterization,
+            noise_features=self.noise_features,
             **self.extra_lightgbm_params,
         )
         return score_model

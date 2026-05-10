@@ -8,7 +8,9 @@ from einops import repeat
 from treeffuser._score_models import LightGBMScoreModel
 from treeffuser._score_models import NoiseParameterization
 from treeffuser._score_models import RawTimeFeatureBuilder
+from treeffuser._score_models import RawTimeLogStdFeatureBuilder
 from treeffuser._score_models import _make_training_data
+from treeffuser._score_models import get_noise_feature_builder
 from treeffuser.sde.diffusion_sdes import VESDE
 
 from .utils import generate_bimodal_linear_regression_data
@@ -55,6 +57,24 @@ def test_raw_time_feature_builder_matches_concatenation():
     assert np.array_equal(features, expected)
 
 
+def test_raw_time_log_std_feature_builder_adds_log_std():
+    perturbed_y = np.array([[0.1, -0.2], [0.3, 0.4], [-0.5, 0.6]])
+    X = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]])
+    t = np.array([[0.1], [0.5], [0.9]])
+    sde = VESDE(hyperparam_min=0.01, hyperparam_max=1.0)
+
+    builder = RawTimeLogStdFeatureBuilder()
+    features = builder.make_features(perturbed_y=perturbed_y, X=X, t=t, sde=sde)
+    _, std = sde.get_mean_std_pt_given_y0(perturbed_y, t)
+    expected = np.concatenate([perturbed_y, X, t, np.log(std[:, :1])], axis=1)
+
+    assert builder.name == "raw_time_log_std"
+    assert get_noise_feature_builder("raw_time_log_std").name == "raw_time_log_std"
+    assert features.shape == expected.shape
+    assert features.shape[1] == perturbed_y.shape[1] + X.shape[1] + 2
+    assert np.allclose(features, expected)
+
+
 def test_make_training_data_with_raw_time_preserves_shape_and_cat_idx():
     n, x_dim, y_dim = 30, 4, 2
     rng = np.random.default_rng(0)
@@ -98,6 +118,33 @@ def test_make_training_data_with_raw_time_preserves_shape_and_cat_idx():
     assert cat_idx_e == cat_idx_b
 
 
+def test_make_training_data_with_raw_time_log_std_preserves_cat_idx():
+    n, x_dim, y_dim = 30, 4, 2
+    rng = np.random.default_rng(0)
+    X = rng.normal(size=(n, x_dim))
+    y = rng.normal(size=(n, y_dim))
+    sde = VESDE(hyperparam_min=0.01, hyperparam_max=1.0)
+    cat_idx = [1, 3]
+
+    predictors_train, predictors_val, target_train, target_val, transformed_cat_idx = _make_training_data(
+        X=X,
+        y=y,
+        sde=sde,
+        n_repeats=2,
+        eval_percent=0.2,
+        cat_idx=list(cat_idx),
+        seed=0,
+        noise_feature_builder=RawTimeLogStdFeatureBuilder(),
+    )
+
+    assert predictors_val is not None
+    assert target_val is not None
+    assert predictors_train.shape[1] == y_dim + x_dim + 2
+    assert predictors_val.shape[1] == y_dim + x_dim + 2
+    assert target_train.shape[1] == y_dim
+    assert transformed_cat_idx == [c + y_dim for c in cat_idx]
+
+
 def test_lightgbm_score_model_with_raw_time_matches_default():
     n, x_dim, y_dim = 200, 1, 1
     sigma = 0.00001
@@ -127,6 +174,39 @@ def test_lightgbm_score_model_with_raw_time_matches_default():
     scores_explicit = explicit_model.score(y=y_perturbed, X=X, t=random_t)
 
     assert np.allclose(scores_default, scores_explicit)
+
+
+def test_lightgbm_score_model_with_raw_time_log_std_scores_finite_near_eps():
+    n, x_dim = 160, 2
+    rng = np.random.default_rng(0)
+    X = rng.normal(size=(n, x_dim))
+    y = np.column_stack(
+        [
+            X[:, 0] + rng.normal(scale=0.1, size=n),
+            X[:, 0] - X[:, 1] + rng.normal(scale=0.1, size=n),
+        ]
+    )
+    sde = VESDE(hyperparam_min=0.01, hyperparam_max=float(y.std()))
+    score_model = LightGBMScoreModel(
+        noise_features="raw_time_log_std",
+        verbose=-1,
+        n_estimators=10,
+        learning_rate=0.1,
+        n_repeats=1,
+        eval_percent=None,
+        seed=0,
+    )
+
+    score_model.fit(X, y, sde)
+    t = np.full((n, 1), 1e-5)
+    z = rng.normal(size=y.shape)
+    mean, std = sde.get_mean_std_pt_given_y0(y, t)
+    y_perturbed = mean + z * std
+
+    scores = score_model.score(y=y_perturbed, X=X, t=t)
+
+    assert scores.shape == y.shape
+    assert np.all(np.isfinite(scores))
 
 
 def test_linear_regression():

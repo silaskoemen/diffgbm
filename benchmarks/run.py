@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import sys
 from datetime import datetime
 from datetime import timezone
@@ -15,17 +16,33 @@ def main() -> None:
     args = parse_args()
     config_path = Path(args.config)
     config = load_config(config_path)
-    output_path = Path(args.output) if args.output else default_output_path(config_path)
+    variant_names = parse_variant_names(args.variants)
+    if variant_names is not None:
+        config = filter_variants(config, variant_names)
+    output_format = resolve_output_format(args.output, args.output_format)
+    output_path = Path(args.output) if args.output else default_output_path(config_path, variant_names, output_format)
     from benchmarks.harness import run_benchmark  # noqa: PLC0415
 
-    run_benchmark(config=config, output_path=output_path)
+    run_benchmark(config=config, output_path=output_path, output_format=output_format)
     print(f"Wrote benchmark results to {output_path}")
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run Treeffuser development benchmarks.")
     parser.add_argument("--config", required=True, help="Path to a benchmark YAML config.")
-    parser.add_argument("--output", default=None, help="Optional output CSV path.")
+    parser.add_argument("--output", default=None, help="Optional output path. The suffix can be .jsonl or .csv.")
+    parser.add_argument(
+        "--output-format",
+        choices=["jsonl", "csv"],
+        default="jsonl",
+        help="Benchmark output format. Ignored when --output has a .jsonl or .csv suffix.",
+    )
+    parser.add_argument(
+        "--variants",
+        nargs="+",
+        default=None,
+        help="Optional variant names to run. Accepts space-separated names or comma-separated groups.",
+    )
     return parser.parse_args()
 
 
@@ -42,9 +59,50 @@ def load_config(path: Path) -> dict[str, Any]:
     return config
 
 
-def default_output_path(config_path: Path) -> Path:
+def parse_variant_names(raw_variants: list[str] | None) -> list[str] | None:
+    if raw_variants is None:
+        return None
+    variants = []
+    for item in raw_variants:
+        variants.extend(part.strip() for part in item.split(","))
+    variants = [variant for variant in variants if variant]
+    if not variants:
+        return None
+    return variants
+
+
+def filter_variants(config: dict[str, Any], variant_names: list[str]) -> dict[str, Any]:
+    config = copy.deepcopy(config)
+    variants_by_name = {variant["name"]: variant for variant in config["variants"]}
+    missing = [name for name in variant_names if name not in variants_by_name]
+    if missing:
+        available = ", ".join(sorted(variants_by_name))
+        raise ValueError(f"Unknown benchmark variants {missing}. Available: {available}")
+    config["variants"] = [variants_by_name[name] for name in variant_names]
+    return config
+
+
+def resolve_output_format(output: str | None, requested_format: str) -> str:
+    if output is None:
+        return requested_format
+    suffix = Path(output).suffix
+    if suffix == ".jsonl":
+        return "jsonl"
+    if suffix == ".csv":
+        return "csv"
+    return requested_format
+
+
+def default_output_path(config_path: Path, variant_names: list[str] | None, output_format: str) -> Path:
     timestamp = datetime.now(tz=timezone.utc).strftime("%Y%m%d_%H%M%S")
-    return Path("benchmarks") / "results" / "raw" / f"{config_path.stem}_{timestamp}.csv"
+    variant_slug = "all" if variant_names is None else "vs".join(_slugify(name) for name in variant_names)
+    if len(variant_slug) > 160:
+        variant_slug = f"{variant_slug[:140]}_{abs(hash(variant_slug))}"
+    return Path("benchmarks") / "results" / "raw" / f"{config_path.stem}__{variant_slug}_{timestamp}.{output_format}"
+
+
+def _slugify(value: str) -> str:
+    return "".join(char if char.isalnum() else "_" for char in value).strip("_")
 
 
 def _load_simple_yaml(path: Path) -> dict[str, Any]:

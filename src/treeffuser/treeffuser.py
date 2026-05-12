@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Literal
 
 from treeffuser._base_tabular_diffusion import BaseTabularDiffusion
+from treeffuser._residualizer import ResidualizeMode
 from treeffuser._score_models import LightGBMScoreModel
 from treeffuser._score_models import ScoreModel
 from treeffuser.sde import DiffusionSDE
@@ -32,9 +33,12 @@ class Treeffuser(BaseTabularDiffusion):
         score_parameterization: str = "noise",
         noise_features: str = "raw_time",
         edm_sigma_data: float = 1.0,
+        residualize: ResidualizeMode = "off",
+        residualize_k_folds: int = 5,
         seed: int | None = None,
         verbose: int = 0,
         extra_lightgbm_params: dict | None = None,
+        extra_residualizer_params: dict | None = None,
     ):
         """
         n_repeats : int
@@ -90,6 +94,12 @@ class Treeffuser(BaseTabularDiffusion):
             Data standard deviation used by the EDM preconditioning coefficients when
             `score_parameterization="edm"`. The default 1.0 matches Treeffuser's
             standardized target scale.
+        residualize : {"off", "mean", "mean_scale"}
+            Optional conditional residualization before score-model fitting. "mean"
+            subtracts a cross-fitted conditional mean, and "mean_scale" additionally
+            divides by a cross-fitted conditional scale.
+        residualize_k_folds : int
+            Maximum number of folds used for cross-fitted residualization.
         seed : int
             Random seed for generating the training data and fitting the model.
         verbose : int
@@ -97,6 +107,9 @@ class Treeffuser(BaseTabularDiffusion):
         """
         super().__init__(
             sde_initialize_from_data=sde_initialize_from_data,
+            residualize=residualize,
+            residualize_k_folds=residualize_k_folds,
+            extra_residualizer_params=extra_residualizer_params,
         )
         self.sde_name = sde_name
         self.n_repeats = n_repeats
@@ -120,7 +133,10 @@ class Treeffuser(BaseTabularDiffusion):
         self.score_parameterization = score_parameterization
         self.noise_features = noise_features
         self.edm_sigma_data = edm_sigma_data
+        self.residualize = residualize
+        self.residualize_k_folds = residualize_k_folds
         self.extra_lightgbm_params = extra_lightgbm_params or {}
+        self.extra_residualizer_params = extra_residualizer_params or {}
 
     def get_new_sde(self) -> DiffusionSDE:
         sde_cls = get_diffusion_sde(self.sde_name)

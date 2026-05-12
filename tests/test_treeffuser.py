@@ -179,6 +179,77 @@ def test_treeffuser_exposes_edm_parameterization():
     assert model.score_model.score_parameterization.sigma_data == 1.7
 
 
+@pytest.mark.parametrize("residualize", ["mean", "mean_scale"])
+def test_treeffuser_residualization_end_to_end(residualize):
+    rng = np.random.default_rng(2)
+    X = rng.normal(size=(120, 2))
+    scale = 0.2 + 0.4 / (1.0 + np.exp(-X[:, :1]))
+    y = X[:, :1] - X[:, 1:] + scale * rng.normal(size=(120, 1))
+
+    model = Treeffuser(
+        n_repeats=1,
+        n_estimators=5,
+        early_stopping_rounds=None,
+        score_parameterization="noise",
+        noise_features="raw_time_log_std",
+        residualize=residualize,
+        residualize_k_folds=3,
+        extra_residualizer_params={
+            "n_estimators": 5,
+            "max_depth": 2,
+            "num_leaves": 3,
+            "min_child_samples": 5,
+        },
+        seed=0,
+        verbose=-1,
+    )
+    model.fit(X=X, y=y)
+    samples = model.sample(X[:4], n_samples=3, n_parallel=2, n_steps=2, seed=0)
+
+    assert model.residualize == residualize
+    assert model._residualizer is not None
+    assert samples.shape == (3, 4, 1)
+    assert np.all(np.isfinite(samples))
+
+
+def test_treeffuser_residualization_inverse_uses_tiled_x_order():
+    rng = np.random.default_rng(3)
+    X = rng.normal(size=(100, 2))
+    y = X[:, :1] + rng.normal(scale=0.2, size=(100, 1))
+    model = Treeffuser(
+        n_repeats=1,
+        n_estimators=3,
+        early_stopping_rounds=None,
+        residualize="mean",
+        residualize_k_folds=2,
+        extra_residualizer_params={
+            "n_estimators": 3,
+            "max_depth": 2,
+            "num_leaves": 3,
+            "min_child_samples": 5,
+        },
+        seed=0,
+        verbose=-1,
+    )
+    model.fit(X, y)
+    assert model._residualizer is not None
+    assert model._x_scaler is not None
+
+    observed = {}
+    original_inverse_transform = model._residualizer.inverse_transform
+
+    def recording_inverse_transform(X, residual):
+        observed["X"] = X.copy()
+        return original_inverse_transform(X, residual)
+
+    model._residualizer.inverse_transform = recording_inverse_transform
+    X_sample = X[:3]
+    model.sample(X_sample, n_samples=4, n_parallel=2, n_steps=2, seed=1)
+
+    expected = np.tile(model._x_scaler.transform(X_sample), [4, 1])
+    assert np.allclose(observed["X"], expected)
+
+
 def test_dataframe_input():
     """Basic test for DataFrame input support."""
     n = 10**3

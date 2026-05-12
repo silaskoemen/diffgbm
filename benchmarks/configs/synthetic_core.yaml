@@ -86,6 +86,54 @@ variants:
       learning_rate: 0.1
       sde_name: vesde
       verbose: -1
+  - name: residualized_mean_noise_raw_time_log_std
+    params:
+      score_parameterization: noise
+      noise_features: raw_time_log_std
+      residualize: mean
+      residualize_k_folds: 5
+      n_repeats: 30
+      n_estimators: 3000
+      early_stopping_rounds: 50
+      learning_rate: 0.1
+      sde_name: vesde
+      verbose: -1
+  - name: residualized_mean_edm_raw_time_log_std
+    params:
+      score_parameterization: edm
+      noise_features: raw_time_log_std
+      residualize: mean
+      residualize_k_folds: 5
+      n_repeats: 30
+      n_estimators: 3000
+      early_stopping_rounds: 50
+      learning_rate: 0.1
+      sde_name: vesde
+      verbose: -1
+  - name: residualized_mean_scale_noise_raw_time_log_std
+    params:
+      score_parameterization: noise
+      noise_features: raw_time_log_std
+      residualize: mean_scale
+      residualize_k_folds: 5
+      n_repeats: 30
+      n_estimators: 3000
+      early_stopping_rounds: 50
+      learning_rate: 0.1
+      sde_name: vesde
+      verbose: -1
+  - name: residualized_mean_scale_edm_raw_time_log_std
+    params:
+      score_parameterization: edm
+      noise_features: raw_time_log_std
+      residualize: mean_scale
+      residualize_k_folds: 5
+      n_repeats: 30
+      n_estimators: 3000
+      early_stopping_rounds: 50
+      learning_rate: 0.1
+      sde_name: vesde
+      verbose: -1
 
 samplers:
   - n_samples: 200

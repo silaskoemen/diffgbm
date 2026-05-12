@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import hashlib
+import json
 import subprocess
 import time
 from dataclasses import dataclass
@@ -28,7 +29,7 @@ class SamplerConfig:
     n_parallel: int
 
 
-def run_benchmark(config: dict[str, Any], output_path: Path) -> None:
+def run_benchmark(config: dict[str, Any], output_path: Path, output_format: str = "jsonl") -> None:
     variants = make_variants(config["variants"])
     datasets = config["datasets"]
     seeds = config["seeds"]
@@ -37,7 +38,7 @@ def run_benchmark(config: dict[str, Any], output_path: Path) -> None:
     provenance = get_provenance()
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    rows = []
+    writer = ResultWriter(output_path, output_format)
     for dataset_config in datasets:
         for seed in seeds:
             resolved_seeds = resolve_seeds(seed=seed, seed_policy=seed_policy)
@@ -68,8 +69,7 @@ def run_benchmark(config: dict[str, Any], output_path: Path) -> None:
                         fit_time=fit_time,
                         provenance=provenance,
                     )
-                    rows.append(row)
-                    write_rows(output_path, rows)
+                    writer.write(row)
 
 
 def fit_variant(variant, X_train, y_train, model_seed: int):
@@ -153,14 +153,40 @@ def get_provenance() -> dict[str, Any]:
     }
 
 
-def write_rows(path: Path, rows: list[dict[str, Any]]) -> None:
-    if not rows:
-        return
-    fieldnames = sorted({key for row in rows for key in row})
-    with path.open("w", newline="") as file:
-        writer = csv.DictWriter(file, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(rows)
+class ResultWriter:
+    def __init__(self, path: Path, output_format: str) -> None:
+        if output_format not in {"jsonl", "csv"}:
+            raise ValueError("output_format must be 'jsonl' or 'csv'.")
+        self.path = path
+        self.output_format = output_format
+        self.rows: list[dict[str, Any]] = []
+        self.path.unlink(missing_ok=True)
+
+    def write(self, row: dict[str, Any]) -> None:
+        self.rows.append(row)
+        if self.output_format == "jsonl":
+            with self.path.open("a") as file:
+                file.write(json.dumps(_json_safe(row), sort_keys=True))
+                file.write("\n")
+        else:
+            self._rewrite_csv()
+
+    def _rewrite_csv(self) -> None:
+        fieldnames = sorted({key for row in self.rows for key in row})
+        with self.path.open("w", newline="") as file:
+            writer = csv.DictWriter(file, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(self.rows)
+
+
+def _json_safe(value):
+    if isinstance(value, dict):
+        return {key: _json_safe(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_json_safe(item) for item in value]
+    if hasattr(value, "item"):
+        return value.item()
+    return value
 
 
 def _make_sampler_configs(config: list[dict[str, Any]]) -> list[SamplerConfig]:

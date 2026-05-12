@@ -39,7 +39,21 @@ simple YAML subset used by these configs:
 python -m benchmarks.run --config benchmarks/configs/smoke.yaml
 ```
 
-By default, results are written to `benchmarks/results/raw/<config>_<timestamp>.csv`.
+By default, results are written as JSON Lines to
+`benchmarks/results/raw/<config>__<variants>_<timestamp>.jsonl`. JSONL is the preferred
+format because each completed benchmark row is appended immediately and variant-specific
+parameter dictionaries do not force CSV schema rewrites.
+
+To run only selected variants from a broad config:
+
+```bash
+python -m benchmarks.run \
+  --config benchmarks/configs/synthetic_core.yaml \
+  --variants baseline_raw_time residualized_mean_edm_raw_time_log_std
+```
+
+CSV remains available with `--output-format csv` or by passing an `--output` path ending
+in `.csv`.
 The `real_smoke.yaml` config uses local datasets bundled with scikit-learn, so it does
 not download external benchmark data.
 

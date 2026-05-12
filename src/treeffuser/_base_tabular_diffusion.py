@@ -13,6 +13,8 @@ from sklearn.base import BaseEstimator
 from sklearn.neighbors import KernelDensity
 from tqdm import tqdm
 
+from treeffuser._residualizer import ConditionalResidualizer
+from treeffuser._residualizer import ResidualizeMode
 from treeffuser._scaler import ScalerMixedTypes
 from treeffuser._score_models import ScoreModel
 from treeffuser._warnings import ConvergenceWarning
@@ -87,10 +89,17 @@ class BaseTabularDiffusion(BaseEstimator, abc.ABC):
     def __init__(
         self,
         sde_initialize_from_data: bool = False,
+        residualize: ResidualizeMode = "off",
+        residualize_k_folds: int = 5,
+        extra_residualizer_params: dict | None = None,
     ):
         self.sde = None
         self.sde_initialize_from_data = sde_initialize_from_data
+        self.residualize = residualize
+        self.residualize_k_folds = residualize_k_folds
+        self.extra_residualizer_params = extra_residualizer_params or {}
         self.score_model = None
+        self._residualizer = None
         self._is_fitted = False
         self._x_dataframe_columns = None
         self._x_scaler = None
@@ -259,6 +268,7 @@ class BaseTabularDiffusion(BaseEstimator, abc.ABC):
         self.score_model = self.get_new_score_model()
         self._x_scaler = ScalerMixedTypes()
         self._y_scaler = ScalerMixedTypes()
+        self._residualizer = None
 
         # store the original number of dimensions of the response
         # before reshaping the data so as to ensure that predictions
@@ -269,10 +279,24 @@ class BaseTabularDiffusion(BaseEstimator, abc.ABC):
 
         x_transformed = self._x_scaler.fit_transform(X_proc, cat_idx=cat_idx)
         y_transformed = self._y_scaler.fit_transform(y_proc)
+        y_for_diffusion = y_transformed
+
+        if self.residualize != "off":
+            self._residualizer = ConditionalResidualizer(
+                residualize=self.residualize,
+                k_folds=self.residualize_k_folds,
+                seed=getattr(self, "seed", None),
+                extra_params=self.extra_residualizer_params,
+            )
+            y_for_diffusion = self._residualizer.fit_transform(
+                X=x_transformed,
+                y=y_transformed,
+                cat_idx=cat_idx,
+            )
 
         if self.sde_initialize_from_data:
-            self.sde.initialize_hyperparams_from_data(y_transformed)
-        self.score_model.fit(x_transformed, y_transformed, self.sde, cat_idx)
+            self.sde.initialize_hyperparams_from_data(y_for_diffusion)
+        self.score_model.fit(x_transformed, y_for_diffusion, self.sde, cat_idx)
 
         self._is_fitted = True
         return self
@@ -393,6 +417,12 @@ class BaseTabularDiffusion(BaseEstimator, abc.ABC):
         pbar.close()
 
         y_transformed = np.concatenate(y_samples, axis=0)
+        if self._residualizer is not None:
+            x_tiled = np.tile(x_transformed, [n_samples, 1])
+            y_transformed = self._residualizer.inverse_transform(
+                X=x_tiled,
+                residual=y_transformed,
+            )
         y_untransformed = self._y_scaler.inverse_transform(y_transformed)
 
         y_untransformed = einops.rearrange(

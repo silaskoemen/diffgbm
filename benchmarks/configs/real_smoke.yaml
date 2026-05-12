@@ -1,3 +1,8 @@
+# Recommended experimental variant: residualized_mean_edm_raw_time_log_std
+# (residualize="mean" + score_parameterization="edm" + noise_features="raw_time_log_std").
+# See benchmarks/README.md "Recommended Variant" for the 2026-05-12 decision runs.
+# Library default remains residualize="off"; mean_scale stays experimental.
+
 seeds: [0, 1, 2, 3, 4]
 
 seed_policy:

@@ -1,3 +1,8 @@
+# Recommended experimental variant: residualized_mean_edm_raw_time_log_std
+# (residualize="mean" + score_parameterization="edm" + noise_features="raw_time_log_std").
+# See benchmarks/README.md "Recommended Variant" for the 2026-05-12 decision runs.
+# Library default remains residualize="off"; mean_scale stays experimental.
+
 seeds: [0, 1, 2, 3, 4]
 
 seed_policy:
@@ -134,6 +139,9 @@ variants:
       learning_rate: 0.1
       sde_name: vesde
       verbose: -1
+# edm_sigma_data sweep (2026-05-12) confirmed default of 1.0 is optimal for
+# standardized targets — values 0.25/0.5 catastrophically under-cover, 2.0
+# widens with no gain. See results/raw/synthetic_core__*sigma_0p25*_20260512_180012.jsonl.
 
 samplers:
   - n_samples: 200

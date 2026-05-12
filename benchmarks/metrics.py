@@ -6,6 +6,7 @@ import numpy as np
 from jaxtyping import Float
 
 DEFAULT_COVERAGE_LEVELS = (0.50, 0.80, 0.90, 0.95)
+VALID_WIDTH_COVERAGE_ERROR_TOLERANCES = (0.01, 0.02)
 
 
 def evaluate_samples(
@@ -35,8 +36,16 @@ def evaluate_samples(
         coverage_stats = interval_stats(y_samples, y_true, level=level)
         prefix = f"interval_{int(level * 100)}"
         result[f"{prefix}_coverage"] = coverage_stats["coverage"]
-        result[f"{prefix}_coverage_error"] = coverage_stats["coverage"] - level
+        coverage_error = coverage_stats["coverage"] - level
+        abs_coverage_error = abs(coverage_error)
+        result[f"{prefix}_coverage_error"] = coverage_error
+        result[f"{prefix}_abs_coverage_error"] = abs_coverage_error
         result[f"{prefix}_width"] = coverage_stats["width"]
+        for tolerance in VALID_WIDTH_COVERAGE_ERROR_TOLERANCES:
+            tolerance_pct = int(tolerance * 100)
+            result[f"{prefix}_valid_width_{tolerance_pct:02d}"] = (
+                coverage_stats["width"] if abs_coverage_error <= tolerance else None
+            )
 
         by_bin = coverage_by_x_bin(
             y_samples=y_samples,

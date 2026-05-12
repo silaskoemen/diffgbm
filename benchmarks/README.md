@@ -69,6 +69,20 @@ The same resolved `model_seed` and `sampler_seed` are used across variants for t
 dataset/seed pair unless the config explicitly changes the offsets. This gives paired
 comparisons a stable stochastic contract.
 
+## Recommended Variant
+
+From the 2026-05-12 decision runs (see `results/raw/synthetic_core__*_20260512_*.jsonl`
+and `results/raw/real_smoke__*_20260512_*.jsonl`), the leading experimental combo is
+`score_parameterization="edm"` + `residualize="mean"` + `noise_features="raw_time_log_std"`,
+encoded as the `residualized_mean_edm_raw_time_log_std` variant. It ties baseline CRPS on
+synthetic and beats it ~3% on real_smoke, with ~40% lower interval-90 absolute coverage
+error on synthetic and ~80% lower on real_smoke. Mean residualization and EDM are
+independent improvements: mean residualization mostly moves CRPS, EDM mostly moves
+calibration. `mean_scale` and the plain-`x0` parameterization stayed experimental — no
+clear CRPS win, higher fit cost.
+
+The library default remains `residualize="off"` for backward compatibility.
+
 ## Provenance
 
 Every result row records:

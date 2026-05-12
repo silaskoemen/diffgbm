@@ -8,10 +8,28 @@ import numpy as np
 from jaxtyping import Float
 from numpy import ndarray
 from sklearn.model_selection import KFold
+from sklearn.model_selection import train_test_split
 
 from treeffuser._score_models import _fit_one_lgbm_model
 
 ResidualizeMode = Literal["off", "mean", "mean_scale"]
+
+# Inner train/val split used when residualizer early stopping is requested.
+_RESIDUALIZER_INNER_VAL_FRACTION = 0.15
+# Minimum inner-val size below which early stopping is too noisy to trust; the
+# residualizer falls back to the empirically-validated high-capacity config below.
+_RESIDUALIZER_INNER_VAL_THRESHOLD = 50
+
+# High-capacity residualizer config, empirically the best non-early-stopped variant on
+# real tabular data (variant C in benchmarks/configs/residualizer_sweep.yaml). Used as
+# the fallback when early stopping is requested but the inner-val gate fails.
+_RESIDUALIZER_FALLBACK_PARAMS = {
+    "n_estimators": 300,
+    "learning_rate": 0.05,
+    "max_depth": -1,
+    "num_leaves": 63,
+    "min_child_samples": 10,
+}
 
 
 class ConditionalResidualizer:
@@ -57,6 +75,7 @@ class ConditionalResidualizer:
         self.eps: Float[ndarray, "1 y_dim"] | None = None
         self.mean_oof: Float[ndarray, "batch y_dim"] | None = None
         self.scale_oof: Float[ndarray, "batch y_dim"] | None = None
+        self.mean_oof_mse: float | None = None
         self.effective_k_folds: int | None = None
         self._is_fitted = False
 
@@ -89,13 +108,23 @@ class ConditionalResidualizer:
         self.effective_k_folds = effective_k
         splits = list(KFold(n_splits=effective_k, shuffle=True, random_state=self.seed).split(X))
 
+        fold_train_size = splits[0][0].size
+        self._resolved_params, self._use_inner_es = self._resolve_residualizer_params(fold_train_size)
+
         self.mean_models = [[] for _ in range(y_dim)]
         mean_oof = np.empty_like(y)
         for dim in range(y_dim):
             for fold_idx, (train_idx, val_idx) in enumerate(splits):
+                X_inner_train, y_inner_train, X_inner_val, y_inner_val = self._maybe_inner_split(
+                    X[train_idx],
+                    y[train_idx, dim],
+                    inner_seed=self._model_seed(kind_offset=15_000, dim=dim, fold_idx=fold_idx),
+                )
                 model = self._fit_model(
-                    X=X[train_idx],
-                    y=y[train_idx, dim],
+                    X=X_inner_train,
+                    y=y_inner_train,
+                    X_val=X_inner_val,
+                    y_val=y_inner_val,
                     cat_idx=cat_idx,
                     seed=self._model_seed(kind_offset=10_000, dim=dim, fold_idx=fold_idx),
                 )
@@ -104,6 +133,8 @@ class ConditionalResidualizer:
 
         self.mean_oof = mean_oof
         residual_oof = y - mean_oof
+        # OOF MSE in standardized-y units; useful telemetry for residualizer tuning.
+        self.mean_oof_mse = float(np.mean(residual_oof**2))
         raw_residual_oof = residual_oof
 
         if self.residualize == "mean_scale":
@@ -184,9 +215,16 @@ class ConditionalResidualizer:
         log_scale_oof = np.empty_like(residual_oof)
         for dim in range(y_dim):
             for fold_idx, (train_idx, val_idx) in enumerate(splits):
+                X_inner_train, y_inner_train, X_inner_val, y_inner_val = self._maybe_inner_split(
+                    X[train_idx],
+                    scale_target[train_idx, dim],
+                    inner_seed=self._model_seed(kind_offset=25_000, dim=dim, fold_idx=fold_idx),
+                )
                 model = self._fit_model(
-                    X=X[train_idx],
-                    y=scale_target[train_idx, dim],
+                    X=X_inner_train,
+                    y=y_inner_train,
+                    X_val=X_inner_val,
+                    y_val=y_inner_val,
                     cat_idx=cat_idx,
                     seed=self._model_seed(kind_offset=20_000, dim=dim, fold_idx=fold_idx),
                 )
@@ -217,21 +255,27 @@ class ConditionalResidualizer:
         y: Float[ndarray, "batch"],
         cat_idx: list[int] | None,
         seed: int | None,
+        X_val: Float[ndarray, "batch x_dim"] | None = None,
+        y_val: Float[ndarray, "batch"] | None = None,
     ):
         params = self._model_params()
         verbose = cast(int, params.pop("verbose"))
         n_jobs = cast(int, params.pop("n_jobs"))
         early_stopping_rounds = cast(int | None, params.pop("early_stopping_rounds"))
+        # Only pass early_stopping_rounds when we actually have a val set; otherwise
+        # the LightGBM callback errors. The size gate in `_resolve_residualizer_params`
+        # already handles the fallback policy.
+        effective_es = early_stopping_rounds if X_val is not None and y_val is not None else None
         return _fit_one_lgbm_model(
             X=X,
             y=y,
-            X_val=None,
-            y_val=None,
+            X_val=X_val,
+            y_val=y_val,
             seed=seed,
             verbose=verbose,
             cat_idx=cat_idx,
             n_jobs=n_jobs,
-            early_stopping_rounds=early_stopping_rounds,
+            early_stopping_rounds=effective_es,
             **params,
         )
 
@@ -248,8 +292,70 @@ class ConditionalResidualizer:
             "verbose": -1,
             "n_jobs": -1,
         }
-        params.update(self.extra_params)
+        # If `fit` has resolved an effective parameter set (after the early-stopping
+        # size gate), use that; otherwise fall back to the user-provided extras.
+        effective_extras = getattr(self, "_resolved_params", None)
+        params.update(effective_extras if effective_extras is not None else self.extra_params)
         return params
+
+    def _resolve_residualizer_params(self, fold_train_size: int) -> tuple[dict, bool]:
+        """Decide whether to use inner-split early stopping and return the effective extras.
+
+        Returns
+        -------
+        effective_extras : dict
+            The hyperparameters to use for residualizer fitting. Either the user-supplied
+            extras (possibly with early stopping enabled) or the empirically-validated
+            fallback config when the size gate trips.
+        use_inner_es : bool
+            True when an inner train/val split should be created for each fold so the
+            LightGBM early-stopping callback has a real eval set to monitor.
+        """
+        requested = dict(self.extra_params)
+        requested_es = requested.get("early_stopping_rounds")
+        if requested_es is None:
+            return requested, False
+
+        inner_val_size = int(np.floor(_RESIDUALIZER_INNER_VAL_FRACTION * fold_train_size))
+        if inner_val_size >= _RESIDUALIZER_INNER_VAL_THRESHOLD:
+            return requested, True
+
+        warnings.warn(
+            (
+                f"Residualizer early stopping requested but inner-val size would be "
+                f"{inner_val_size} rows (< threshold {_RESIDUALIZER_INNER_VAL_THRESHOLD}; "
+                f"fold train size={fold_train_size}). Falling back to the empirically-"
+                f"validated high-capacity config "
+                f"(benchmarks/configs/residualizer_sweep.yaml variant C). "
+                f"Override: increase residualize_k_folds or training data."
+            ),
+            UserWarning,
+            stacklevel=4,
+        )
+        fallback = {**requested, **_RESIDUALIZER_FALLBACK_PARAMS}
+        fallback.pop("early_stopping_rounds", None)
+        return fallback, False
+
+    def _maybe_inner_split(
+        self,
+        X: Float[ndarray, "batch x_dim"],
+        y: Float[ndarray, "batch"],
+        inner_seed: int | None,
+    ) -> tuple[
+        Float[ndarray, "batch x_dim"],
+        Float[ndarray, "batch"],
+        Float[ndarray, "batch x_dim"] | None,
+        Float[ndarray, "batch"] | None,
+    ]:
+        if not getattr(self, "_use_inner_es", False):
+            return X, y, None, None
+        X_train, X_val, y_train, y_val = train_test_split(
+            X,
+            y,
+            test_size=_RESIDUALIZER_INNER_VAL_FRACTION,
+            random_state=inner_seed,
+        )
+        return X_train, y_train, X_val, y_val
 
     def _model_seed(self, kind_offset: int, dim: int, fold_idx: int) -> int | None:
         if self.seed is None:

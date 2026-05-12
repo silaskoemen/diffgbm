@@ -1,0 +1,106 @@
+# Step-count sweep comparing Euler stochastic reverse-SDE vs Heun probability-flow ODE
+# on the leading variants. Tests whether PF-ODE/Heun matches Euler quality at fewer
+# steps (the practical win), not just at matched steps.
+
+seeds: [0, 1, 2]
+
+seed_policy:
+  data_seed_offset: 0
+  model_seed_offset: 10000
+  sampler_seed_offset: 20000
+
+datasets:
+  - name: heteroscedastic_gaussian_linear
+    n_train: 1000
+    n_test: 1000
+    x_dim: 3
+  - name: heteroscedastic_gaussian_nonlinear
+    n_train: 1000
+    n_test: 1000
+    x_dim: 3
+  - name: student_t_heavy_tail
+    n_train: 1000
+    n_test: 1000
+    x_dim: 3
+  - name: bimodal_mixture
+    n_train: 1000
+    n_test: 1000
+    x_dim: 3
+  - name: diabetes
+    n_train: 300
+    n_test: 142
+  - name: california_housing
+    n_train: 500
+    n_test: 300
+  - name: kin8nm
+    n_train: 500
+    n_test: 300
+  - name: wine_quality_white
+    n_train: 500
+    n_test: 300
+
+variants:
+  - name: baseline_raw_time
+    params:
+      score_parameterization: noise
+      noise_features: raw_time
+      n_repeats: 30
+      n_estimators: 3000
+      early_stopping_rounds: 50
+      learning_rate: 0.1
+      sde_name: vesde
+      verbose: -1
+  - name: residualized_mean_edm_raw_time_log_std
+    params:
+      score_parameterization: edm
+      noise_features: raw_time_log_std
+      residualize: mean
+      residualize_k_folds: 5
+      n_repeats: 30
+      n_estimators: 3000
+      early_stopping_rounds: 50
+      learning_rate: 0.1
+      sde_name: vesde
+      verbose: -1
+
+samplers:
+  - n_samples: 200
+    n_steps: 15
+    n_parallel: 20
+    method: euler
+    pf_ode: false
+  - n_samples: 200
+    n_steps: 25
+    n_parallel: 20
+    method: euler
+    pf_ode: false
+  - n_samples: 200
+    n_steps: 50
+    n_parallel: 20
+    method: euler
+    pf_ode: false
+  - n_samples: 200
+    n_steps: 100
+    n_parallel: 20
+    method: euler
+    pf_ode: false
+  - n_samples: 200
+    n_steps: 15
+    n_parallel: 20
+    method: heun
+    pf_ode: true
+  - n_samples: 200
+    n_steps: 25
+    n_parallel: 20
+    method: heun
+    pf_ode: true
+  - n_samples: 200
+    n_steps: 50
+    n_parallel: 20
+    method: heun
+    pf_ode: true
+  - n_samples: 200
+    n_steps: 100
+    n_parallel: 20
+    method: heun
+    pf_ode: true

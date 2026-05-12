@@ -10,13 +10,19 @@ from einops import repeat
 
 from treeffuser._score_models import EDMParameterization
 from treeffuser._score_models import LightGBMScoreModel
+from treeffuser._score_models import LogSigmaNormalTSampler
+from treeffuser._score_models import MinSNRLossWeighting
 from treeffuser._score_models import NoiseParameterization
 from treeffuser._score_models import RawTimeFeatureBuilder
 from treeffuser._score_models import RawTimeLogStdFeatureBuilder
+from treeffuser._score_models import UniformLossWeighting
+from treeffuser._score_models import UniformTSampler
 from treeffuser._score_models import X0Parameterization
 from treeffuser._score_models import _make_training_data
+from treeffuser._score_models import get_loss_weighting
 from treeffuser._score_models import get_noise_feature_builder
 from treeffuser._score_models import get_score_parameterization
+from treeffuser._score_models import get_t_sampler
 from treeffuser.sde.diffusion_sdes import VESDE
 from treeffuser.sde.diffusion_sdes import VPSDE
 from treeffuser.sde.diffusion_sdes import SubVPSDE
@@ -170,6 +176,204 @@ def test_edm_parameterization_requires_positive_std():
         )
 
 
+def test_get_loss_weighting_resolves_known_names():
+    assert isinstance(get_loss_weighting("uniform"), UniformLossWeighting)
+    weighting = get_loss_weighting("min_snr", min_snr_gamma=2.5)
+    assert isinstance(weighting, MinSNRLossWeighting)
+    assert weighting.gamma == 2.5
+    passthrough = MinSNRLossWeighting(gamma=1.0)
+    assert get_loss_weighting(passthrough) is passthrough
+    with pytest.raises(ValueError, match="Unknown loss weighting"):
+        get_loss_weighting("bogus")
+
+
+def test_uniform_loss_weighting_returns_ones():
+    weighting = UniformLossWeighting()
+    std = np.array([[0.1, 0.1], [0.5, 0.5], [2.0, 2.0]])
+    alpha = np.ones_like(std)
+    weights = weighting.compute_sample_weight(std=std, alpha=alpha, parameterization=NoiseParameterization())
+    assert weights.shape == (3,)
+    assert np.allclose(weights, 1.0)
+
+
+def test_min_snr_loss_weighting_matches_canonical_formula_per_parameterization():
+    gamma = 3.0
+    sigma = np.array([[0.2], [1.0], [4.0]])
+    alpha = np.ones_like(sigma)
+    snr = (1.0 / sigma) ** 2
+    snr_flat = snr[:, 0]
+    clipped = np.minimum(snr_flat, gamma)
+
+    weighting = MinSNRLossWeighting(gamma=gamma)
+
+    noise_w = weighting.compute_sample_weight(std=sigma, alpha=alpha, parameterization=NoiseParameterization())
+    assert np.allclose(noise_w, clipped / snr_flat)
+
+    x0_w = weighting.compute_sample_weight(std=sigma, alpha=alpha, parameterization=X0Parameterization())
+    assert np.allclose(x0_w, clipped)
+
+    edm_param = EDMParameterization(sigma_data=1.5)
+    edm_w = weighting.compute_sample_weight(std=sigma, alpha=alpha, parameterization=edm_param)
+    sigma_flat = sigma[:, 0]
+    c_out_sq = (sigma_flat**2) * (1.5**2) / (sigma_flat**2 + 1.5**2)
+    assert np.allclose(edm_w, clipped * c_out_sq)
+
+
+def test_min_snr_loss_weighting_rejects_non_positive_std_and_gamma():
+    with pytest.raises(ValueError, match="strictly positive"):
+        MinSNRLossWeighting(gamma=0.0)
+    weighting = MinSNRLossWeighting(gamma=1.0)
+    with pytest.raises(ValueError, match="strictly positive"):
+        weighting.compute_sample_weight(
+            std=np.array([[0.0]]),
+            alpha=np.array([[1.0]]),
+            parameterization=NoiseParameterization(),
+        )
+
+
+def test_make_training_data_min_snr_returns_finite_weights_matching_target_shape():
+    n, x_dim, y_dim = 30, 2, 1
+    rng = np.random.default_rng(0)
+    X = rng.normal(size=(n, x_dim))
+    y = rng.normal(size=(n, y_dim))
+    sde = VESDE(hyperparam_min=0.01, hyperparam_max=1.0)
+
+    (
+        _,
+        _,
+        target_train,
+        target_val,
+        sw_train,
+        sw_val,
+        _,
+    ) = _make_training_data(
+        X=X,
+        y=y,
+        sde=sde,
+        n_repeats=2,
+        eval_percent=0.2,
+        seed=0,
+        score_parameterization=NoiseParameterization(),
+        loss_weighting=MinSNRLossWeighting(gamma=4.0),
+    )
+
+    assert sw_train is not None
+    assert sw_train.shape == (target_train.shape[0],)
+    assert np.all(np.isfinite(sw_train))
+    assert np.all(sw_train > 0)
+    # Cap is gamma=4 so noise-param weights = min(snr,4)/snr in [0, 1].
+    assert sw_train.max() <= 1.0 + 1e-9
+    assert sw_val is not None
+    assert sw_val.shape == (target_val.shape[0],)
+
+
+def test_get_t_sampler_resolves_known_names():
+    assert isinstance(get_t_sampler("uniform"), UniformTSampler)
+    sampler = get_t_sampler("log_sigma_normal", log_sigma_p_mean=-0.5, log_sigma_p_std=2.0)
+    assert isinstance(sampler, LogSigmaNormalTSampler)
+    assert sampler.p_mean == -0.5
+    assert sampler.p_std == 2.0
+    passthrough = UniformTSampler()
+    assert get_t_sampler(passthrough) is passthrough
+    with pytest.raises(ValueError, match="Unknown t sampling"):
+        get_t_sampler("bogus")
+
+
+def test_uniform_t_sampler_stays_within_bounds():
+    sde = VESDE(hyperparam_min=0.01, hyperparam_max=2.0)
+    rng = np.random.default_rng(0)
+    t = UniformTSampler().sample(n=500, sde=sde, rng=rng)
+    assert t.shape == (500, 1)
+    assert t.min() >= 1e-5
+    assert t.max() <= sde.T
+
+
+def test_log_sigma_normal_t_sampler_concentrates_around_target_log_sigma():
+    sde = VESDE(hyperparam_min=0.01, hyperparam_max=5.0)
+    rng = np.random.default_rng(0)
+    sampler = LogSigmaNormalTSampler(p_mean=-1.2, p_std=1.2)
+    t = sampler.sample(n=20000, sde=sde, rng=rng)
+    assert t.shape == (20000, 1)
+    _, std = sde.get_mean_std_pt_given_y0(np.ones_like(t), t)
+    log_sigma = np.log(std[:, 0])
+    # Mean should be near -1.2 (subject to clipping by the SDE's achievable range).
+    assert abs(float(log_sigma.mean()) - (-1.2)) < 0.2
+    # Standard deviation should be near 1.2.
+    assert abs(float(log_sigma.std()) - 1.2) < 0.2
+
+
+def test_log_sigma_normal_t_sampler_rejects_invalid_params():
+    with pytest.raises(ValueError, match="strictly positive"):
+        LogSigmaNormalTSampler(p_mean=0.0, p_std=0.0)
+    with pytest.raises(ValueError, match="at least 16"):
+        LogSigmaNormalTSampler(p_mean=0.0, p_std=1.0, table_size=2)
+
+
+def test_make_training_data_uses_t_sampler_distribution():
+    n, x_dim, y_dim = 50, 2, 1
+    rng = np.random.default_rng(0)
+    X = rng.normal(size=(n, x_dim))
+    y = rng.normal(size=(n, y_dim))
+    sde = VESDE(hyperparam_min=0.01, hyperparam_max=2.0)
+
+    (
+        predictors_train,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+    ) = _make_training_data(
+        X=X,
+        y=y,
+        sde=sde,
+        n_repeats=4,
+        eval_percent=None,
+        seed=0,
+        score_parameterization=NoiseParameterization(),
+        t_sampler=LogSigmaNormalTSampler(p_mean=-1.2, p_std=1.2),
+    )
+    # The last feature is `t` for the default RawTimeFeatureBuilder.
+    t_used = predictors_train[:, -1]
+    _, std = sde.get_mean_std_pt_given_y0(np.ones((t_used.size, 1)), t_used.reshape(-1, 1))
+    log_sigma = np.log(std[:, 0])
+    # With biased sampling, the empirical log-sigma mean should not match the
+    # uniform-in-t expectation (which would be near log(sigma(T/2)) >= -1.0 for
+    # this SDE).
+    assert float(log_sigma.mean()) < -0.5
+
+
+def test_lightgbm_score_model_min_snr_runs_and_scores_finite():
+    n, x_dim = 200, 1
+    sigma_noise = 1e-5
+    X, y = generate_bimodal_linear_regression_data(n, x_dim, sigma_noise, bimodal=False, seed=0)
+    sde = VESDE(hyperparam_min=0.01, hyperparam_max=float(y.std()))
+
+    model = LightGBMScoreModel(
+        score_parameterization="edm",
+        noise_features="raw_time_log_std",
+        loss_weighting="min_snr",
+        min_snr_gamma=5.0,
+        n_repeats=2,
+        n_estimators=20,
+        learning_rate=0.1,
+        verbose=-1,
+        seed=0,
+    )
+    model.fit(X, y, sde)
+
+    rng = np.random.default_rng(0)
+    t = rng.uniform(1e-5, sde.T / 2, size=n).reshape(-1, 1)
+    z = rng.normal(size=y.shape)
+    mean, std = sde.get_mean_std_pt_given_y0(y, t)
+    y_pert = mean + std * z
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        scores = model.score(y=y_pert, X=X, t=t)
+    assert np.all(np.isfinite(scores))
+
+
 def test_raw_time_feature_builder_matches_concatenation():
     perturbed_y = np.array([[0.1, -0.2], [0.3, 0.4], [-0.5, 0.6]])
     X = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]])
@@ -246,8 +450,8 @@ def test_make_training_data_with_raw_time_preserves_shape_and_cat_idx():
         noise_feature_builder=RawTimeFeatureBuilder(),
     )
 
-    pred_train_b, pred_val_b, target_train_b, target_val_b, cat_idx_b = baseline
-    pred_train_e, pred_val_e, target_train_e, target_val_e, cat_idx_e = explicit
+    pred_train_b, pred_val_b, target_train_b, target_val_b, sw_train_b, sw_val_b, cat_idx_b = baseline
+    pred_train_e, pred_val_e, target_train_e, target_val_e, sw_train_e, sw_val_e, cat_idx_e = explicit
 
     assert np.array_equal(pred_train_b, pred_train_e)
     assert np.array_equal(pred_val_b, pred_val_e)
@@ -257,6 +461,10 @@ def test_make_training_data_with_raw_time_preserves_shape_and_cat_idx():
     assert pred_train_b.shape[1] == y_dim + x_dim + 1
     assert cat_idx_b == [c + y_dim for c in cat_idx]
     assert cat_idx_e == cat_idx_b
+    assert sw_train_b is None
+    assert sw_val_b is None
+    assert sw_train_e is None
+    assert sw_val_e is None
 
 
 def test_make_training_data_with_raw_time_log_std_preserves_cat_idx():
@@ -267,7 +475,15 @@ def test_make_training_data_with_raw_time_log_std_preserves_cat_idx():
     sde = VESDE(hyperparam_min=0.01, hyperparam_max=1.0)
     cat_idx = [1, 3]
 
-    predictors_train, predictors_val, target_train, target_val, transformed_cat_idx = _make_training_data(
+    (
+        predictors_train,
+        predictors_val,
+        target_train,
+        target_val,
+        _,
+        _,
+        transformed_cat_idx,
+    ) = _make_training_data(
         X=X,
         y=y,
         sde=sde,
@@ -621,7 +837,7 @@ def test_make_training_data_respects_validation_split():
     y = np.zeros((20, 1))
     sde = VESDE(hyperparam_min=0.01, hyperparam_max=1.0)
 
-    predictors_train, predictors_val, _, _, _ = _make_training_data(
+    predictors_train, predictors_val, _, _, _, _, _ = _make_training_data(
         X=X,
         y=y,
         sde=sde,

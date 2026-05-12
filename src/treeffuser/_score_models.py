@@ -363,6 +363,241 @@ def get_noise_feature_builder(
 
 
 ###################################################
+# Loss weighting
+###################################################
+
+
+class LossWeighting(abc.ABC):
+    """
+    Per-sample loss weighting for the score-model regression. Implementations return a
+    1-D array of weights (length batch) that is multiplied onto LightGBM's squared loss.
+
+    The mapping from a target denoising-score-matching (DSM) weight schedule to a
+    sample weight on the regressor's target depends on the score parameterization,
+    so implementations are passed the active `ScoreParameterization` and may dispatch
+    accordingly.
+    """
+
+    @property
+    @abc.abstractmethod
+    def name(self) -> str:
+        pass
+
+    @abc.abstractmethod
+    def compute_sample_weight(
+        self,
+        std: Float[np.ndarray, "batch y_dim"],
+        alpha: Float[np.ndarray, "batch y_dim"],
+        parameterization: ScoreParameterization,
+    ) -> Float[np.ndarray, "batch"]:
+        pass
+
+
+class UniformLossWeighting(LossWeighting):
+    """
+    Sample weight 1 for every row. Reproduces the current Treeffuser behavior.
+    """
+
+    @property
+    def name(self) -> str:
+        return "uniform"
+
+    def compute_sample_weight(
+        self,
+        std: Float[np.ndarray, "batch y_dim"],
+        alpha: Float[np.ndarray, "batch y_dim"],
+        parameterization: ScoreParameterization,
+    ) -> Float[np.ndarray, "batch"]:
+        return np.ones(std.shape[0], dtype=np.float64)
+
+
+class MinSNRLossWeighting(LossWeighting):
+    """
+    Min-SNR-gamma loss weighting from Hang et al. (2023), "Efficient Diffusion Training
+    via Min-SNR Weighting Strategy".
+
+    SNR(t) = alpha(t)^2 / std(t)^2. The sample weight on the regression target is
+    parameterization-aware so the implied DSM loss weight is `min(SNR, gamma)`:
+
+        - NoiseParameterization (target = -z): w = min(SNR, gamma) / SNR
+        - X0Parameterization   (target =  y0): w = min(SNR, gamma)
+        - EDMParameterization  (preconditioned residual target): w = min(SNR, gamma) * c_out(sigma)^2
+
+    Clipping at `gamma` caps the influence of small-noise rows where the score is
+    unboundedly large, while keeping pressure on the regime that drives local density
+    shape and interval calibration.
+    """
+
+    def __init__(self, gamma: float = 5.0) -> None:
+        if gamma <= 0:
+            raise ValueError("gamma must be strictly positive.")
+        self.gamma = float(gamma)
+
+    @property
+    def name(self) -> str:
+        return f"min_snr_g{self.gamma:g}"
+
+    def compute_sample_weight(
+        self,
+        std: Float[np.ndarray, "batch y_dim"],
+        alpha: Float[np.ndarray, "batch y_dim"],
+        parameterization: ScoreParameterization,
+    ) -> Float[np.ndarray, "batch"]:
+        if np.any(std <= 0):
+            raise ValueError("MinSNRLossWeighting requires strictly positive std values.")
+        std_col = std[:, 0]
+        alpha_col = alpha[:, 0]
+        snr = (alpha_col / std_col) ** 2
+        clipped = np.minimum(snr, self.gamma)
+        if isinstance(parameterization, NoiseParameterization):
+            return clipped / snr
+        if isinstance(parameterization, X0Parameterization):
+            return clipped
+        if isinstance(parameterization, EDMParameterization):
+            sigma_data_sq = parameterization.sigma_data**2
+            c_out_sq = (std_col**2) * sigma_data_sq / (std_col**2 + sigma_data_sq)
+            return clipped * c_out_sq
+        raise NotImplementedError(
+            f"MinSNRLossWeighting is not implemented for parameterization " f"{type(parameterization).__name__}."
+        )
+
+
+def get_loss_weighting(
+    spec: str | LossWeighting,
+    min_snr_gamma: float = 5.0,
+) -> LossWeighting:
+    if isinstance(spec, LossWeighting):
+        return spec
+    if spec == "uniform":
+        return UniformLossWeighting()
+    if spec == "min_snr":
+        return MinSNRLossWeighting(gamma=min_snr_gamma)
+    raise ValueError(f"Unknown loss weighting: {spec!r}")
+
+
+###################################################
+# t sampling
+###################################################
+
+# Smallest t we ever sample. Matches the EPS used historically in `_make_training_data`
+# and the reverse-time integration endpoint in `_base_tabular_diffusion.sample`.
+_T_SAMPLER_EPS = 1e-5
+
+
+class TSampler(abc.ABC):
+    """
+    Draws training `t` values from a chosen distribution.
+
+    Tree-based score models bin features by data density: shifting the distribution of
+    `t` values changes where LightGBM places its histogram splits and therefore where
+    the score model spends capacity. This is a different lever from loss weighting,
+    which scales the loss within fixed bins.
+    """
+
+    @property
+    @abc.abstractmethod
+    def name(self) -> str:
+        pass
+
+    @abc.abstractmethod
+    def sample(
+        self,
+        n: int,
+        sde: DiffusionSDE,
+        rng: np.random.Generator,
+    ) -> Float[np.ndarray, "n 1"]:
+        pass
+
+
+class UniformTSampler(TSampler):
+    """Uniform `t` on `[EPS, T]`. Reproduces the current Treeffuser behavior."""
+
+    @property
+    def name(self) -> str:
+        return "uniform"
+
+    def sample(
+        self,
+        n: int,
+        sde: DiffusionSDE,
+        rng: np.random.Generator,
+    ) -> Float[np.ndarray, "n 1"]:
+        return rng.uniform(0, 1, size=(n, 1)) * (sde.T - _T_SAMPLER_EPS) + _T_SAMPLER_EPS
+
+
+class LogSigmaNormalTSampler(TSampler):
+    """
+    EDM-style `t` sampling: draws `log sigma(t) ~ Normal(p_mean, p_std)`, clips to the
+    SDE's achievable `[log sigma(EPS), log sigma(T)]` range, then inverts back to `t`
+    using a precomputed `t -> sigma` lookup with `np.interp`. The lookup is rebuilt on
+    each call so any SDE hyperparameter changes between fits are picked up.
+
+    Parameters
+    ----------
+    p_mean, p_std : float
+        Mean and standard deviation of the log-sigma Normal. EDM uses (-1.2, 1.2) for
+        image data on standardized targets; Treeffuser uses standardized targets too so
+        the defaults are a reasonable starting point.
+    table_size : int
+        Number of `t` grid points used for the lookup. 1024 is overkill for VESDE
+        (analytic geometric schedule) and adequate for VPSDE/SubVPSDE.
+    """
+
+    def __init__(self, p_mean: float = -1.2, p_std: float = 1.2, table_size: int = 1024) -> None:
+        if p_std <= 0:
+            raise ValueError("p_std must be strictly positive.")
+        if table_size < 16:
+            raise ValueError("table_size must be at least 16.")
+        self.p_mean = float(p_mean)
+        self.p_std = float(p_std)
+        self.table_size = int(table_size)
+
+    @property
+    def name(self) -> str:
+        return f"log_sigma_normal_pm{self.p_mean:g}_ps{self.p_std:g}"
+
+    def _build_table(self, sde: DiffusionSDE) -> tuple[np.ndarray, np.ndarray]:
+        t_grid = np.linspace(_T_SAMPLER_EPS, sde.T, self.table_size).reshape(-1, 1)
+        _, std_grid = sde.get_mean_std_pt_given_y0(np.ones((self.table_size, 1)), t_grid)
+        std_col = std_grid[:, 0]
+        if np.any(std_col <= 0):
+            raise ValueError(
+                "LogSigmaNormalTSampler requires the SDE to have strictly positive " "std(t) on the sampling interval."
+            )
+        log_sigma_grid = np.log(std_col)
+        # The SDE schedules supported here are monotone in t. If not strictly increasing
+        # the interpolation behaves like nearest-neighbor on flats; we sort defensively.
+        order = np.argsort(log_sigma_grid)
+        return log_sigma_grid[order], t_grid[:, 0][order]
+
+    def sample(
+        self,
+        n: int,
+        sde: DiffusionSDE,
+        rng: np.random.Generator,
+    ) -> Float[np.ndarray, "n 1"]:
+        log_sigma_grid, t_grid = self._build_table(sde)
+        log_sigma = rng.normal(loc=self.p_mean, scale=self.p_std, size=n)
+        log_sigma = np.clip(log_sigma, log_sigma_grid[0], log_sigma_grid[-1])
+        t = np.interp(log_sigma, log_sigma_grid, t_grid)
+        return t.reshape(-1, 1)
+
+
+def get_t_sampler(
+    spec: str | TSampler,
+    log_sigma_p_mean: float = -1.2,
+    log_sigma_p_std: float = 1.2,
+) -> TSampler:
+    if isinstance(spec, TSampler):
+        return spec
+    if spec == "uniform":
+        return UniformTSampler()
+    if spec == "log_sigma_normal":
+        return LogSigmaNormalTSampler(p_mean=log_sigma_p_mean, p_std=log_sigma_p_std)
+    raise ValueError(f"Unknown t sampling strategy: {spec!r}")
+
+
+###################################################
 # Helper functions
 ###################################################
 
@@ -377,6 +612,8 @@ def _fit_one_lgbm_model(
     cat_idx: list[int] | None = None,
     n_jobs: int | None = -1,
     early_stopping_rounds: int | None = None,
+    sample_weight: Float[np.ndarray, "batch"] | None = None,
+    sample_weight_val: Float[np.ndarray, "batch"] | None = None,
     **lgbm_args,
 ) -> lgb.LGBMRegressor:
     """
@@ -396,13 +633,17 @@ def _fit_one_lgbm_model(
     )
     if X_val is not None and y_val is not None:
         eval_set = [(X_val, y_val)]
+        eval_sample_weight = [sample_weight_val] if sample_weight_val is not None else None
     else:
         eval_set = None
+        eval_sample_weight = None
     categorical_feature: list[int] | str = "auto" if cat_idx is None else cat_idx
     model.fit(
         X=X,
         y=y,
+        sample_weight=sample_weight,
         eval_set=cast(Any, eval_set),
+        eval_sample_weight=cast(Any, eval_sample_weight),
         callbacks=cast(Any, callbacks),
         categorical_feature=categorical_feature,
     )
@@ -419,28 +660,38 @@ def _make_training_data(
     seed: int | None = None,
     score_parameterization: ScoreParameterization | None = None,
     noise_feature_builder: NoiseFeatureBuilder | None = None,
+    loss_weighting: LossWeighting | None = None,
+    t_sampler: TSampler | None = None,
 ):
     """
     Creates the training data for the score model. The score parameterization owns the
-    regression target; the noise feature builder owns the LightGBM feature matrix layout.
+    regression target; the noise feature builder owns the LightGBM feature matrix layout;
+    the loss weighting owns the per-sample regression weights.
 
     Returns:
     - predictors_train: training features for lgbm
     - predictors_val: validation features for lgbm
     - predicted_train: training target for lgbm
     - predicted_val: validation target for lgbm
+    - sample_weight_train: per-row weights for the training MSE (or `None` if uniform)
+    - sample_weight_val: per-row weights for the validation MSE (or `None`)
+    - cat_idx: shifted categorical-feature indices
     """
     if score_parameterization is None:
         score_parameterization = NoiseParameterization()
     if noise_feature_builder is None:
         noise_feature_builder = RawTimeFeatureBuilder()
-    EPS = 1e-5  # smallest step we can sample from
-    T = sde.T
+    if loss_weighting is None:
+        loss_weighting = UniformLossWeighting()
+    if t_sampler is None:
+        t_sampler = UniformTSampler()
     rng = np.random.default_rng(seed)
 
     X_train, X_test, y_train, y_test = X, None, y, None
     predictors_train, predictors_val = None, None
     predicted_train, predicted_val = None, None
+    sample_weight_train: Float[np.ndarray, "batch"] | None = None
+    sample_weight_val: Float[np.ndarray, "batch"] | None = None
 
     if eval_percent is not None:
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=eval_percent, random_state=seed)
@@ -449,10 +700,11 @@ def _make_training_data(
     n_reps = n_repeats if n_repeats is not None else 1
     X_train = np.tile(X_train, (n_reps, 1))
     y_train = np.tile(y_train, (n_reps, 1))
-    t_train = rng.uniform(0, 1, size=(y_train.shape[0], 1)) * (T - EPS) + EPS
+    t_train = t_sampler.sample(y_train.shape[0], sde=sde, rng=rng)
     z_train = rng.normal(size=y_train.shape)
 
     train_mean, train_std = sde.get_mean_std_pt_given_y0(y_train, t_train)
+    train_alpha, _ = sde.get_mean_std_pt_given_y0(np.ones_like(y_train), t_train)
     perturbed_y_train = train_mean + train_std * z_train
     feature_perturbed_y_train = score_parameterization.make_feature_perturbed_y(
         perturbed_y=perturbed_y_train,
@@ -473,15 +725,22 @@ def _make_training_data(
         std=train_std,
         t=t_train,
     )
+    if not isinstance(loss_weighting, UniformLossWeighting):
+        sample_weight_train = loss_weighting.compute_sample_weight(
+            std=train_std,
+            alpha=train_alpha,
+            parameterization=score_parameterization,
+        )
 
     # VALIDATION DATA
     if eval_percent is not None:
         assert y_test is not None
         assert X_test is not None
-        t_val = rng.uniform(0, 1, size=(y_test.shape[0], 1)) * (T - EPS) + EPS
+        t_val = t_sampler.sample(y_test.shape[0], sde=sde, rng=rng)
         z_val = rng.normal(size=(y_test.shape[0], y_test.shape[1]))
 
         val_mean, val_std = sde.get_mean_std_pt_given_y0(y_test, t_val)
+        val_alpha, _ = sde.get_mean_std_pt_given_y0(np.ones_like(y_test), t_val)
         perturbed_y_val = val_mean + val_std * z_val
         feature_perturbed_y_val = score_parameterization.make_feature_perturbed_y(
             perturbed_y=perturbed_y_val,
@@ -502,10 +761,24 @@ def _make_training_data(
             std=val_std,
             t=t_val,
         )
+        if not isinstance(loss_weighting, UniformLossWeighting):
+            sample_weight_val = loss_weighting.compute_sample_weight(
+                std=val_std,
+                alpha=val_alpha,
+                parameterization=score_parameterization,
+            )
 
     cat_idx = [c + y_train.shape[1] for c in cat_idx] if cat_idx is not None else None
 
-    return predictors_train, predictors_val, predicted_train, predicted_val, cat_idx
+    return (
+        predictors_train,
+        predictors_val,
+        predicted_train,
+        predicted_val,
+        sample_weight_train,
+        sample_weight_val,
+        cat_idx,
+    )
 
 
 ###################################################
@@ -572,6 +845,11 @@ class LightGBMScoreModel(ScoreModel):
         score_parameterization: str | ScoreParameterization = "noise",
         noise_features: str | NoiseFeatureBuilder = "raw_time",
         edm_sigma_data: float = 1.0,
+        loss_weighting: str | LossWeighting = "uniform",
+        min_snr_gamma: float = 5.0,
+        t_sampling: str | TSampler = "uniform",
+        log_sigma_p_mean: float = -1.2,
+        log_sigma_p_std: float = 1.2,
         **lgbm_args,
     ) -> None:
         self.n_repeats = n_repeats
@@ -583,6 +861,12 @@ class LightGBMScoreModel(ScoreModel):
             edm_sigma_data=edm_sigma_data,
         )
         self.noise_feature_builder = get_noise_feature_builder(noise_features)
+        self.loss_weighting = get_loss_weighting(loss_weighting, min_snr_gamma=min_snr_gamma)
+        self.t_sampler = get_t_sampler(
+            t_sampling,
+            log_sigma_p_mean=log_sigma_p_mean,
+            log_sigma_p_std=log_sigma_p_std,
+        )
 
         self._lgbm_args = lgbm_args
         self.sde = None
@@ -663,7 +947,15 @@ class LightGBMScoreModel(ScoreModel):
         self.sde = sde
         self._warn_on_edm_config(sde)
 
-        lgb_X_train, lgb_X_val, lgb_y_train, lgb_y_val, cat_idx = _make_training_data(
+        (
+            lgb_X_train,
+            lgb_X_val,
+            lgb_y_train,
+            lgb_y_val,
+            sample_weight_train,
+            sample_weight_val,
+            cat_idx,
+        ) = _make_training_data(
             X=X,
             y=y,
             sde=sde,
@@ -673,6 +965,8 @@ class LightGBMScoreModel(ScoreModel):
             seed=self.seed,
             score_parameterization=self.score_parameterization,
             noise_feature_builder=self.noise_feature_builder,
+            loss_weighting=self.loss_weighting,
+            t_sampler=self.t_sampler,
         )
 
         models = []
@@ -686,6 +980,8 @@ class LightGBMScoreModel(ScoreModel):
                 cat_idx=cat_idx,
                 seed=self.seed,
                 n_jobs=self.n_jobs,
+                sample_weight=sample_weight_train,
+                sample_weight_val=sample_weight_val,
                 **self._lgbm_args,
             )
             models.append(score_model_i)

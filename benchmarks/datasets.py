@@ -5,6 +5,8 @@ from dataclasses import dataclass
 
 import numpy as np
 from jaxtyping import Float
+from sklearn.datasets import fetch_california_housing
+from sklearn.datasets import fetch_openml
 from sklearn.datasets import load_diabetes
 
 
@@ -133,6 +135,27 @@ def _diabetes(n_train: int, n_test: int, seed: int) -> DatasetBundle:
     return _split_real_dataset(name="diabetes", X=X, y=y, n_train=n_train, n_test=n_test, seed=seed)
 
 
+def _california_housing(n_train: int, n_test: int, seed: int) -> DatasetBundle:
+    data = fetch_california_housing()
+    X = data.data
+    y = data.target.reshape(-1, 1)
+    return _split_real_dataset(name="california_housing", X=X, y=y, n_train=n_train, n_test=n_test, seed=seed)
+
+
+def _kin8nm(n_train: int, n_test: int, seed: int) -> DatasetBundle:
+    data = fetch_openml(name="kin8nm", version=1, as_frame=True, parser="auto")
+    X = data.data.to_numpy(dtype=np.float64)
+    y = data.target.to_numpy(dtype=np.float64).reshape(-1, 1)
+    return _split_real_dataset(name="kin8nm", X=X, y=y, n_train=n_train, n_test=n_test, seed=seed)
+
+
+def _wine_quality_white(n_train: int, n_test: int, seed: int) -> DatasetBundle:
+    data = fetch_openml(name="wine-quality-white", version=1, as_frame=True, parser="auto")
+    X = data.data.to_numpy(dtype=np.float64)
+    y = data.target.astype(int).to_numpy(dtype=np.float64).reshape(-1, 1)
+    return _split_real_dataset(name="wine_quality_white", X=X, y=y, n_train=n_train, n_test=n_test, seed=seed)
+
+
 def _split_real_dataset(
     name: str,
     X: Float[np.ndarray, "batch x_dim"],
@@ -160,4 +183,7 @@ def _split_real_dataset(
 
 REAL_DATASETS = {
     "diabetes": _diabetes,
+    "california_housing": _california_housing,
+    "kin8nm": _kin8nm,
+    "wine_quality_white": _wine_quality_white,
 }

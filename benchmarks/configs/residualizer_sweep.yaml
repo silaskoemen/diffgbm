@@ -1,0 +1,111 @@
+# Residualizer-capacity sweep on top of the new winning combo
+# (EDM + residualize=mean + raw_time_log_std + t_sampling=log_sigma_normal).
+# Three points along the LightGBM capacity-regularization axis. Sees whether better
+# conditional-mean estimation closes the remaining CRPS gap on real data
+# (wine_quality_white) and the coverage-error regression on small sets (diabetes, kin8nm).
+
+seeds: [0, 1, 2]
+
+seed_policy:
+  data_seed_offset: 0
+  model_seed_offset: 10000
+  sampler_seed_offset: 20000
+
+datasets:
+  - name: heteroscedastic_gaussian_linear
+    n_train: 1000
+    n_test: 1000
+    x_dim: 3
+  - name: heteroscedastic_gaussian_nonlinear
+    n_train: 1000
+    n_test: 1000
+    x_dim: 3
+  - name: student_t_heavy_tail
+    n_train: 1000
+    n_test: 1000
+    x_dim: 3
+  - name: bimodal_mixture
+    n_train: 1000
+    n_test: 1000
+    x_dim: 3
+  - name: diabetes
+    n_train: 300
+    n_test: 142
+  - name: california_housing
+    n_train: 500
+    n_test: 300
+  - name: kin8nm
+    n_train: 500
+    n_test: 300
+  - name: wine_quality_white
+    n_train: 500
+    n_test: 300
+
+variants:
+  # A — current residualizer defaults. Baseline.
+  - name: resid_A_current
+    params:
+      score_parameterization: edm
+      noise_features: raw_time_log_std
+      residualize: mean
+      residualize_k_folds: 5
+      t_sampling: log_sigma_normal
+      log_sigma_p_mean: -1.2
+      log_sigma_p_std: 1.2
+      n_repeats: 30
+      n_estimators: 3000
+      early_stopping_rounds: 50
+      learning_rate: 0.1
+      sde_name: vesde
+      verbose: -1
+  # B — regularized for small n. Shallower trees, more rounds, stronger min_child.
+  - name: resid_B_regularized
+    params:
+      score_parameterization: edm
+      noise_features: raw_time_log_std
+      residualize: mean
+      residualize_k_folds: 5
+      t_sampling: log_sigma_normal
+      log_sigma_p_mean: -1.2
+      log_sigma_p_std: 1.2
+      n_repeats: 30
+      n_estimators: 3000
+      early_stopping_rounds: 50
+      learning_rate: 0.1
+      sde_name: vesde
+      verbose: -1
+      extra_residualizer_params:
+        n_estimators: 500
+        learning_rate: 0.05
+        max_depth: 4
+        num_leaves: 15
+        min_child_samples: 40
+  # C — high-capacity. Lift depth/leaf caps, lower min_child.
+  - name: resid_C_high_capacity
+    params:
+      score_parameterization: edm
+      noise_features: raw_time_log_std
+      residualize: mean
+      residualize_k_folds: 5
+      t_sampling: log_sigma_normal
+      log_sigma_p_mean: -1.2
+      log_sigma_p_std: 1.2
+      n_repeats: 30
+      n_estimators: 3000
+      early_stopping_rounds: 50
+      learning_rate: 0.1
+      sde_name: vesde
+      verbose: -1
+      extra_residualizer_params:
+        n_estimators: 300
+        learning_rate: 0.05
+        max_depth: -1
+        num_leaves: 63
+        min_child_samples: 10
+
+samplers:
+  - n_samples: 200
+    n_steps: 50
+    n_parallel: 20
+    method: euler
+    pf_ode: false

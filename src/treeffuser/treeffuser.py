@@ -33,6 +33,11 @@ class Treeffuser(BaseTabularDiffusion):
         score_parameterization: str = "noise",
         noise_features: str = "raw_time",
         edm_sigma_data: float = 1.0,
+        loss_weighting: str = "uniform",
+        min_snr_gamma: float = 5.0,
+        t_sampling: str = "uniform",
+        log_sigma_p_mean: float = -1.2,
+        log_sigma_p_std: float = 1.2,
         residualize: ResidualizeMode = "off",
         residualize_k_folds: int = 5,
         seed: int | None = None,
@@ -94,6 +99,25 @@ class Treeffuser(BaseTabularDiffusion):
             Data standard deviation used by the EDM preconditioning coefficients when
             `score_parameterization="edm"`. The default 1.0 matches Treeffuser's
             standardized target scale.
+        loss_weighting : {"uniform", "min_snr"}
+            Per-sample weighting of the score-model regression loss. "uniform" (default)
+            preserves the current Treeffuser behavior. "min_snr" applies the parameterization-
+            aware min-SNR-gamma weighting from Hang et al. (2023) to cap the contribution
+            of small-noise rows where the score is unboundedly large.
+        min_snr_gamma : float
+            Cap on the signal-to-noise ratio used when `loss_weighting="min_snr"`. Ignored
+            otherwise. Standard practice is a value in the range 1-5.
+        t_sampling : {"uniform", "log_sigma_normal"}
+            Distribution used to draw the training-time `t` values. "uniform" (default)
+            keeps the current behavior. "log_sigma_normal" follows Karras et al. (EDM)
+            by drawing `log sigma(t) ~ Normal(log_sigma_p_mean, log_sigma_p_std)` and
+            inverting back to `t`. For tree-based score models this is a stronger lever
+            than loss weighting because it shifts the histogram-bin density.
+        log_sigma_p_mean, log_sigma_p_std : float
+            Mean and standard deviation of the log-sigma distribution used when
+            `t_sampling="log_sigma_normal"`. Defaults to EDM's (-1.2, 1.2). For
+            standardized targets, `log sigma ~ Normal(-1.2, 1.2)` concentrates training
+            mass near `sigma ~ 0.3` and tapers in both directions.
         residualize : {"off", "mean", "mean_scale"}
             Optional conditional residualization before score-model fitting. "mean"
             subtracts a cross-fitted conditional mean, and "mean_scale" additionally
@@ -133,6 +157,11 @@ class Treeffuser(BaseTabularDiffusion):
         self.score_parameterization = score_parameterization
         self.noise_features = noise_features
         self.edm_sigma_data = edm_sigma_data
+        self.loss_weighting = loss_weighting
+        self.min_snr_gamma = min_snr_gamma
+        self.t_sampling = t_sampling
+        self.log_sigma_p_mean = log_sigma_p_mean
+        self.log_sigma_p_std = log_sigma_p_std
         self.residualize = residualize
         self.residualize_k_folds = residualize_k_folds
         self.extra_lightgbm_params = extra_lightgbm_params or {}
@@ -169,6 +198,11 @@ class Treeffuser(BaseTabularDiffusion):
             score_parameterization=self.score_parameterization,
             noise_features=self.noise_features,
             edm_sigma_data=self.edm_sigma_data,
+            loss_weighting=self.loss_weighting,
+            min_snr_gamma=self.min_snr_gamma,
+            t_sampling=self.t_sampling,
+            log_sigma_p_mean=self.log_sigma_p_mean,
+            log_sigma_p_std=self.log_sigma_p_std,
             **self.extra_lightgbm_params,
         )
         return score_model

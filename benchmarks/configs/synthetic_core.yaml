@@ -139,6 +139,34 @@ variants:
       learning_rate: 0.1
       sde_name: vesde
       verbose: -1
+  - name: residualized_mean_edm_raw_time_log_std_minsnr1
+    params:
+      score_parameterization: edm
+      noise_features: raw_time_log_std
+      residualize: mean
+      residualize_k_folds: 5
+      loss_weighting: min_snr
+      min_snr_gamma: 1.0
+      n_repeats: 30
+      n_estimators: 3000
+      early_stopping_rounds: 50
+      learning_rate: 0.1
+      sde_name: vesde
+      verbose: -1
+  - name: residualized_mean_edm_raw_time_log_std_minsnr5
+    params:
+      score_parameterization: edm
+      noise_features: raw_time_log_std
+      residualize: mean
+      residualize_k_folds: 5
+      loss_weighting: min_snr
+      min_snr_gamma: 5.0
+      n_repeats: 30
+      n_estimators: 3000
+      early_stopping_rounds: 50
+      learning_rate: 0.1
+      sde_name: vesde
+      verbose: -1
 # edm_sigma_data sweep (2026-05-12) confirmed default of 1.0 is optimal for
 # standardized targets — values 0.25/0.5 catastrophically under-cover, 2.0
 # widens with no gain. See results/raw/synthetic_core__*sigma_0p25*_20260512_180012.jsonl.
@@ -147,3 +175,10 @@ samplers:
   - n_samples: 200
     n_steps: 50
     n_parallel: 20
+    method: euler
+    pf_ode: false
+  - n_samples: 200
+    n_steps: 50
+    n_parallel: 20
+    method: heun
+    pf_ode: true

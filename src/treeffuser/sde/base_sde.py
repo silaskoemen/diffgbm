@@ -3,6 +3,7 @@ from __future__ import annotations
 import abc
 from collections.abc import Callable
 
+import numpy as np
 from jaxtyping import Float
 from numpy import ndarray
 
@@ -81,6 +82,51 @@ class ReverseSDE(BaseSDE):
 
     def __repr__(self):
         return f"ReverseSDE(sde={self.sde}, t_origin={self.t_reverse_origin}, score_fn={self.score_fn})"
+
+
+class ProbabilityFlowODE(BaseSDE):
+    """
+    Deterministic probability-flow ODE associated with a reversed diffusion SDE [1].
+
+    For an original SDE `dY = f(Y, t) dt + g(Y, t) dW`, the marginal-equivalent
+    probability-flow ODE in reverse time is
+
+        dY(T-t) = (-f(Y, T-t) + 0.5 * g(Y, T-t)^2 * score(Y, T-t)) dt.
+
+    Compared to `ReverseSDE`, the drift coefficient on the score term is halved and
+    the diffusion is zero, so the resulting trajectory is deterministic and matches
+    the score-SDE marginals at every t. Paired with a higher-order ODE solver (e.g.
+    Heun) this typically gives a more accurate sampler at the same step count and a
+    materially cheaper sampler at matched quality.
+
+    References:
+        [1] Song et al. (2021), "Score-Based Generative Modeling through SDEs".
+            https://openreview.net/pdf?id=PxTIG12RRHS
+    """
+
+    def __init__(
+        self,
+        sde: BaseSDE,
+        t_reverse_origin: float,
+        score_fn: Callable[
+            [Float[ndarray, "batch y_dim"], Float[ndarray, "batch"]],
+            Float[ndarray, "batch"],
+        ],
+    ):
+        self.sde = sde
+        self.t_reverse_origin = t_reverse_origin
+        self.score_fn = score_fn
+
+    def drift_and_diffusion(
+        self, y: Float[ndarray, "batch y_dim"], t: Float[ndarray, "batch 1"]
+    ) -> tuple[Float[ndarray, "batch y_dim"], Float[ndarray, "batch y_dim"]]:
+        drift, diffusion = self.sde.drift_and_diffusion(y, self.t_reverse_origin - t)
+        pf_drift = -drift + 0.5 * diffusion**2 * self.score_fn(y, self.t_reverse_origin - t)
+        zero_diffusion = np.zeros_like(diffusion)
+        return pf_drift, zero_diffusion
+
+    def __repr__(self):
+        return f"ProbabilityFlowODE(sde={self.sde}, t_origin={self.t_reverse_origin}, " f"score_fn={self.score_fn})"
 
 
 class CustomSDE(BaseSDE):

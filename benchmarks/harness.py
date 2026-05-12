@@ -9,10 +9,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import numpy as np
+
 from benchmarks.datasets import make_dataset
+from benchmarks.metrics import DEFAULT_COVERAGE_LEVELS
 from benchmarks.metrics import evaluate_samples
 from benchmarks.variants import Variant
 from benchmarks.variants import make_variants
+from treeffuser._conformal import ConformalQuantileCalibrator
 
 
 @dataclass(frozen=True)
@@ -27,6 +31,8 @@ class SamplerConfig:
     n_samples: int
     n_steps: int
     n_parallel: int
+    method: str = "euler"
+    pf_ode: bool = False
 
 
 def run_benchmark(config: dict[str, Any], output_path: Path, output_format: str = "jsonl") -> None:
@@ -35,6 +41,7 @@ def run_benchmark(config: dict[str, Any], output_path: Path, output_format: str 
     seeds = config["seeds"]
     sampler_configs = _make_sampler_configs(config["samplers"])
     seed_policy = config.get("seed_policy", {})
+    conformal_cal_fraction = config.get("conformal_cal_fraction", None)
     provenance = get_provenance()
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -68,6 +75,7 @@ def run_benchmark(config: dict[str, Any], output_path: Path, output_format: str 
                         sampler_config=sampler_config,
                         fit_time=fit_time,
                         provenance=provenance,
+                        conformal_cal_fraction=conformal_cal_fraction,
                     )
                     writer.write(row)
 
@@ -91,6 +99,7 @@ def evaluate_variant(
     sampler_config: SamplerConfig,
     fit_time: float,
     provenance: dict[str, Any],
+    conformal_cal_fraction: float | None = None,
 ) -> dict[str, Any]:
     start = time.perf_counter()
     y_samples = model.sample(
@@ -100,6 +109,8 @@ def evaluate_variant(
         n_steps=sampler_config.n_steps,
         seed=seeds.sampler_seed,
         verbose=False,
+        sampler_method=sampler_config.method,
+        pf_ode=sampler_config.pf_ode,
     )
     sample_time = time.perf_counter() - start
 
@@ -121,17 +132,67 @@ def evaluate_variant(
         "n_samples": sampler_config.n_samples,
         "n_steps": sampler_config.n_steps,
         "n_parallel": sampler_config.n_parallel,
+        "sampler_method": sampler_config.method,
+        "sampler_pf_ode": sampler_config.pf_ode,
         "fit_time": fit_time,
         "sample_time": sample_time,
         "training_rows": training_rows,
         "n_estimators_true": _format_n_estimators_true(model),
         "n_estimators_true_sum": _sum_n_estimators_true(model),
         "n_estimators_true_max": _max_n_estimators_true(model),
+        "residualizer_mean_oof_mse": _residualizer_mean_oof_mse(model),
     }
     row.update(provenance)
     row.update(metrics)
+    if conformal_cal_fraction is not None:
+        row.update(
+            _conformal_metrics(
+                y_samples=y_samples,
+                y_test=y_test,
+                cal_fraction=conformal_cal_fraction,
+                cal_seed=seeds.sampler_seed + 1,
+            )
+        )
     row.update({f"param_{key}": value for key, value in sorted(variant.params.items())})
     return row
+
+
+def _conformal_metrics(
+    y_samples,
+    y_test,
+    cal_fraction: float,
+    cal_seed: int,
+) -> dict[str, Any]:
+    """Split-CQR coverage and width on a held-out calibration slice of the test set."""
+    if not 0.0 < cal_fraction < 1.0:
+        raise ValueError("conformal_cal_fraction must be in (0, 1).")
+    n = y_test.shape[0]
+    n_cal = round(n * cal_fraction)
+    if n_cal < 2 or n - n_cal < 1:
+        raise ValueError(f"conformal_cal_fraction={cal_fraction} leaves an unusable split for n_test={n}.")
+    rng = np.random.default_rng(cal_seed)
+    perm = rng.permutation(n)
+    cal_idx, eval_idx = perm[:n_cal], perm[n_cal:]
+    samples_cal = y_samples[:, cal_idx]
+    samples_eval = y_samples[:, eval_idx]
+    y_cal = y_test[cal_idx]
+    y_eval = y_test[eval_idx]
+
+    out: dict[str, Any] = {"conformal_n_cal": int(n_cal), "conformal_n_eval": int(n - n_cal)}
+    for level in DEFAULT_COVERAGE_LEVELS:
+        cal = ConformalQuantileCalibrator(level=level).fit_from_samples(samples_cal, y_cal)
+        lower, upper = cal.predict_interval_from_samples(samples_eval)
+        covered = (y_eval >= lower) & (y_eval <= upper)
+        coverage = float(np.mean(covered))
+        width = float(np.mean(upper - lower))
+        prefix = f"conformal_interval_{int(level * 100)}"
+        out[f"{prefix}_coverage"] = coverage
+        out[f"{prefix}_coverage_error"] = coverage - level
+        out[f"{prefix}_abs_coverage_error"] = abs(coverage - level)
+        out[f"{prefix}_width"] = width
+        radius = cal.radius
+        out[f"{prefix}_cal_radius"] = float(np.mean(radius)) if radius is not None else None
+    return out
 
 
 def resolve_seeds(seed: int, seed_policy: dict[str, Any]) -> ResolvedSeeds:
@@ -195,6 +256,8 @@ def _make_sampler_configs(config: list[dict[str, Any]]) -> list[SamplerConfig]:
             n_samples=int(item["n_samples"]),
             n_steps=int(item["n_steps"]),
             n_parallel=int(item.get("n_parallel", 10)),
+            method=str(item.get("method", "euler")),
+            pf_ode=bool(item.get("pf_ode", False)),
         )
         for item in config
     ]
@@ -225,6 +288,13 @@ def _max_n_estimators_true(model) -> int | str:
     if isinstance(values, list):
         return max(values)
     return values
+
+
+def _residualizer_mean_oof_mse(model) -> float | None:
+    residualizer = getattr(model, "_residualizer", None)
+    if residualizer is None:
+        return None
+    return getattr(residualizer, "mean_oof_mse", None)
 
 
 def _get_n_estimators_true(model):

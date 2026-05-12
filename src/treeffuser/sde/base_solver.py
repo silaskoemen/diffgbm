@@ -5,6 +5,7 @@ from jaxtyping import Float
 from numpy import ndarray
 
 from .base_sde import BaseSDE
+from .base_sde import ProbabilityFlowODE
 from .base_sde import ReverseSDE
 
 _AVAILABLE_SOLVERS = {}
@@ -20,6 +21,7 @@ def sdeint(
     score_fn=None,
     n_samples=1,
     seed=None,
+    pf_ode=False,
 ):
     """
     Integrate an SDE (i.e. sample from an SDE).
@@ -35,7 +37,7 @@ def sdeint(
     t1 : float
         The final time.
     method : str
-        The integration method to use. Currently only "euler" is supported.
+        The integration method to use. Currently supported: "euler", "heun".
     n_steps : int
         The number of steps to use for the integration.
     score_fn : callable
@@ -44,6 +46,10 @@ def sdeint(
         The number of samples to generate per input point.
     seed : int
         Random seed.
+    pf_ode : bool
+        Only meaningful when reversing (t1 < t0). When True, integrate the deterministic
+        probability-flow ODE associated with the diffusion SDE instead of the stochastic
+        reverse SDE. Best paired with `method="heun"`.
     """
     if t1 < t0:
         # Reverse SDE
@@ -52,8 +58,10 @@ def sdeint(
                 "`score_fn` must be provided for reverse SDE (the SDE is reversed "
                 f"because `t1` is smaller than `t0`: t0={t0}, t1={t1})."
             )
-        sde = ReverseSDE(sde, t0, score_fn)
+        sde = ProbabilityFlowODE(sde, t0, score_fn) if pf_ode else ReverseSDE(sde, t0, score_fn)
         t0, t1 = 0.0, t0 - t1
+    elif pf_ode:
+        raise ValueError("`pf_ode=True` is only valid for reverse-time integration (t1 < t0).")
     if n_samples > 1:
         y0 = np.broadcast_to(y0, (n_samples, *y0.shape))
     solver = get_solver(method)(sde=sde, n_steps=n_steps, seed=seed)

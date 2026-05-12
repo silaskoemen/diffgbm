@@ -164,6 +164,86 @@ def test_conditional_residualizer_requires_enough_rows():
         residualizer.fit(X, y)
 
 
+def test_residualizer_early_stopping_size_gate_falls_back_with_warning():
+    """When the dataset is too small for a 50-row inner val, the residualizer should
+    warn and fall back to the high-capacity defaults rather than running early stopping
+    on too few rows."""
+    rng = np.random.default_rng(0)
+    n = 120  # fold train ≈ 90, inner val ≈ 13 -> below threshold 50
+    X = rng.normal(size=(n, 3))
+    y = (X[:, :1] + 0.5 * rng.normal(size=(n, 1))).astype(np.float64)
+    y = (y - y.mean(axis=0)) / y.std(axis=0)
+
+    residualizer = ConditionalResidualizer(
+        residualize="mean",
+        k_folds=3,
+        seed=0,
+        extra_params={
+            "n_estimators": 100,
+            "early_stopping_rounds": 30,
+            "learning_rate": 0.1,
+            "max_depth": 3,
+        },
+    )
+    with pytest.warns(UserWarning, match="Falling back"):
+        residualizer.fit(X, y)
+    assert residualizer._use_inner_es is False
+    # Fallback params should have replaced the user-provided ones.
+    resolved = residualizer._resolved_params
+    assert resolved["n_estimators"] == 300
+    assert resolved["max_depth"] == -1
+    assert resolved["num_leaves"] == 63
+    assert resolved["min_child_samples"] == 10
+    assert "early_stopping_rounds" not in resolved
+
+
+def test_residualizer_early_stopping_passes_size_gate_with_enough_data():
+    """With ample training data the gate should pass and the resolved params should
+    keep the user-supplied early-stopping config without falling back."""
+    rng = np.random.default_rng(0)
+    n = 800  # fold train ≈ 600, inner val ≈ 90 -> above threshold 50
+    X = rng.normal(size=(n, 3))
+    y = (X[:, :1] + 0.5 * rng.normal(size=(n, 1))).astype(np.float64)
+    y = (y - y.mean(axis=0)) / y.std(axis=0)
+
+    residualizer = ConditionalResidualizer(
+        residualize="mean",
+        k_folds=4,
+        seed=0,
+        extra_params={
+            "n_estimators": 1000,
+            "early_stopping_rounds": 30,
+            "learning_rate": 0.05,
+            "max_depth": 6,
+        },
+    )
+    residualizer.fit(X, y)
+    assert residualizer._use_inner_es is True
+    assert residualizer._resolved_params["early_stopping_rounds"] == 30
+    # Early stopping should pick fewer trees than the 1000-tree budget on this easy target.
+    best_iters = [model.best_iteration_ for model in residualizer.mean_models[0]]
+    assert all(iter_ < 1000 for iter_ in best_iters)
+
+
+def test_residualizer_no_early_stopping_when_not_requested():
+    """If `early_stopping_rounds` is not in extras, behavior is unchanged: no inner
+    split, no fallback, no warning."""
+    rng = np.random.default_rng(0)
+    n = 800
+    X = rng.normal(size=(n, 3))
+    y = (X[:, :1] + 0.5 * rng.normal(size=(n, 1))).astype(np.float64)
+    y = (y - y.mean(axis=0)) / y.std(axis=0)
+
+    residualizer = ConditionalResidualizer(
+        residualize="mean",
+        k_folds=4,
+        seed=0,
+        extra_params=_fast_params(),
+    )
+    residualizer.fit(X, y)
+    assert residualizer._use_inner_es is False
+
+
 def test_conditional_residualizer_preserves_multioutput_shape():
     X, y1 = _make_heteroscedastic_data()
     y = np.concatenate([y1, -0.5 * y1 + 0.1 * X[:, :1]], axis=1)

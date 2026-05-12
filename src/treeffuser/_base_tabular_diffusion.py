@@ -309,6 +309,8 @@ class BaseTabularDiffusion(BaseEstimator, abc.ABC):
         n_steps: int = 50,
         seed=None,
         verbose: bool = False,
+        sampler_method: str = "euler",
+        pf_ode: bool = False,
     ) -> Float[ndarray, "n_samples batch y_dim"]:
         """
         Sample responses from the diffusion model conditional on the given input data `X`.
@@ -327,6 +329,14 @@ class BaseTabularDiffusion(BaseEstimator, abc.ABC):
             Seed for the random number generator of the sampling. Default is None.
         verbose : bool, optional
             Show a progress bar indicating the number of samples drawn. Default is False.
+        sampler_method : str, optional
+            SDE integration method passed to `sdeint`. Currently supported: "euler"
+            (default, stochastic Euler-Maruyama) and "heun" (second-order, intended for
+            the probability-flow ODE).
+        pf_ode : bool, optional
+            When True, sample from the deterministic probability-flow ODE associated
+            with the diffusion SDE instead of the stochastic reverse SDE. Best paired
+            with `sampler_method="heun"`. Default is False.
 
         Returns
         -------
@@ -350,7 +360,14 @@ class BaseTabularDiffusion(BaseEstimator, abc.ABC):
         assert isinstance(X_proc, np.ndarray)
 
         y_samples = self._sample_without_validation(
-            X_proc, n_samples, n_parallel=n_parallel, n_steps=n_steps, seed=seed, verbose=verbose
+            X_proc,
+            n_samples,
+            n_parallel=n_parallel,
+            n_steps=n_steps,
+            seed=seed,
+            verbose=verbose,
+            sampler_method=sampler_method,
+            pf_ode=pf_ode,
         )
 
         # Ensure output aligns with original shape provided by user
@@ -367,6 +384,8 @@ class BaseTabularDiffusion(BaseEstimator, abc.ABC):
         n_steps: int = 100,
         seed=None,
         verbose: bool = False,
+        sampler_method: str = "euler",
+        pf_ode: bool = False,
     ) -> Float[ndarray, "n_samples batch y_dim"]:
         """
         Sampling method that preserves shape conventions.
@@ -401,15 +420,20 @@ class BaseTabularDiffusion(BaseEstimator, abc.ABC):
                 # B023 highlights that x_batched might change in the future. But we
                 # use _score_fn immediately inside the loop, so there are no risks.
 
+            # Reverse-integrate down to a small positive sigma_min to keep the score
+            # well-defined at the data-distribution boundary. This matches the EPS
+            # used when generating training perturbations and is required by the
+            # Heun corrector, which evaluates the drift at the step's endpoint.
             y_batch_samples = sdeint(
                 self.sde,
                 y_batch,
                 self.sde.T,
-                0,
+                1e-5,
                 n_steps=n_steps,
-                method="euler",
+                method=sampler_method,
                 seed=seed + n_samples_sampled if seed is not None else None,
                 score_fn=_score_fn,
+                pf_ode=pf_ode,
             )
             n_samples_sampled += batch_size_samples
             y_samples.append(y_batch_samples)

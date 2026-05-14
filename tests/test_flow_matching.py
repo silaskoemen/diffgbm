@@ -14,7 +14,10 @@ from treeffuser._score_models import _FLOW_MATCHING_T_EPS
 from treeffuser._score_models import LightGBMVelocityModel
 from treeffuser._score_models import LogBetaNormalFlowMatchingTSampler
 from treeffuser._score_models import LogSNRNormalFlowMatchingTSampler
+from treeffuser._score_models import MinSNRFlowMatchingLossWeighting
+from treeffuser._score_models import UniformFlowMatchingLossWeighting
 from treeffuser._score_models import _make_flow_matching_training_data
+from treeffuser._score_models import get_flow_matching_loss_weighting
 from treeffuser._score_models import get_flow_matching_t_sampler
 from treeffuser.sde import sdeint
 
@@ -62,7 +65,15 @@ def test_make_flow_matching_training_data_shapes_endpoint_and_cat_idx():
         cat_idx=list(cat_idx),
         seed=0,
     )
-    predictors_train, predictors_val, target_train, target_val, transformed_cat_idx = baseline
+    (
+        predictors_train,
+        predictors_val,
+        target_train,
+        target_val,
+        sample_weight_train,
+        sample_weight_val,
+        transformed_cat_idx,
+    ) = baseline
 
     assert predictors_val is not None
     assert target_val is not None
@@ -73,7 +84,13 @@ def test_make_flow_matching_training_data_shapes_endpoint_and_cat_idx():
     assert transformed_cat_idx == [c + y.shape[1] for c in cat_idx]
     assert predictors_train[:, -1].min() >= 1e-5
     assert predictors_train[:, -1].max() == 1.0
+    # Default loss weighting is uniform -> no per-sample weights to forward to LightGBM.
+    assert sample_weight_train is None
+    assert sample_weight_val is None
     for observed, expected in zip(baseline, repeat, strict=True):
+        if observed is None or expected is None:
+            assert observed is expected
+            continue
         assert np.array_equal(observed, expected)
 
 
@@ -199,6 +216,10 @@ def test_treeffuser_flow_matching_warns_on_score_only_params():
     assert "score_parameterization" in message
     assert "sde_hyperparam_max" in message
     assert "t_sampling" not in message
+    # loss_weighting / min_snr_gamma are now FM-aware via FlowMatchingLossWeighting,
+    # so they must not show up in the ignored-parameters warning.
+    assert "loss_weighting" not in message
+    assert "min_snr_gamma" not in message
 
 
 def test_treeffuser_flow_matching_gaussian_smoke_distribution():
@@ -675,3 +696,123 @@ def test_uniform_endpoint_fraction_threads_through_treeffuser():
     # Allow noise; the expected rate is 0.5.
     assert 0.4 < anchor_rate < 0.6
     assert t_samples.min() >= _FLOW_MATCHING_T_EPS
+
+
+def test_min_snr_fm_loss_weighting_matches_closed_form_and_clips_at_gamma():
+    path = LinearFlowPath()
+    # Span low-t (high SNR) to high-t (low SNR) so we exercise both regimes.
+    t = np.array([[0.01], [0.1], [0.5], [0.9], [0.99]])
+    alpha = path.signal_scale(t)
+    beta = path.noise_scale(t)
+    snr = (alpha[:, 0] / beta[:, 0]) ** 2
+
+    gamma = 5.0
+    w = MinSNRFlowMatchingLossWeighting(gamma=gamma).compute_sample_weight(alpha=alpha, beta=beta)
+
+    assert w.shape == (t.shape[0],)
+    # Closed form: w = min(1, gamma / SNR). High-SNR rows are clipped strictly below 1.
+    expected = np.minimum(1.0, gamma / snr)
+    assert np.allclose(w, expected)
+    assert w[0] < 1.0  # near t=0, SNR >> gamma => weight strictly less than 1
+    assert w[-1] == pytest.approx(1.0)  # near t=1, SNR << gamma => weight saturates at 1
+
+    with pytest.raises(ValueError, match="gamma must be strictly positive"):
+        MinSNRFlowMatchingLossWeighting(gamma=0.0)
+
+
+def test_min_snr_fm_loss_weighting_large_gamma_approaches_uniform():
+    # For any fixed t in (0, 1], gamma -> infinity drives min_snr weights to 1.
+    # We avoid the immediate neighborhood of t=0 because the linear-path SNR
+    # diverges as 1/t^2 there, so no finite gamma can dominate it.
+    path = LinearFlowPath()
+    t = np.linspace(0.05, 1.0, 50).reshape(-1, 1)
+    alpha = path.signal_scale(t)
+    beta = path.noise_scale(t)
+    snr_max = float(((alpha[:, 0] / beta[:, 0]) ** 2).max())
+    huge_gamma = 1e6 * snr_max
+    w_huge_gamma = MinSNRFlowMatchingLossWeighting(gamma=huge_gamma).compute_sample_weight(alpha=alpha, beta=beta)
+    assert np.allclose(w_huge_gamma, 1.0)
+
+
+def test_get_flow_matching_loss_weighting_factory():
+    assert isinstance(get_flow_matching_loss_weighting("uniform"), UniformFlowMatchingLossWeighting)
+    minsnr = get_flow_matching_loss_weighting("min_snr", min_snr_gamma=2.5)
+    assert isinstance(minsnr, MinSNRFlowMatchingLossWeighting)
+    assert minsnr.gamma == 2.5
+    # Pass-through when an instance is supplied directly.
+    instance = MinSNRFlowMatchingLossWeighting(gamma=7.0)
+    assert get_flow_matching_loss_weighting(instance) is instance
+    with pytest.raises(ValueError, match="Unknown flow-matching loss weighting"):
+        get_flow_matching_loss_weighting("bogus")
+
+
+def test_make_flow_matching_training_data_emits_sample_weights_under_min_snr():
+    rng = np.random.default_rng(0)
+    X = rng.normal(size=(40, 2))
+    y = rng.normal(size=(40, 1))
+    path = LinearFlowPath()
+
+    out = _make_flow_matching_training_data(
+        X=X,
+        y=y,
+        flow_path=path,
+        n_repeats=2,
+        eval_percent=0.2,
+        seed=0,
+        loss_weighting=MinSNRFlowMatchingLossWeighting(gamma=1.0),
+    )
+    (
+        predictors_train,
+        predictors_val,
+        _target_train,
+        _target_val,
+        sample_weight_train,
+        sample_weight_val,
+        _cat_idx,
+    ) = out
+
+    assert sample_weight_train is not None
+    assert sample_weight_val is not None
+    assert sample_weight_train.shape == (predictors_train.shape[0],)
+    assert sample_weight_val.shape == (predictors_val.shape[0],)
+    # All weights in [0, 1] under the min(1, gamma/SNR) form.
+    assert sample_weight_train.min() > 0.0
+    assert sample_weight_train.max() <= 1.0 + 1e-12
+    assert sample_weight_val.max() <= 1.0 + 1e-12
+
+
+def test_treeffuser_fm_min_snr_threads_through_and_changes_models():
+    rng = np.random.default_rng(0)
+    X = rng.normal(size=(120, 2))
+    y = X[:, :1] - X[:, 1:] + rng.normal(scale=0.1, size=(120, 1))
+
+    common = {
+        "training_objective": "flow_matching",
+        "flow_path": "linear",
+        "n_repeats": 2,
+        "n_estimators": 30,
+        "early_stopping_rounds": None,
+        "learning_rate": 0.1,
+        "eval_percent": None,
+        "seed": 0,
+        "verbose": -1,
+    }
+    uniform_model = Treeffuser(**common, loss_weighting="uniform")
+    minsnr_model = Treeffuser(**common, loss_weighting="min_snr", min_snr_gamma=1.0)
+
+    # The FM velocity model should carry the corresponding weighting instance.
+    assert isinstance(
+        uniform_model.get_new_velocity_model().loss_weighting,
+        UniformFlowMatchingLossWeighting,
+    )
+    minsnr_vm = minsnr_model.get_new_velocity_model()
+    assert isinstance(minsnr_vm.loss_weighting, MinSNRFlowMatchingLossWeighting)
+    assert minsnr_vm.loss_weighting.gamma == 1.0
+
+    # The two trained models must disagree somewhere — if min_snr were silently
+    # dropped the LightGBM fits would be bitwise identical (same seed, same data).
+    uniform_model.fit(X, y)
+    minsnr_model.fit(X, y)
+    v_uniform = uniform_model.velocity_model.velocity(y=y[:10], X=X[:10], t=np.full((10, 1), 0.05))
+    v_minsnr = minsnr_model.velocity_model.velocity(y=y[:10], X=X[:10], t=np.full((10, 1), 0.05))
+    assert not np.allclose(v_uniform, v_minsnr)

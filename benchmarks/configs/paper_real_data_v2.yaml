@@ -5,7 +5,8 @@
 # residualizer ablation showed they are dominated by vp_fm_ode under the right
 # residualizer config.
 #
-# Four variants, same 10 datasets × 3 seeds as v1.
+# Four variants, same 10 datasets × 3 seeds as v1, using the full available
+# dataset size for each benchmark.
 
 seeds: [0, 1, 2]
 
@@ -31,8 +32,8 @@ datasets:
     n_train: 5847
     n_test: 650
   - name: kin8nm
-    n_train: 5000
-    n_test: 1000
+    n_train: 7372
+    n_test: 820
   - name: power_plant
     n_train: 8611
     n_test: 957
@@ -40,11 +41,11 @@ datasets:
     n_train: 10741
     n_test: 1193
   - name: california_housing
-    n_train: 8000
-    n_test: 2000
+    n_train: 18576
+    n_test: 2064
   - name: protein
-    n_train: 5000
-    n_test: 1500
+    n_train: 41157
+    n_test: 4573
 
 variants:
   - name: treeffuser_published

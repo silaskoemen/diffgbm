@@ -1,0 +1,155 @@
+# FM `off` (StandardScaler-only) vs `mean` (residualizer-C) ablation.
+#
+# Closes a comparability gap in the v2 headline: the residualizer_fm_sweep
+# tested A-E variants of mean residualization but never included `residualize:
+# "off"` as a baseline. The published-vs-score+ row in `paper_real_data_v2`
+# confounds residualization with EDM, log-sigma t-sampling, and noise features.
+# This sweep isolates residualization itself on the FM side at matched config:
+# VP path, uniform t, uniform loss weighting, residualizer-C extra params.
+#
+# Same 10-dataset / 10-seed protocol as `fm_mean_scale_sweep.yaml` so the
+# resulting evidence has the same statistical power as the mean-scale result.
+
+seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+seed_policy:
+  data_seed_offset: 0
+  model_seed_offset: 10000
+  sampler_seed_offset: 20000
+
+datasets:
+  # Synthetic: regime coverage
+  - name: homoscedastic_gaussian_linear
+    n_train: 1000
+    n_test: 1000
+    x_dim: 3
+  - name: heteroscedastic_gaussian_nonlinear
+    n_train: 1000
+    n_test: 1000
+    x_dim: 3
+  - name: student_t_heavy_tail
+    n_train: 1000
+    n_test: 1000
+    x_dim: 3
+  - name: skewed_noise
+    n_train: 1000
+    n_test: 1000
+    x_dim: 3
+  - name: bimodal_mixture
+    n_train: 1000
+    n_test: 1000
+    x_dim: 3
+  # Real: scale coverage
+  - name: yacht
+    n_train: 277
+    n_test: 31
+  - name: concrete
+    n_train: 927
+    n_test: 103
+  - name: kin8nm
+    n_train: 5000
+    n_test: 1000
+  - name: california_housing
+    n_train: 8000
+    n_test: 2000
+  - name: protein
+    n_train: 5000
+    n_test: 1500
+
+variants:
+  # ----- ODE @ 5 steps × {off, mean}
+  - name: vp_fm_ode_resid_off
+    params:
+      training_objective: flow_matching
+      flow_path: vp
+      noise_features: raw_time
+      residualize: "off"
+      t_sampling: uniform
+      uniform_endpoint_fraction: 0.05
+      loss_weighting: uniform
+      n_repeats: 30
+      n_estimators: 3000
+      early_stopping_rounds: 50
+      learning_rate: 0.1
+      verbose: -1
+  - name: vp_fm_ode_resid_mean
+    params:
+      training_objective: flow_matching
+      flow_path: vp
+      noise_features: raw_time
+      residualize: mean
+      residualize_k_folds: 5
+      t_sampling: uniform
+      uniform_endpoint_fraction: 0.05
+      loss_weighting: uniform
+      n_repeats: 30
+      n_estimators: 3000
+      early_stopping_rounds: 50
+      learning_rate: 0.1
+      verbose: -1
+      extra_residualizer_params:
+        n_estimators: 300
+        learning_rate: 0.05
+        max_depth: -1
+        num_leaves: 63
+        min_child_samples: 10
+
+  # ----- SDE @ 25 steps × {off, mean}
+  - name: vp_fm_sde_resid_off
+    params:
+      training_objective: flow_matching
+      flow_path: vp
+      noise_features: raw_time
+      residualize: "off"
+      t_sampling: uniform
+      uniform_endpoint_fraction: 0.05
+      loss_weighting: uniform
+      n_repeats: 30
+      n_estimators: 3000
+      early_stopping_rounds: 50
+      learning_rate: 0.1
+      verbose: -1
+  - name: vp_fm_sde_resid_mean
+    params:
+      training_objective: flow_matching
+      flow_path: vp
+      noise_features: raw_time
+      residualize: mean
+      residualize_k_folds: 5
+      t_sampling: uniform
+      uniform_endpoint_fraction: 0.05
+      loss_weighting: uniform
+      n_repeats: 30
+      n_estimators: 3000
+      early_stopping_rounds: 50
+      learning_rate: 0.1
+      verbose: -1
+      extra_residualizer_params:
+        n_estimators: 300
+        learning_rate: 0.05
+        max_depth: -1
+        num_leaves: 63
+        min_child_samples: 10
+
+samplers:
+  - n_samples: 200
+    n_steps: 5
+    n_parallel: 20
+    method: heun
+    pf_ode: false
+    velocity_stochasticity: 0.0
+    velocity_stochasticity_schedule: linear
+    variants:
+      - vp_fm_ode_resid_off
+      - vp_fm_ode_resid_mean
+
+  - n_samples: 200
+    n_steps: 25
+    n_parallel: 20
+    method: heun
+    pf_ode: false
+    velocity_stochasticity: 1.0
+    velocity_stochasticity_schedule: linear
+    variants:
+      - vp_fm_sde_resid_off
+      - vp_fm_sde_resid_mean

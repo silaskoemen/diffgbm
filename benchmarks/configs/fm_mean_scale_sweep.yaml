@@ -1,0 +1,181 @@
+# FM mean vs mean_scale residualization ablation.
+#
+# Closes a representativeness gap: `residualizer_fm_sweep.yaml` tested A-E
+# variants of mean residualization but never tried `mean_scale`, which divides
+# y by a conditional-std estimator in addition to subtracting a conditional
+# mean. Score-side data (`synthetic_core__*_20260512_154847.jsonl`) found no
+# clear winner over plain `mean`, but the FM target is the path velocity
+# `a'(t) y0 + b'(t) z`, so per-x variance differences propagate into the
+# velocity MSE directly. A priori we don't know whether scale residualization
+# helps or hurts FM, and the paper currently says "the residualizer is unchanged
+# across score and FM" — a reviewer prompt that should have a swept answer.
+#
+# Design choices for "representative subset, strong conclusions":
+#   * 10 datasets total: 5 synthetic + 5 real. The synthetic set spans the
+#     distributional regimes mean_scale is supposed to interact with
+#     (homoscedastic baseline, heteroscedastic nonlinear, heavy-tail, skewed,
+#     bimodal). The real set spans dataset sizes from 277 (yacht) to 8000
+#     (california_housing).
+#   * 10 seeds (vs 3 in the recent t-sampling / loss-weighting sweeps) so
+#     paired comparisons can resolve sub-1% effects rather than bottoming out
+#     at p > 0.4.
+#   * VP path + residualizer-C + uniform t, otherwise matched to the v2 paper
+#     headline (`paper_real_data_v2.yaml::vp_fm_ode_resid_C`).
+
+seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+seed_policy:
+  data_seed_offset: 0
+  model_seed_offset: 10000
+  sampler_seed_offset: 20000
+
+datasets:
+  # ----- Synthetic: known ground truth, regime coverage
+  - name: homoscedastic_gaussian_linear
+    n_train: 1000
+    n_test: 1000
+    x_dim: 3
+  - name: heteroscedastic_gaussian_nonlinear
+    n_train: 1000
+    n_test: 1000
+    x_dim: 3
+  - name: student_t_heavy_tail
+    n_train: 1000
+    n_test: 1000
+    x_dim: 3
+  - name: skewed_noise
+    n_train: 1000
+    n_test: 1000
+    x_dim: 3
+  - name: bimodal_mixture
+    n_train: 1000
+    n_test: 1000
+    x_dim: 3
+  # ----- Real: scale coverage, n in [277, 8000]
+  - name: yacht
+    n_train: 277
+    n_test: 31
+  - name: concrete
+    n_train: 927
+    n_test: 103
+  - name: kin8nm
+    n_train: 5000
+    n_test: 1000
+  - name: california_housing
+    n_train: 8000
+    n_test: 2000
+  - name: protein
+    n_train: 5000
+    n_test: 1500
+
+variants:
+  # ----- ODE @ 5 steps × {mean, mean_scale}
+  - name: vp_fm_ode_resid_mean
+    params:
+      training_objective: flow_matching
+      flow_path: vp
+      noise_features: raw_time
+      residualize: mean
+      residualize_k_folds: 5
+      t_sampling: uniform
+      uniform_endpoint_fraction: 0.05
+      loss_weighting: uniform
+      n_repeats: 30
+      n_estimators: 3000
+      early_stopping_rounds: 50
+      learning_rate: 0.1
+      verbose: -1
+      extra_residualizer_params:
+        n_estimators: 300
+        learning_rate: 0.05
+        max_depth: -1
+        num_leaves: 63
+        min_child_samples: 10
+  - name: vp_fm_ode_resid_mean_scale
+    params:
+      training_objective: flow_matching
+      flow_path: vp
+      noise_features: raw_time
+      residualize: mean_scale
+      residualize_k_folds: 5
+      t_sampling: uniform
+      uniform_endpoint_fraction: 0.05
+      loss_weighting: uniform
+      n_repeats: 30
+      n_estimators: 3000
+      early_stopping_rounds: 50
+      learning_rate: 0.1
+      verbose: -1
+      extra_residualizer_params:
+        n_estimators: 300
+        learning_rate: 0.05
+        max_depth: -1
+        num_leaves: 63
+        min_child_samples: 10
+
+  # ----- SDE @ 25 steps × {mean, mean_scale}
+  - name: vp_fm_sde_resid_mean
+    params:
+      training_objective: flow_matching
+      flow_path: vp
+      noise_features: raw_time
+      residualize: mean
+      residualize_k_folds: 5
+      t_sampling: uniform
+      uniform_endpoint_fraction: 0.05
+      loss_weighting: uniform
+      n_repeats: 30
+      n_estimators: 3000
+      early_stopping_rounds: 50
+      learning_rate: 0.1
+      verbose: -1
+      extra_residualizer_params:
+        n_estimators: 300
+        learning_rate: 0.05
+        max_depth: -1
+        num_leaves: 63
+        min_child_samples: 10
+  - name: vp_fm_sde_resid_mean_scale
+    params:
+      training_objective: flow_matching
+      flow_path: vp
+      noise_features: raw_time
+      residualize: mean_scale
+      residualize_k_folds: 5
+      t_sampling: uniform
+      uniform_endpoint_fraction: 0.05
+      loss_weighting: uniform
+      n_repeats: 30
+      n_estimators: 3000
+      early_stopping_rounds: 50
+      learning_rate: 0.1
+      verbose: -1
+      extra_residualizer_params:
+        n_estimators: 300
+        learning_rate: 0.05
+        max_depth: -1
+        num_leaves: 63
+        min_child_samples: 10
+
+samplers:
+  - n_samples: 200
+    n_steps: 5
+    n_parallel: 20
+    method: heun
+    pf_ode: false
+    velocity_stochasticity: 0.0
+    velocity_stochasticity_schedule: linear
+    variants:
+      - vp_fm_ode_resid_mean
+      - vp_fm_ode_resid_mean_scale
+
+  - n_samples: 200
+    n_steps: 25
+    n_parallel: 20
+    method: heun
+    pf_ode: false
+    velocity_stochasticity: 1.0
+    velocity_stochasticity_schedule: linear
+    variants:
+      - vp_fm_sde_resid_mean
+      - vp_fm_sde_resid_mean_scale

@@ -224,12 +224,10 @@ class Treeffuser(BaseTabularDiffusion):
             ignored_params.append("score_parameterization")
         if self.edm_sigma_data != 1.0:
             ignored_params.append("edm_sigma_data")
-        if self.loss_weighting != "uniform":
-            ignored_params.append("loss_weighting")
-        if self.min_snr_gamma != 5.0:
-            ignored_params.append("min_snr_gamma")
-        # t_sampling, log_sigma_p_mean, log_sigma_p_std are now used by the
-        # flow-matching path too (log-beta-normal sampler reuses the same names).
+        # t_sampling, log_sigma_p_*, loss_weighting, min_snr_gamma are now used
+        # by the flow-matching path too — loss_weighting maps to the FM
+        # FlowMatchingLossWeighting hierarchy with the same "uniform" / "min_snr"
+        # spec strings (see _score_models.get_flow_matching_loss_weighting).
         if not ignored_params:
             return
         warnings.warn(
@@ -290,6 +288,8 @@ class Treeffuser(BaseTabularDiffusion):
             log_sigma_p_mean=self.log_sigma_p_mean,
             log_sigma_p_std=self.log_sigma_p_std,
             uniform_endpoint_fraction=self.uniform_endpoint_fraction,
+            loss_weighting=self.loss_weighting,
+            min_snr_gamma=self.min_snr_gamma,
             **self.extra_lightgbm_params,
         )
         return velocity_model

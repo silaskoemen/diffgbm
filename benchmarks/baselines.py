@@ -226,6 +226,7 @@ class LightGBMQuantileBaseline(SampleBaseline):
         num_leaves: int = 31,
         min_child_samples: int = 20,
         n_jobs: int = -1,
+        early_stopping_rounds: int | None = None,
         seed: int | None = None,
     ) -> None:
         self.quantile_count = quantile_count
@@ -234,15 +235,24 @@ class LightGBMQuantileBaseline(SampleBaseline):
         self.num_leaves = num_leaves
         self.min_child_samples = min_child_samples
         self.n_jobs = n_jobs
+        self.early_stopping_rounds = early_stopping_rounds
         self.seed = seed
         self.models: list[Any] = []
+        self.n_estimators_true: list[int] = []
         self.quantiles = np.linspace(1.0 / (quantile_count + 1), quantile_count / (quantile_count + 1), quantile_count)
 
     def fit(self, X: ndarray, y: ndarray) -> LightGBMQuantileBaseline:
         y = _ensure_2d_y(y)
         if y.shape[1] != 1:
             raise ValueError("LightGBMQuantileBaseline currently supports one-dimensional y.")
+        X_train, X_val, y_train, y_val = train_test_split(
+            X,
+            y[:, 0],
+            test_size=0.1,
+            random_state=self.seed,
+        )
         self.models = []
+        self.n_estimators_true = []
         for alpha in self.quantiles:
             model = lgb.LGBMRegressor(
                 objective="quantile",
@@ -255,8 +265,13 @@ class LightGBMQuantileBaseline(SampleBaseline):
                 random_state=self.seed,
                 verbose=-1,
             )
-            model.fit(X, y[:, 0])
+            fit_kwargs: dict[str, Any] = {}
+            if self.early_stopping_rounds is not None:
+                fit_kwargs["eval_set"] = [(X_val, y_val)]
+                fit_kwargs["callbacks"] = [lgb.early_stopping(self.early_stopping_rounds, verbose=False)]
+            model.fit(X_train, y_train, **fit_kwargs)
             self.models.append(model)
+            self.n_estimators_true.append(getattr(model, "best_iteration_", None) or self.n_estimators)
         return self
 
     def sample(self, X: ndarray, n_samples: int = 200, seed: int | None = None, **kwargs) -> ndarray:

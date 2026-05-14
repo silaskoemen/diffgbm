@@ -1,0 +1,219 @@
+# FM Min-SNR loss-weighting ablation.
+#
+# Mirrors the score-side `loss_weighting: min_snr` experiments in
+# `synthetic_core.yaml` (and similarly `real_smoke.yaml`) but on the FM velocity
+# regression. The new `FlowMatchingLossWeighting` hierarchy maps the same spec
+# strings ("uniform", "min_snr") + `min_snr_gamma` to a velocity-space
+# reweighting `w(t) = min(1, gamma / SNR(t))`, with SNR(t) = alpha(t)^2 / beta(t)^2
+# read from the active FlowPath.
+#
+# Hypothesis: low-t (high-SNR) rows have unbounded leverage on the velocity MSE
+# because alpha/beta diverges, so clipping at gamma should redistribute capacity
+# to the high-noise regime that actually drives sample diversity and tail
+# calibration. Score-side history shows the gain only appears at gamma=1 (the
+# tighter clip); gamma=5 reproduces uniform behavior on real data. We test both
+# values on both ODE and SDE FM paths to see whether the FM side responds at all.
+#
+# All variants use VP path + residualizer-C, matching the v2 headline FM config
+# established by `fm_t_sampling_sweep.yaml`.
+
+seeds: [0, 1, 2]
+
+seed_policy:
+  data_seed_offset: 0
+  model_seed_offset: 10000
+  sampler_seed_offset: 20000
+
+datasets:
+  - name: yacht
+    n_train: 277
+    n_test: 31
+  - name: concrete
+    n_train: 927
+    n_test: 103
+  - name: energy
+    n_train: 691
+    n_test: 77
+  - name: diabetes
+    n_train: 400
+    n_test: 42
+  - name: wine
+    n_train: 5847
+    n_test: 650
+  - name: kin8nm
+    n_train: 5000
+    n_test: 1000
+  - name: power_plant
+    n_train: 8611
+    n_test: 957
+  - name: naval
+    n_train: 10741
+    n_test: 1193
+  - name: california_housing
+    n_train: 8000
+    n_test: 2000
+  - name: protein
+    n_train: 5000
+    n_test: 1500
+
+variants:
+  # ----- FM: VP + ODE + residualizer-C × {loss_weighting}
+  - name: vp_fm_ode_uniform_w
+    params:
+      training_objective: flow_matching
+      flow_path: vp
+      noise_features: raw_time
+      residualize: mean
+      residualize_k_folds: 5
+      t_sampling: uniform
+      uniform_endpoint_fraction: 0.05
+      loss_weighting: uniform
+      n_repeats: 30
+      n_estimators: 3000
+      early_stopping_rounds: 50
+      learning_rate: 0.1
+      verbose: -1
+      extra_residualizer_params:
+        n_estimators: 300
+        learning_rate: 0.05
+        max_depth: -1
+        num_leaves: 63
+        min_child_samples: 10
+  - name: vp_fm_ode_minsnr1
+    params:
+      training_objective: flow_matching
+      flow_path: vp
+      noise_features: raw_time
+      residualize: mean
+      residualize_k_folds: 5
+      t_sampling: uniform
+      uniform_endpoint_fraction: 0.05
+      loss_weighting: min_snr
+      min_snr_gamma: 1.0
+      n_repeats: 30
+      n_estimators: 3000
+      early_stopping_rounds: 50
+      learning_rate: 0.1
+      verbose: -1
+      extra_residualizer_params:
+        n_estimators: 300
+        learning_rate: 0.05
+        max_depth: -1
+        num_leaves: 63
+        min_child_samples: 10
+  - name: vp_fm_ode_minsnr5
+    params:
+      training_objective: flow_matching
+      flow_path: vp
+      noise_features: raw_time
+      residualize: mean
+      residualize_k_folds: 5
+      t_sampling: uniform
+      uniform_endpoint_fraction: 0.05
+      loss_weighting: min_snr
+      min_snr_gamma: 5.0
+      n_repeats: 30
+      n_estimators: 3000
+      early_stopping_rounds: 50
+      learning_rate: 0.1
+      verbose: -1
+      extra_residualizer_params:
+        n_estimators: 300
+        learning_rate: 0.05
+        max_depth: -1
+        num_leaves: 63
+        min_child_samples: 10
+
+  # ----- FM: VP + SDE (stoch=1.0 linear) + residualizer-C × {loss_weighting}
+  - name: vp_fm_sde_uniform_w
+    params:
+      training_objective: flow_matching
+      flow_path: vp
+      noise_features: raw_time
+      residualize: mean
+      residualize_k_folds: 5
+      t_sampling: uniform
+      uniform_endpoint_fraction: 0.05
+      loss_weighting: uniform
+      n_repeats: 30
+      n_estimators: 3000
+      early_stopping_rounds: 50
+      learning_rate: 0.1
+      verbose: -1
+      extra_residualizer_params:
+        n_estimators: 300
+        learning_rate: 0.05
+        max_depth: -1
+        num_leaves: 63
+        min_child_samples: 10
+  - name: vp_fm_sde_minsnr1
+    params:
+      training_objective: flow_matching
+      flow_path: vp
+      noise_features: raw_time
+      residualize: mean
+      residualize_k_folds: 5
+      t_sampling: uniform
+      uniform_endpoint_fraction: 0.05
+      loss_weighting: min_snr
+      min_snr_gamma: 1.0
+      n_repeats: 30
+      n_estimators: 3000
+      early_stopping_rounds: 50
+      learning_rate: 0.1
+      verbose: -1
+      extra_residualizer_params:
+        n_estimators: 300
+        learning_rate: 0.05
+        max_depth: -1
+        num_leaves: 63
+        min_child_samples: 10
+  - name: vp_fm_sde_minsnr5
+    params:
+      training_objective: flow_matching
+      flow_path: vp
+      noise_features: raw_time
+      residualize: mean
+      residualize_k_folds: 5
+      t_sampling: uniform
+      uniform_endpoint_fraction: 0.05
+      loss_weighting: min_snr
+      min_snr_gamma: 5.0
+      n_repeats: 30
+      n_estimators: 3000
+      early_stopping_rounds: 50
+      learning_rate: 0.1
+      verbose: -1
+      extra_residualizer_params:
+        n_estimators: 300
+        learning_rate: 0.05
+        max_depth: -1
+        num_leaves: 63
+        min_child_samples: 10
+
+samplers:
+  # FM ODE @ 5 steps (matches fm_t_sampling_sweep)
+  - n_samples: 200
+    n_steps: 5
+    n_parallel: 20
+    method: heun
+    pf_ode: false
+    velocity_stochasticity: 0.0
+    velocity_stochasticity_schedule: linear
+    variants:
+      - vp_fm_ode_uniform_w
+      - vp_fm_ode_minsnr1
+      - vp_fm_ode_minsnr5
+
+  # FM SDE @ 25 steps
+  - n_samples: 200
+    n_steps: 25
+    n_parallel: 20
+    method: heun
+    pf_ode: false
+    velocity_stochasticity: 1.0
+    velocity_stochasticity_schedule: linear
+    variants:
+      - vp_fm_sde_uniform_w
+      - vp_fm_sde_minsnr1
+      - vp_fm_sde_minsnr5

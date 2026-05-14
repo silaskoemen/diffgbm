@@ -477,6 +477,107 @@ def get_loss_weighting(
     raise ValueError(f"Unknown loss weighting: {spec!r}")
 
 
+class FlowMatchingLossWeighting(abc.ABC):
+    """
+    Per-sample loss weighting for the flow-matching velocity regression.
+
+    The score-side `LossWeighting` reweights an MSE against a noise / x0 / EDM
+    target, which depends on `(std, alpha, parameterization)`. The FM regression
+    target is the path velocity `v(t) = a'(t) y0 + b'(t) z`, so the weighting
+    signature is just `(alpha, beta) = (a(t), b(t))` taken directly from the
+    `FlowPath`. The parameterization argument has no analogue here because the
+    velocity target is fixed by the chosen flow path.
+    """
+
+    @property
+    @abc.abstractmethod
+    def name(self) -> str:
+        pass
+
+    @abc.abstractmethod
+    def compute_sample_weight(
+        self,
+        alpha: Float[np.ndarray, "batch 1"],
+        beta: Float[np.ndarray, "batch 1"],
+    ) -> Float[np.ndarray, "batch"]:
+        pass
+
+
+class UniformFlowMatchingLossWeighting(FlowMatchingLossWeighting):
+    """Sample weight 1 for every row. Reproduces the original FM training behavior."""
+
+    @property
+    def name(self) -> str:
+        return "uniform"
+
+    def compute_sample_weight(
+        self,
+        alpha: Float[np.ndarray, "batch 1"],
+        beta: Float[np.ndarray, "batch 1"],
+    ) -> Float[np.ndarray, "batch"]:
+        return np.ones(alpha.shape[0], dtype=np.float64)
+
+
+class MinSNRFlowMatchingLossWeighting(FlowMatchingLossWeighting):
+    """
+    Min-SNR-gamma weighting transplanted to the flow-matching velocity target.
+
+    SNR(t) = alpha(t)^2 / beta(t)^2. The applied sample weight is
+
+        w(t) = min(SNR, gamma) / SNR = min(1, gamma / SNR).
+
+    This mirrors the score-side `NoiseParameterization` formula. The intent is
+    the same: at low t the SNR diverges, so unrestricted MSE on those rows
+    over-allocates capacity to nearly-clean samples. Clipping at gamma caps the
+    leverage of the low-noise regime while keeping full weight at high noise
+    (SNR < gamma => w = 1). The velocity-regression target is not pure noise,
+    so this is a heuristic transplant rather than a derivation, but it is the
+    cleanest 1:1 analogue of the score-side knob and the only natural way to
+    expose the same lever on the FM side without changing the regression target.
+    """
+
+    def __init__(self, gamma: float = 5.0) -> None:
+        if gamma <= 0:
+            raise ValueError("gamma must be strictly positive.")
+        self.gamma = float(gamma)
+
+    @property
+    def name(self) -> str:
+        return f"min_snr_g{self.gamma:g}"
+
+    def compute_sample_weight(
+        self,
+        alpha: Float[np.ndarray, "batch 1"],
+        beta: Float[np.ndarray, "batch 1"],
+    ) -> Float[np.ndarray, "batch"]:
+        if np.any(beta <= 0):
+            raise ValueError("MinSNRFlowMatchingLossWeighting requires strictly positive beta values.")
+        a = alpha[:, 0]
+        b = beta[:, 0]
+        snr = (a / b) ** 2
+        # min(1, gamma / SNR) — at SNR = 0 (alpha = 0, e.g. linear/trig/vp at t=1)
+        # the mathematical limit is 1, so substitute directly to avoid a
+        # 0-division RuntimeWarning. min(1, x) on the safe branch is robust to
+        # very large gamma / SNR ratios since the cap is taken in [0, 1].
+        weight = np.ones_like(snr)
+        nonzero = snr > 0
+        weight[nonzero] = np.minimum(1.0, self.gamma / snr[nonzero])
+        return weight
+
+
+def get_flow_matching_loss_weighting(
+    spec: str | FlowMatchingLossWeighting,
+    min_snr_gamma: float = 5.0,
+) -> FlowMatchingLossWeighting:
+    if isinstance(spec, FlowMatchingLossWeighting):
+        return spec
+    if spec == "uniform":
+        return UniformFlowMatchingLossWeighting()
+    if spec == "min_snr":
+        return MinSNRFlowMatchingLossWeighting(gamma=min_snr_gamma)
+    raise ValueError(f"Unknown flow-matching loss weighting: {spec!r}")
+
+
 ###################################################
 # t sampling
 ###################################################
@@ -963,6 +1064,7 @@ def _make_flow_matching_training_data(
     seed: int | None = None,
     noise_feature_builder: NoiseFeatureBuilder | None = None,
     t_sampler: FlowMatchingTSampler | None = None,
+    loss_weighting: FlowMatchingLossWeighting | None = None,
 ):
     """
     Creates LightGBM training rows for flow matching.
@@ -971,16 +1073,22 @@ def _make_flow_matching_training_data(
     prior-noise draws, matching `_make_training_data` and avoiding leakage between
     noisy views of the same data point. `t_sampler` controls the training-time
     distribution of t; default reproduces the original uniform-with-endpoint-anchor.
+    `loss_weighting` controls the per-sample regression weight; default is uniform
+    and returns `None` for the weight arrays, matching the original behavior.
     """
     if noise_feature_builder is None:
         noise_feature_builder = RawTimeFeatureBuilder()
     if t_sampler is None:
         t_sampler = UniformFlowMatchingTSampler()
+    if loss_weighting is None:
+        loss_weighting = UniformFlowMatchingLossWeighting()
     rng = np.random.default_rng(seed)
 
     X_train, X_test, y_train, y_test = X, None, y, None
     predictors_val = None
     predicted_val = None
+    sample_weight_train: Float[np.ndarray, "batch"] | None = None
+    sample_weight_val: Float[np.ndarray, "batch"] | None = None
 
     if eval_percent is not None:
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=eval_percent, random_state=seed)
@@ -998,6 +1106,11 @@ def _make_flow_matching_training_data(
         sde=cast(DiffusionSDE, None),
     )
     predicted_train = flow_path.target_velocity(y0=y_train, z=z_train, t=t_train)
+    if not isinstance(loss_weighting, UniformFlowMatchingLossWeighting):
+        sample_weight_train = loss_weighting.compute_sample_weight(
+            alpha=flow_path.signal_scale(t_train),
+            beta=flow_path.noise_scale(t_train),
+        )
 
     if eval_percent is not None:
         assert y_test is not None
@@ -1012,6 +1125,11 @@ def _make_flow_matching_training_data(
             sde=cast(DiffusionSDE, None),
         )
         predicted_val = flow_path.target_velocity(y0=y_test, z=z_val, t=t_val)
+        if not isinstance(loss_weighting, UniformFlowMatchingLossWeighting):
+            sample_weight_val = loss_weighting.compute_sample_weight(
+                alpha=flow_path.signal_scale(t_val),
+                beta=flow_path.noise_scale(t_val),
+            )
 
     cat_idx = [c + y_train.shape[1] for c in cat_idx] if cat_idx is not None else None
 
@@ -1020,6 +1138,8 @@ def _make_flow_matching_training_data(
         predictors_val,
         predicted_train,
         predicted_val,
+        sample_weight_train,
+        sample_weight_val,
         cat_idx,
     )
 
@@ -1303,6 +1423,8 @@ class LightGBMVelocityModel(VelocityModel):
         log_sigma_p_mean: float = -1.2,
         log_sigma_p_std: float = 1.2,
         uniform_endpoint_fraction: float = _FLOW_MATCHING_ENDPOINT_FRACTION,
+        loss_weighting: str | FlowMatchingLossWeighting = "uniform",
+        min_snr_gamma: float = 5.0,
         verbose: int = 0,
         **lgbm_args,
     ) -> None:
@@ -1320,6 +1442,7 @@ class LightGBMVelocityModel(VelocityModel):
             log_sigma_p_std=log_sigma_p_std,
             uniform_endpoint_fraction=uniform_endpoint_fraction,
         )
+        self.loss_weighting = get_flow_matching_loss_weighting(loss_weighting, min_snr_gamma=min_snr_gamma)
         self.verbose = verbose
         self._lgbm_args = lgbm_args
         self.models = None
@@ -1371,6 +1494,8 @@ class LightGBMVelocityModel(VelocityModel):
             lgb_X_val,
             lgb_y_train,
             lgb_y_val,
+            sample_weight_train,
+            sample_weight_val,
             cat_idx,
         ) = _make_flow_matching_training_data(
             X=X,
@@ -1382,6 +1507,7 @@ class LightGBMVelocityModel(VelocityModel):
             seed=self.seed,
             noise_feature_builder=self.noise_feature_builder,
             t_sampler=self.t_sampler,
+            loss_weighting=self.loss_weighting,
         )
 
         models = []
@@ -1396,6 +1522,8 @@ class LightGBMVelocityModel(VelocityModel):
                 seed=self.seed,
                 verbose=self.verbose,
                 n_jobs=self.n_jobs,
+                sample_weight=sample_weight_train,
+                sample_weight_val=sample_weight_val,
                 **self._lgbm_args,
             )
             models.append(velocity_model_i)

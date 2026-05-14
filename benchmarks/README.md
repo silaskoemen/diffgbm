@@ -57,6 +57,42 @@ in `.csv`.
 The `real_smoke.yaml` config uses local datasets bundled with scikit-learn, so it does
 not download external benchmark data.
 
+## External Baseline Hyperparameter Selection
+
+External probabilistic baselines are tuned in a separate workflow from the final paper
+performance run. This keeps parameter selection auditable and avoids rerunning
+Treeffuser when only non-Treeffuser baselines change.
+
+Generate one fixed-grid selection config per model family:
+
+```bash
+pixi run python -m benchmarks.select_probabilistic_baseline_hyperparams write-configs
+```
+
+Run the generated family configs independently, for example:
+
+```bash
+pixi run python -m benchmarks.run \
+  --config benchmarks/configs/probabilistic_baseline_hyperparams/ngboost.yaml \
+  --output benchmarks/results/raw/probabilistic_baseline_hyperparams_ngboost.jsonl
+```
+
+After all family JSONL files complete, select one winner per family and emit the final
+external-baseline config:
+
+```bash
+pixi run python -m benchmarks.select_probabilistic_baseline_hyperparams select \
+  --configs 'benchmarks/configs/probabilistic_baseline_hyperparams/*.yaml' \
+  --results 'benchmarks/results/raw/probabilistic_baseline_hyperparams_*.jsonl'
+```
+
+The selector ranks candidates by CRPS on the same small selection suite used for
+Treeffuser development (4 synthetic diagnostics + 4 small real datasets, 3 seeds),
+breaks near-ties by interval-90 absolute coverage error, and requires complete runs by
+default. The generated `paper_probabilistic_baselines_selected.yaml` intentionally
+contains only external baselines and should be joined with the already completed
+`paper_real_data_v2` Treeffuser results.
+
 ## Seeding Policy
 
 For each dataset/seed pair, the harness derives and records three seeds:

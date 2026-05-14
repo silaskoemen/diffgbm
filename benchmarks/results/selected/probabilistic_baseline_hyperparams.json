@@ -1,0 +1,1628 @@
+{
+  "protocol": {
+    "configs": [
+      "benchmarks/configs/probabilistic_baseline_hyperparams/catboost_uncertainty.yaml",
+      "benchmarks/configs/probabilistic_baseline_hyperparams/deep_ensemble.yaml",
+      "benchmarks/configs/probabilistic_baseline_hyperparams/ibug.yaml",
+      "benchmarks/configs/probabilistic_baseline_hyperparams/ngboost.yaml",
+      "benchmarks/configs/probabilistic_baseline_hyperparams/qreg_lightgbm.yaml"
+    ],
+    "metric": "crps",
+    "metric_direction": "min",
+    "min_completeness": 1.0,
+    "results": [
+      "benchmarks/results/raw/probabilistic_baseline_hyperparams_catboost_uncertainty.jsonl",
+      "benchmarks/results/raw/probabilistic_baseline_hyperparams_deep_ensemble.jsonl",
+      "benchmarks/results/raw/probabilistic_baseline_hyperparams_ibug.jsonl",
+      "benchmarks/results/raw/probabilistic_baseline_hyperparams_ngboost.jsonl",
+      "benchmarks/results/raw/probabilistic_baseline_hyperparams_qreg_lightgbm.jsonl"
+    ],
+    "selection_suite": {
+      "aggregation": "mean over seeds within dataset, then unweighted mean over datasets",
+      "datasets": [
+        {
+          "n_test": 1000,
+          "n_train": 1000,
+          "name": "heteroscedastic_gaussian_linear",
+          "x_dim": 3
+        },
+        {
+          "n_test": 1000,
+          "n_train": 1000,
+          "name": "heteroscedastic_gaussian_nonlinear",
+          "x_dim": 3
+        },
+        {
+          "n_test": 1000,
+          "n_train": 1000,
+          "name": "student_t_heavy_tail",
+          "x_dim": 3
+        },
+        {
+          "n_test": 1000,
+          "n_train": 1000,
+          "name": "bimodal_mixture",
+          "x_dim": 3
+        },
+        {
+          "n_test": 142,
+          "n_train": 300,
+          "name": "diabetes"
+        },
+        {
+          "n_test": 300,
+          "n_train": 500,
+          "name": "california_housing"
+        },
+        {
+          "n_test": 300,
+          "n_train": 500,
+          "name": "kin8nm"
+        },
+        {
+          "n_test": 300,
+          "n_train": 500,
+          "name": "wine_quality_white"
+        }
+      ],
+      "seeds": [
+        0,
+        1,
+        2
+      ]
+    },
+    "tie_breaker": "interval_90_abs_coverage_error",
+    "tie_tolerance": 0.0025
+  },
+  "rankings": {
+    "catboost_uncertainty": [
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/catboost_uncertainty.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.4815236958143824,
+          "california_housing": 0.33888103857956275,
+          "diabetes": 31.42283651671574,
+          "heteroscedastic_gaussian_linear": 0.32184407049327063,
+          "heteroscedastic_gaussian_nonlinear": 0.3310101921559821,
+          "kin8nm": 0.10851552392146789,
+          "student_t_heavy_tail": 0.31393366158755237,
+          "wine_quality_white": 0.4161119819076813
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.032333333333333325,
+          "california_housing": 0.09888888888888892,
+          "diabetes": 0.027699530516431925,
+          "heteroscedastic_gaussian_linear": 0.0776666666666667,
+          "heteroscedastic_gaussian_nonlinear": 0.06000000000000005,
+          "kin8nm": 0.08222222222222224,
+          "student_t_heavy_tail": 0.02766666666666669,
+          "wine_quality_white": 0.0377777777777778
+        },
+        "mean_fit_time": 0.05675880019164955,
+        "model": "catboost_uncertainty",
+        "params": {
+          "depth": 4,
+          "early_stopping_rounds": 50,
+          "iterations": 3000,
+          "learning_rate": 0.05,
+          "thread_count": -1
+        },
+        "row_count": 24,
+        "score": 4.216832085146955,
+        "tie_breaker_score": 0.05553188575899846,
+        "variant": "catboost_uncertainty__d4__it3000__lr0p05"
+      },
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/catboost_uncertainty.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.48088212027092053,
+          "california_housing": 0.3347560795140834,
+          "diabetes": 31.575068949154296,
+          "heteroscedastic_gaussian_linear": 0.32070380989436376,
+          "heteroscedastic_gaussian_nonlinear": 0.3297388581167331,
+          "kin8nm": 0.1072788625024761,
+          "student_t_heavy_tail": 0.3103052452244634,
+          "wine_quality_white": 0.41618773780266344
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.036,
+          "california_housing": 0.1166666666666667,
+          "diabetes": 0.03568075117370891,
+          "heteroscedastic_gaussian_linear": 0.07500000000000007,
+          "heteroscedastic_gaussian_nonlinear": 0.06466666666666672,
+          "kin8nm": 0.08222222222222227,
+          "student_t_heavy_tail": 0.0316666666666667,
+          "wine_quality_white": 0.03555555555555556
+        },
+        "mean_fit_time": 0.08745796179088454,
+        "model": "catboost_uncertainty",
+        "params": {
+          "depth": 4,
+          "early_stopping_rounds": 50,
+          "iterations": 3000,
+          "learning_rate": 0.03,
+          "thread_count": -1
+        },
+        "row_count": 24,
+        "score": 4.23436520781,
+        "tie_breaker_score": 0.05968231611893587,
+        "variant": "catboost_uncertainty__d4__it3000__lr0p03"
+      },
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/catboost_uncertainty.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.4829075803182223,
+          "california_housing": 0.3430001221080809,
+          "diabetes": 31.567010145601316,
+          "heteroscedastic_gaussian_linear": 0.32239152412757105,
+          "heteroscedastic_gaussian_nonlinear": 0.3311292253835218,
+          "kin8nm": 0.10598244517453491,
+          "student_t_heavy_tail": 0.3161903661925572,
+          "wine_quality_white": 0.4168722622851741
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.03633333333333333,
+          "california_housing": 0.0922222222222222,
+          "diabetes": 0.03380281690140848,
+          "heteroscedastic_gaussian_linear": 0.0716666666666667,
+          "heteroscedastic_gaussian_nonlinear": 0.0753333333333334,
+          "kin8nm": 0.10444444444444445,
+          "student_t_heavy_tail": 0.024333333333333356,
+          "wine_quality_white": 0.0377777777777778
+        },
+        "mean_fit_time": 0.03761769273357155,
+        "model": "catboost_uncertainty",
+        "params": {
+          "depth": 4,
+          "early_stopping_rounds": 50,
+          "iterations": 3000,
+          "learning_rate": 0.1,
+          "thread_count": -1
+        },
+        "row_count": 24,
+        "score": 4.235685458898872,
+        "tie_breaker_score": 0.05948924100156497,
+        "variant": "catboost_uncertainty__d4__it3000__lr0p1"
+      },
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/catboost_uncertainty.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.48661696941901905,
+          "california_housing": 0.3563308756920798,
+          "diabetes": 31.648125129267214,
+          "heteroscedastic_gaussian_linear": 0.32761990694766685,
+          "heteroscedastic_gaussian_nonlinear": 0.3317613729114346,
+          "kin8nm": 0.10855822247990933,
+          "student_t_heavy_tail": 0.31595793084747537,
+          "wine_quality_white": 0.42362777801735596
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.009000000000000008,
+          "california_housing": 0.07444444444444447,
+          "diabetes": 0.022065727699530524,
+          "heteroscedastic_gaussian_linear": 0.07933333333333337,
+          "heteroscedastic_gaussian_nonlinear": 0.08500000000000003,
+          "kin8nm": 0.09000000000000001,
+          "student_t_heavy_tail": 0.02100000000000002,
+          "wine_quality_white": 0.02777777777777779
+        },
+        "mean_fit_time": 0.0802638281408387,
+        "model": "catboost_uncertainty",
+        "params": {
+          "depth": 6,
+          "early_stopping_rounds": 50,
+          "iterations": 3000,
+          "learning_rate": 0.05,
+          "thread_count": -1
+        },
+        "row_count": 24,
+        "score": 4.249824773197769,
+        "tie_breaker_score": 0.05107766040688578,
+        "variant": "catboost_uncertainty__d6__it3000__lr0p05"
+      },
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/catboost_uncertainty.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.48548597100289026,
+          "california_housing": 0.34897965311483975,
+          "diabetes": 31.829754318114247,
+          "heteroscedastic_gaussian_linear": 0.3260956224180922,
+          "heteroscedastic_gaussian_nonlinear": 0.33000566660931224,
+          "kin8nm": 0.10729432383636166,
+          "student_t_heavy_tail": 0.3140294399552254,
+          "wine_quality_white": 0.42455190343691496
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.012333333333333344,
+          "california_housing": 0.09555555555555557,
+          "diabetes": 0.03380281690140848,
+          "heteroscedastic_gaussian_linear": 0.07833333333333341,
+          "heteroscedastic_gaussian_nonlinear": 0.09200000000000001,
+          "kin8nm": 0.09333333333333338,
+          "student_t_heavy_tail": 0.024333333333333356,
+          "wine_quality_white": 0.03666666666666666
+        },
+        "mean_fit_time": 0.11584560594443853,
+        "model": "catboost_uncertainty",
+        "params": {
+          "depth": 6,
+          "early_stopping_rounds": 50,
+          "iterations": 3000,
+          "learning_rate": 0.03,
+          "thread_count": -1
+        },
+        "row_count": 24,
+        "score": 4.270774612310985,
+        "tie_breaker_score": 0.058294796557120526,
+        "variant": "catboost_uncertainty__d6__it3000__lr0p03"
+      },
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/catboost_uncertainty.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.48959644837288535,
+          "california_housing": 0.379273132864343,
+          "diabetes": 32.186478860698315,
+          "heteroscedastic_gaussian_linear": 0.33198418851332545,
+          "heteroscedastic_gaussian_nonlinear": 0.33449218406528297,
+          "kin8nm": 0.11149580768303793,
+          "student_t_heavy_tail": 0.3234555017610271,
+          "wine_quality_white": 0.4309424103486944
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.01100000000000001,
+          "california_housing": 0.08555555555555557,
+          "diabetes": 0.022065727699530562,
+          "heteroscedastic_gaussian_linear": 0.09533333333333331,
+          "heteroscedastic_gaussian_nonlinear": 0.08766666666666671,
+          "kin8nm": 0.10555555555555558,
+          "student_t_heavy_tail": 0.028000000000000025,
+          "wine_quality_white": 0.025555555555555554
+        },
+        "mean_fit_time": 0.2105403108483491,
+        "model": "catboost_uncertainty",
+        "params": {
+          "depth": 8,
+          "early_stopping_rounds": 50,
+          "iterations": 3000,
+          "learning_rate": 0.03,
+          "thread_count": -1
+        },
+        "row_count": 24,
+        "score": 4.323464816788364,
+        "tie_breaker_score": 0.05759154929577467,
+        "variant": "catboost_uncertainty__d8__it3000__lr0p03"
+      },
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/catboost_uncertainty.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.48937116709977296,
+          "california_housing": 0.35209982230291653,
+          "diabetes": 32.24318769994094,
+          "heteroscedastic_gaussian_linear": 0.3267467848141134,
+          "heteroscedastic_gaussian_nonlinear": 0.33149824173313214,
+          "kin8nm": 0.11191402508097646,
+          "student_t_heavy_tail": 0.3137863561845677,
+          "wine_quality_white": 0.42445363720075846
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.013333333333333345,
+          "california_housing": 0.14888888888888893,
+          "diabetes": 0.014553990610328657,
+          "heteroscedastic_gaussian_linear": 0.08766666666666667,
+          "heteroscedastic_gaussian_nonlinear": 0.08500000000000008,
+          "kin8nm": 0.09222222222222225,
+          "student_t_heavy_tail": 0.03400000000000003,
+          "wine_quality_white": 0.02777777777777779
+        },
+        "mean_fit_time": 0.056716960001116,
+        "model": "catboost_uncertainty",
+        "params": {
+          "depth": 6,
+          "early_stopping_rounds": 50,
+          "iterations": 3000,
+          "learning_rate": 0.1,
+          "thread_count": -1
+        },
+        "row_count": 24,
+        "score": 4.324132216794647,
+        "tie_breaker_score": 0.06293035993740222,
+        "variant": "catboost_uncertainty__d6__it3000__lr0p1"
+      },
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/catboost_uncertainty.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.4899382412513283,
+          "california_housing": 0.3746484738581563,
+          "diabetes": 32.195527813717426,
+          "heteroscedastic_gaussian_linear": 0.3340024784424876,
+          "heteroscedastic_gaussian_nonlinear": 0.3349623449726864,
+          "kin8nm": 0.10986170872181426,
+          "student_t_heavy_tail": 0.32545889621779267,
+          "wine_quality_white": 0.4376079066752299
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.01200000000000001,
+          "california_housing": 0.10000000000000002,
+          "diabetes": 0.01737089201877932,
+          "heteroscedastic_gaussian_linear": 0.10666666666666669,
+          "heteroscedastic_gaussian_nonlinear": 0.08400000000000003,
+          "kin8nm": 0.11111111111111112,
+          "student_t_heavy_tail": 0.0346666666666667,
+          "wine_quality_white": 0.024444444444444418
+        },
+        "mean_fit_time": 0.15983926390375322,
+        "model": "catboost_uncertainty",
+        "params": {
+          "depth": 8,
+          "early_stopping_rounds": 50,
+          "iterations": 3000,
+          "learning_rate": 0.05,
+          "thread_count": -1
+        },
+        "row_count": 24,
+        "score": 4.325250982982115,
+        "tie_breaker_score": 0.06128247261345854,
+        "variant": "catboost_uncertainty__d8__it3000__lr0p05"
+      },
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/catboost_uncertainty.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.4924820072672917,
+          "california_housing": 0.38889828853343883,
+          "diabetes": 32.19151595484146,
+          "heteroscedastic_gaussian_linear": 0.33563467476106773,
+          "heteroscedastic_gaussian_nonlinear": 0.3372259639982903,
+          "kin8nm": 0.11347325758726585,
+          "student_t_heavy_tail": 0.33054421484467894,
+          "wine_quality_white": 0.4369443724087955
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.007000000000000006,
+          "california_housing": 0.052222222222222246,
+          "diabetes": 0.031455399061032896,
+          "heteroscedastic_gaussian_linear": 0.12133333333333333,
+          "heteroscedastic_gaussian_nonlinear": 0.08366666666666671,
+          "kin8nm": 0.10333333333333332,
+          "student_t_heavy_tail": 0.038333333333333365,
+          "wine_quality_white": 0.023333333333333355
+        },
+        "mean_fit_time": 0.10820663363362353,
+        "model": "catboost_uncertainty",
+        "params": {
+          "depth": 8,
+          "early_stopping_rounds": 50,
+          "iterations": 3000,
+          "learning_rate": 0.1,
+          "thread_count": -1
+        },
+        "row_count": 24,
+        "score": 4.328339841780286,
+        "tie_breaker_score": 0.057584702660406904,
+        "variant": "catboost_uncertainty__d8__it3000__lr0p1"
+      }
+    ],
+    "deep_ensemble": [
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/deep_ensemble.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.46683970267492664,
+          "california_housing": 0.40470240078728864,
+          "diabetes": 30.809591031929248,
+          "heteroscedastic_gaussian_linear": 0.30804476643814105,
+          "heteroscedastic_gaussian_nonlinear": 0.31882660220236064,
+          "kin8nm": 0.08869591430151363,
+          "student_t_heavy_tail": 0.29394915343185646,
+          "wine_quality_white": 0.4025995491695868
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.0773333333333333,
+          "california_housing": 0.028888888888888853,
+          "diabetes": 0.023004694835680756,
+          "heteroscedastic_gaussian_linear": 0.02200000000000002,
+          "heteroscedastic_gaussian_nonlinear": 0.025000000000000022,
+          "kin8nm": 0.053333333333333344,
+          "student_t_heavy_tail": 0.019666666666666683,
+          "wine_quality_white": 0.018888888888888917
+        },
+        "mean_fit_time": 1.294791706459364,
+        "model": "deep_ensemble",
+        "params": {
+          "batch_size": 256,
+          "hidden_size": 50,
+          "learning_rate": 0.001,
+          "max_epochs": 150,
+          "n_ensembles": 5,
+          "n_layers": 1,
+          "patience": 15
+        },
+        "row_count": 24,
+        "score": 4.136656140116865,
+        "tie_breaker_score": 0.03351447574334899,
+        "variant": "deep_ensemble__h50__lr0p001__ep150__ens5__layers1"
+      },
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/deep_ensemble.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.46864542300874434,
+          "california_housing": 0.40688183474089595,
+          "diabetes": 31.227963770684166,
+          "heteroscedastic_gaussian_linear": 0.30762126434834636,
+          "heteroscedastic_gaussian_nonlinear": 0.31881779559877843,
+          "kin8nm": 0.08877233465279198,
+          "student_t_heavy_tail": 0.2948873973469989,
+          "wine_quality_white": 0.4024250404280226
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.07266666666666662,
+          "california_housing": 0.02888888888888889,
+          "diabetes": 0.03239436619718309,
+          "heteroscedastic_gaussian_linear": 0.021666666666666685,
+          "heteroscedastic_gaussian_nonlinear": 0.025000000000000022,
+          "kin8nm": 0.052222222222222246,
+          "student_t_heavy_tail": 0.01666666666666668,
+          "wine_quality_white": 0.014444444444444446
+        },
+        "mean_fit_time": 0.8139357778806394,
+        "model": "deep_ensemble",
+        "params": {
+          "batch_size": 256,
+          "hidden_size": 50,
+          "learning_rate": 0.001,
+          "max_epochs": 150,
+          "n_ensembles": 3,
+          "n_layers": 1,
+          "patience": 15
+        },
+        "row_count": 24,
+        "score": 4.189501857601093,
+        "tie_breaker_score": 0.032993740219092335,
+        "variant": "deep_ensemble__h50__lr0p001__ep150__ens3__layers1"
+      },
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/deep_ensemble.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.46760865841746724,
+          "california_housing": 0.4064669940998833,
+          "diabetes": 31.30426107271714,
+          "heteroscedastic_gaussian_linear": 0.30865486749496723,
+          "heteroscedastic_gaussian_nonlinear": 0.31696717334403757,
+          "kin8nm": 0.08574785438039964,
+          "student_t_heavy_tail": 0.29392068008773264,
+          "wine_quality_white": 0.4023887656540539
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.07599999999999996,
+          "california_housing": 0.03111111111111109,
+          "diabetes": 0.027699530516431963,
+          "heteroscedastic_gaussian_linear": 0.029666666666666692,
+          "heteroscedastic_gaussian_nonlinear": 0.0336666666666667,
+          "kin8nm": 0.08666666666666667,
+          "student_t_heavy_tail": 0.019666666666666683,
+          "wine_quality_white": 0.024444444444444453
+        },
+        "mean_fit_time": 1.014368144106508,
+        "model": "deep_ensemble",
+        "params": {
+          "batch_size": 256,
+          "hidden_size": 100,
+          "learning_rate": 0.001,
+          "max_epochs": 150,
+          "n_ensembles": 5,
+          "n_layers": 1,
+          "patience": 15
+        },
+        "row_count": 24,
+        "score": 4.19825200827446,
+        "tie_breaker_score": 0.041115219092331776,
+        "variant": "deep_ensemble__h100__lr0p001__ep150__ens5__layers1"
+      },
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/deep_ensemble.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.46980086543267624,
+          "california_housing": 0.39486100815089803,
+          "diabetes": 31.34653117323593,
+          "heteroscedastic_gaussian_linear": 0.3097374364841334,
+          "heteroscedastic_gaussian_nonlinear": 0.3164506720049935,
+          "kin8nm": 0.075304659003571,
+          "student_t_heavy_tail": 0.29254234138823376,
+          "wine_quality_white": 0.4004877387346129
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.06999999999999995,
+          "california_housing": 0.027777777777777752,
+          "diabetes": 0.04178403755868546,
+          "heteroscedastic_gaussian_linear": 0.029000000000000026,
+          "heteroscedastic_gaussian_nonlinear": 0.03400000000000003,
+          "kin8nm": 0.06999999999999999,
+          "student_t_heavy_tail": 0.023333333333333355,
+          "wine_quality_white": 0.020000000000000056
+        },
+        "mean_fit_time": 1.3394039514435765,
+        "model": "deep_ensemble",
+        "params": {
+          "batch_size": 256,
+          "hidden_size": 50,
+          "learning_rate": 0.001,
+          "max_epochs": 150,
+          "n_ensembles": 5,
+          "n_layers": 2,
+          "patience": 15
+        },
+        "row_count": 24,
+        "score": 4.200714486804381,
+        "tie_breaker_score": 0.03948689358372458,
+        "variant": "deep_ensemble__h50__lr0p001__ep150__ens5__layers2"
+      },
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/deep_ensemble.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.47124882983690336,
+          "california_housing": 0.38894452947751773,
+          "diabetes": 31.410871547553462,
+          "heteroscedastic_gaussian_linear": 0.3103491822895935,
+          "heteroscedastic_gaussian_nonlinear": 0.31836363649631305,
+          "kin8nm": 0.07936319572243909,
+          "student_t_heavy_tail": 0.2934802221632732,
+          "wine_quality_white": 0.3994927279205753
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.06633333333333329,
+          "california_housing": 0.033333333333333326,
+          "diabetes": 0.04882629107981221,
+          "heteroscedastic_gaussian_linear": 0.030000000000000027,
+          "heteroscedastic_gaussian_nonlinear": 0.04733333333333337,
+          "kin8nm": 0.08666666666666667,
+          "student_t_heavy_tail": 0.02200000000000002,
+          "wine_quality_white": 0.018888888888888917
+        },
+        "mean_fit_time": 1.0187931302449822,
+        "model": "deep_ensemble",
+        "params": {
+          "batch_size": 256,
+          "hidden_size": 100,
+          "learning_rate": 0.001,
+          "max_epochs": 150,
+          "n_ensembles": 5,
+          "n_layers": 2,
+          "patience": 15
+        },
+        "row_count": 24,
+        "score": 4.20901423393251,
+        "tie_breaker_score": 0.04417273082942098,
+        "variant": "deep_ensemble__h100__lr0p001__ep150__ens5__layers2"
+      },
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/deep_ensemble.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.47121074617986747,
+          "california_housing": 0.3945382631816384,
+          "diabetes": 31.444646145466013,
+          "heteroscedastic_gaussian_linear": 0.30930712860762877,
+          "heteroscedastic_gaussian_nonlinear": 0.3161860627697869,
+          "kin8nm": 0.07603271117977038,
+          "student_t_heavy_tail": 0.2930595337054585,
+          "wine_quality_white": 0.4015091061722007
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.06699999999999995,
+          "california_housing": 0.028888888888888853,
+          "diabetes": 0.04882629107981221,
+          "heteroscedastic_gaussian_linear": 0.023333333333333355,
+          "heteroscedastic_gaussian_nonlinear": 0.039333333333333366,
+          "kin8nm": 0.0911111111111111,
+          "student_t_heavy_tail": 0.022666666666666686,
+          "wine_quality_white": 0.015555555555555545
+        },
+        "mean_fit_time": 0.7992033521974614,
+        "model": "deep_ensemble",
+        "params": {
+          "batch_size": 256,
+          "hidden_size": 50,
+          "learning_rate": 0.001,
+          "max_epochs": 150,
+          "n_ensembles": 3,
+          "n_layers": 2,
+          "patience": 15
+        },
+        "row_count": 24,
+        "score": 4.213311212157795,
+        "tie_breaker_score": 0.04208939749608763,
+        "variant": "deep_ensemble__h50__lr0p001__ep150__ens3__layers2"
+      },
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/deep_ensemble.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.46920591291558666,
+          "california_housing": 0.40777823501676563,
+          "diabetes": 31.461468967793245,
+          "heteroscedastic_gaussian_linear": 0.30776404927434675,
+          "heteroscedastic_gaussian_nonlinear": 0.31700452490854897,
+          "kin8nm": 0.08572961936568553,
+          "student_t_heavy_tail": 0.2941219255293253,
+          "wine_quality_white": 0.401822953204155
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.07366666666666662,
+          "california_housing": 0.03444444444444442,
+          "diabetes": 0.019248826291079824,
+          "heteroscedastic_gaussian_linear": 0.02300000000000002,
+          "heteroscedastic_gaussian_nonlinear": 0.03700000000000003,
+          "kin8nm": 0.08666666666666667,
+          "student_t_heavy_tail": 0.01833333333333335,
+          "wine_quality_white": 0.01777777777777778
+        },
+        "mean_fit_time": 0.6835408992289255,
+        "model": "deep_ensemble",
+        "params": {
+          "batch_size": 256,
+          "hidden_size": 100,
+          "learning_rate": 0.001,
+          "max_epochs": 150,
+          "n_ensembles": 3,
+          "n_layers": 1,
+          "patience": 15
+        },
+        "row_count": 24,
+        "score": 4.218112023500957,
+        "tie_breaker_score": 0.03876721439749609,
+        "variant": "deep_ensemble__h100__lr0p001__ep150__ens3__layers1"
+      },
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/deep_ensemble.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.4729837938310213,
+          "california_housing": 0.39467483738343606,
+          "diabetes": 31.686057344524848,
+          "heteroscedastic_gaussian_linear": 0.30968779366361304,
+          "heteroscedastic_gaussian_nonlinear": 0.31805955366308963,
+          "kin8nm": 0.07845381778937592,
+          "student_t_heavy_tail": 0.29342504901412525,
+          "wine_quality_white": 0.40002194613701436
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.05999999999999994,
+          "california_housing": 0.03555555555555553,
+          "diabetes": 0.053521126760563385,
+          "heteroscedastic_gaussian_linear": 0.02200000000000002,
+          "heteroscedastic_gaussian_nonlinear": 0.04600000000000004,
+          "kin8nm": 0.10333333333333335,
+          "student_t_heavy_tail": 0.022333333333333354,
+          "wine_quality_white": 0.01777777777777778
+        },
+        "mean_fit_time": 0.7566359305443863,
+        "model": "deep_ensemble",
+        "params": {
+          "batch_size": 256,
+          "hidden_size": 100,
+          "learning_rate": 0.001,
+          "max_epochs": 150,
+          "n_ensembles": 3,
+          "n_layers": 2,
+          "patience": 15
+        },
+        "row_count": 24,
+        "score": 4.244170517000815,
+        "tie_breaker_score": 0.04506514084507043,
+        "variant": "deep_ensemble__h100__lr0p001__ep150__ens3__layers2"
+      }
+    ],
+    "ibug": [
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/ibug.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.4984295982736735,
+          "california_housing": 0.35142895634611104,
+          "diabetes": 32.316010798122065,
+          "heteroscedastic_gaussian_linear": 0.36362170698913404,
+          "heteroscedastic_gaussian_nonlinear": 0.35619336172144533,
+          "kin8nm": 0.11015882015223777,
+          "student_t_heavy_tail": 0.32388328802922317,
+          "wine_quality_white": 0.39044933333333337
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.012333333333333344,
+          "california_housing": 0.025555555555555515,
+          "diabetes": 0.03708920187793426,
+          "heteroscedastic_gaussian_linear": 0.007666666666666673,
+          "heteroscedastic_gaussian_nonlinear": 0.03400000000000003,
+          "kin8nm": 0.01666666666666668,
+          "student_t_heavy_tail": 0.026000000000000023,
+          "wine_quality_white": 0.026666666666666655
+        },
+        "mean_fit_time": 0.34265653654195677,
+        "model": "ibug",
+        "params": {
+          "k": 50,
+          "leaf_sample_trees": 64,
+          "learning_rate": 0.05,
+          "max_depth": 3,
+          "n_estimators": 300
+        },
+        "row_count": 24,
+        "score": 4.338771982870903,
+        "tie_breaker_score": 0.023247261345852897,
+        "variant": "ibug__k50__leaf_sample_trees64__lr0p05__md3__est300"
+      },
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/ibug.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.4984295982736735,
+          "california_housing": 0.35142895634611104,
+          "diabetes": 32.316010798122065,
+          "heteroscedastic_gaussian_linear": 0.36362170698913404,
+          "heteroscedastic_gaussian_nonlinear": 0.35619336172144533,
+          "kin8nm": 0.11015882015223777,
+          "student_t_heavy_tail": 0.32388328802922317,
+          "wine_quality_white": 0.39044933333333337
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.012333333333333344,
+          "california_housing": 0.025555555555555515,
+          "diabetes": 0.03708920187793426,
+          "heteroscedastic_gaussian_linear": 0.007666666666666673,
+          "heteroscedastic_gaussian_nonlinear": 0.03400000000000003,
+          "kin8nm": 0.01666666666666668,
+          "student_t_heavy_tail": 0.026000000000000023,
+          "wine_quality_white": 0.026666666666666655
+        },
+        "mean_fit_time": 1.109716154470031,
+        "model": "ibug",
+        "params": {
+          "k": 50,
+          "leaf_sample_trees": 64,
+          "learning_rate": 0.05,
+          "max_depth": 3,
+          "n_estimators": 1000
+        },
+        "row_count": 24,
+        "score": 4.338771982870903,
+        "tie_breaker_score": 0.023247261345852897,
+        "variant": "ibug__k50__leaf_sample_trees64__lr0p05__md3__est1000"
+      },
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/ibug.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.5080430352390657,
+          "california_housing": 0.39074408883916667,
+          "diabetes": 32.26702646713615,
+          "heteroscedastic_gaussian_linear": 0.3814497607681731,
+          "heteroscedastic_gaussian_nonlinear": 0.36050286813159105,
+          "kin8nm": 0.11316864986157443,
+          "student_t_heavy_tail": 0.32963251042731045,
+          "wine_quality_white": 0.39139819444444446
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.03033333333333336,
+          "california_housing": 0.026666666666666616,
+          "diabetes": 0.009859154929577452,
+          "heteroscedastic_gaussian_linear": 0.017000000000000015,
+          "heteroscedastic_gaussian_nonlinear": 0.008666666666666675,
+          "kin8nm": 0.018888888888888917,
+          "student_t_heavy_tail": 0.009000000000000008,
+          "wine_quality_white": 0.04
+        },
+        "mean_fit_time": 0.3393779253140868,
+        "model": "ibug",
+        "params": {
+          "k": 100,
+          "leaf_sample_trees": 64,
+          "learning_rate": 0.05,
+          "max_depth": 3,
+          "n_estimators": 300
+        },
+        "row_count": 24,
+        "score": 4.342745696855935,
+        "tie_breaker_score": 0.02005183881064163,
+        "variant": "ibug__k100__leaf_sample_trees64__lr0p05__md3__est300"
+      },
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/ibug.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.5080430352390657,
+          "california_housing": 0.39074408883916667,
+          "diabetes": 32.26702646713615,
+          "heteroscedastic_gaussian_linear": 0.3814497607681731,
+          "heteroscedastic_gaussian_nonlinear": 0.36050286813159105,
+          "kin8nm": 0.11316864986157443,
+          "student_t_heavy_tail": 0.32963251042731045,
+          "wine_quality_white": 0.39139819444444446
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.03033333333333336,
+          "california_housing": 0.026666666666666616,
+          "diabetes": 0.009859154929577452,
+          "heteroscedastic_gaussian_linear": 0.017000000000000015,
+          "heteroscedastic_gaussian_nonlinear": 0.008666666666666675,
+          "kin8nm": 0.018888888888888917,
+          "student_t_heavy_tail": 0.009000000000000008,
+          "wine_quality_white": 0.04
+        },
+        "mean_fit_time": 1.1133646736464773,
+        "model": "ibug",
+        "params": {
+          "k": 100,
+          "leaf_sample_trees": 64,
+          "learning_rate": 0.05,
+          "max_depth": 3,
+          "n_estimators": 1000
+        },
+        "row_count": 24,
+        "score": 4.342745696855935,
+        "tie_breaker_score": 0.02005183881064163,
+        "variant": "ibug__k100__leaf_sample_trees64__lr0p05__md3__est1000"
+      },
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/ibug.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.508074021668887,
+          "california_housing": 0.38786583092472227,
+          "diabetes": 32.55461936619719,
+          "heteroscedastic_gaussian_linear": 0.3820821348159351,
+          "heteroscedastic_gaussian_nonlinear": 0.3618124722807473,
+          "kin8nm": 0.11151877554068335,
+          "student_t_heavy_tail": 0.3306442231789776,
+          "wine_quality_white": 0.3886258055555556
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.022333333333333354,
+          "california_housing": 0.03777777777777772,
+          "diabetes": 0.01690140845070424,
+          "heteroscedastic_gaussian_linear": 0.001666666666666668,
+          "heteroscedastic_gaussian_nonlinear": 0.016000000000000014,
+          "kin8nm": 0.014444444444444446,
+          "student_t_heavy_tail": 0.016000000000000014,
+          "wine_quality_white": 0.03111111111111109
+        },
+        "mean_fit_time": 0.6117176181093479,
+        "model": "ibug",
+        "params": {
+          "k": 100,
+          "leaf_sample_trees": 64,
+          "learning_rate": 0.05,
+          "max_depth": 6,
+          "n_estimators": 300
+        },
+        "row_count": 24,
+        "score": 4.378155328770337,
+        "tie_breaker_score": 0.019529342723004692,
+        "variant": "ibug__k100__leaf_sample_trees64__lr0p05__md6__est300"
+      },
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/ibug.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.508074021668887,
+          "california_housing": 0.38786583092472227,
+          "diabetes": 32.55461936619719,
+          "heteroscedastic_gaussian_linear": 0.3820821348159351,
+          "heteroscedastic_gaussian_nonlinear": 0.3618124722807473,
+          "kin8nm": 0.11151877554068335,
+          "student_t_heavy_tail": 0.3306442231789776,
+          "wine_quality_white": 0.3886258055555556
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.022333333333333354,
+          "california_housing": 0.03777777777777772,
+          "diabetes": 0.01690140845070424,
+          "heteroscedastic_gaussian_linear": 0.001666666666666668,
+          "heteroscedastic_gaussian_nonlinear": 0.016000000000000014,
+          "kin8nm": 0.014444444444444446,
+          "student_t_heavy_tail": 0.016000000000000014,
+          "wine_quality_white": 0.03111111111111109
+        },
+        "mean_fit_time": 1.934898578299908,
+        "model": "ibug",
+        "params": {
+          "k": 100,
+          "leaf_sample_trees": 64,
+          "learning_rate": 0.05,
+          "max_depth": 6,
+          "n_estimators": 1000
+        },
+        "row_count": 24,
+        "score": 4.378155328770337,
+        "tie_breaker_score": 0.019529342723004692,
+        "variant": "ibug__k100__leaf_sample_trees64__lr0p05__md6__est1000"
+      },
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/ibug.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.4998360365881967,
+          "california_housing": 0.34824618215388886,
+          "diabetes": 32.73869366197183,
+          "heteroscedastic_gaussian_linear": 0.3641825265795979,
+          "heteroscedastic_gaussian_nonlinear": 0.35460286603355023,
+          "kin8nm": 0.10845428833759917,
+          "student_t_heavy_tail": 0.32224792394779195,
+          "wine_quality_white": 0.3850332222222222
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.019666666666666683,
+          "california_housing": 0.013333333333333308,
+          "diabetes": 0.059624413145539935,
+          "heteroscedastic_gaussian_linear": 0.0316666666666667,
+          "heteroscedastic_gaussian_nonlinear": 0.052000000000000046,
+          "kin8nm": 0.03555555555555556,
+          "student_t_heavy_tail": 0.041000000000000036,
+          "wine_quality_white": 0.025555555555555515
+        },
+        "mean_fit_time": 0.6187731613948321,
+        "model": "ibug",
+        "params": {
+          "k": 50,
+          "leaf_sample_trees": 64,
+          "learning_rate": 0.05,
+          "max_depth": 6,
+          "n_estimators": 300
+        },
+        "row_count": 24,
+        "score": 4.390162088479334,
+        "tie_breaker_score": 0.034800273865414726,
+        "variant": "ibug__k50__leaf_sample_trees64__lr0p05__md6__est300"
+      },
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/ibug.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.4998360365881967,
+          "california_housing": 0.34824618215388886,
+          "diabetes": 32.73869366197183,
+          "heteroscedastic_gaussian_linear": 0.3641825265795979,
+          "heteroscedastic_gaussian_nonlinear": 0.35460286603355023,
+          "kin8nm": 0.10845428833759917,
+          "student_t_heavy_tail": 0.32224792394779195,
+          "wine_quality_white": 0.3850332222222222
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.019666666666666683,
+          "california_housing": 0.013333333333333308,
+          "diabetes": 0.059624413145539935,
+          "heteroscedastic_gaussian_linear": 0.0316666666666667,
+          "heteroscedastic_gaussian_nonlinear": 0.052000000000000046,
+          "kin8nm": 0.03555555555555556,
+          "student_t_heavy_tail": 0.041000000000000036,
+          "wine_quality_white": 0.025555555555555515
+        },
+        "mean_fit_time": 1.890122632040099,
+        "model": "ibug",
+        "params": {
+          "k": 50,
+          "leaf_sample_trees": 64,
+          "learning_rate": 0.05,
+          "max_depth": 6,
+          "n_estimators": 1000
+        },
+        "row_count": 24,
+        "score": 4.390162088479334,
+        "tie_breaker_score": 0.034800273865414726,
+        "variant": "ibug__k50__leaf_sample_trees64__lr0p05__md6__est1000"
+      },
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/ibug.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.5298999272153937,
+          "california_housing": 0.4530881130041666,
+          "diabetes": 35.774925176056335,
+          "heteroscedastic_gaussian_linear": 0.41713674467975165,
+          "heteroscedastic_gaussian_nonlinear": 0.37307780911753746,
+          "kin8nm": 0.12105208423800304,
+          "student_t_heavy_tail": 0.34748982167312653,
+          "wine_quality_white": 0.40012119444444444
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.03666666666666666,
+          "california_housing": 0.043333333333333335,
+          "diabetes": 0.02018779342723002,
+          "heteroscedastic_gaussian_linear": 0.02733333333333336,
+          "heteroscedastic_gaussian_nonlinear": 0.011666666666666678,
+          "kin8nm": 0.018888888888888882,
+          "student_t_heavy_tail": 0.00733333333333334,
+          "wine_quality_white": 0.04888888888888887
+        },
+        "mean_fit_time": 0.34991726393733796,
+        "model": "ibug",
+        "params": {
+          "k": 200,
+          "leaf_sample_trees": 64,
+          "learning_rate": 0.05,
+          "max_depth": 3,
+          "n_estimators": 300
+        },
+        "row_count": 24,
+        "score": 4.802098858803594,
+        "tie_breaker_score": 0.026787363067292642,
+        "variant": "ibug__k200__leaf_sample_trees64__lr0p05__md3__est300"
+      },
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/ibug.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.5298999272153937,
+          "california_housing": 0.4530881130041666,
+          "diabetes": 35.774925176056335,
+          "heteroscedastic_gaussian_linear": 0.41713674467975165,
+          "heteroscedastic_gaussian_nonlinear": 0.37307780911753746,
+          "kin8nm": 0.12105208423800304,
+          "student_t_heavy_tail": 0.34748982167312653,
+          "wine_quality_white": 0.40012119444444444
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.03666666666666666,
+          "california_housing": 0.043333333333333335,
+          "diabetes": 0.02018779342723002,
+          "heteroscedastic_gaussian_linear": 0.02733333333333336,
+          "heteroscedastic_gaussian_nonlinear": 0.011666666666666678,
+          "kin8nm": 0.018888888888888882,
+          "student_t_heavy_tail": 0.00733333333333334,
+          "wine_quality_white": 0.04888888888888887
+        },
+        "mean_fit_time": 1.1296534861515586,
+        "model": "ibug",
+        "params": {
+          "k": 200,
+          "leaf_sample_trees": 64,
+          "learning_rate": 0.05,
+          "max_depth": 3,
+          "n_estimators": 1000
+        },
+        "row_count": 24,
+        "score": 4.802098858803594,
+        "tie_breaker_score": 0.026787363067292642,
+        "variant": "ibug__k200__leaf_sample_trees64__lr0p05__md3__est1000"
+      },
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/ibug.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.5328061228524732,
+          "california_housing": 0.4684531580705555,
+          "diabetes": 36.939807159624415,
+          "heteroscedastic_gaussian_linear": 0.4243492992697357,
+          "heteroscedastic_gaussian_nonlinear": 0.37938424685387223,
+          "kin8nm": 0.11982537797053446,
+          "student_t_heavy_tail": 0.34698214334252275,
+          "wine_quality_white": 0.3989722777777777
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.03233333333333336,
+          "california_housing": 0.037777777777777764,
+          "diabetes": 0.024882629107981186,
+          "heteroscedastic_gaussian_linear": 0.022666666666666686,
+          "heteroscedastic_gaussian_nonlinear": 0.006000000000000005,
+          "kin8nm": 0.013333333333333345,
+          "student_t_heavy_tail": 0.016000000000000014,
+          "wine_quality_white": 0.0444444444444444
+        },
+        "mean_fit_time": 0.6332373107725289,
+        "model": "ibug",
+        "params": {
+          "k": 200,
+          "leaf_sample_trees": 64,
+          "learning_rate": 0.05,
+          "max_depth": 6,
+          "n_estimators": 300
+        },
+        "row_count": 24,
+        "score": 4.951322473220236,
+        "tie_breaker_score": 0.024679773082942096,
+        "variant": "ibug__k200__leaf_sample_trees64__lr0p05__md6__est300"
+      },
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/ibug.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.5328061228524732,
+          "california_housing": 0.4684531580705555,
+          "diabetes": 36.939807159624415,
+          "heteroscedastic_gaussian_linear": 0.4243492992697357,
+          "heteroscedastic_gaussian_nonlinear": 0.37938424685387223,
+          "kin8nm": 0.11982537797053446,
+          "student_t_heavy_tail": 0.34698214334252275,
+          "wine_quality_white": 0.3989722777777777
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.03233333333333336,
+          "california_housing": 0.037777777777777764,
+          "diabetes": 0.024882629107981186,
+          "heteroscedastic_gaussian_linear": 0.022666666666666686,
+          "heteroscedastic_gaussian_nonlinear": 0.006000000000000005,
+          "kin8nm": 0.013333333333333345,
+          "student_t_heavy_tail": 0.016000000000000014,
+          "wine_quality_white": 0.0444444444444444
+        },
+        "mean_fit_time": 1.9178161510208156,
+        "model": "ibug",
+        "params": {
+          "k": 200,
+          "leaf_sample_trees": 64,
+          "learning_rate": 0.05,
+          "max_depth": 6,
+          "n_estimators": 1000
+        },
+        "row_count": 24,
+        "score": 4.951322473220236,
+        "tie_breaker_score": 0.024679773082942096,
+        "variant": "ibug__k200__leaf_sample_trees64__lr0p05__md6__est1000"
+      }
+    ],
+    "ngboost": [
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/ngboost.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.5011330164179539,
+          "california_housing": 0.33014653438308655,
+          "diabetes": 33.16104013031792,
+          "heteroscedastic_gaussian_linear": 0.33646513564516556,
+          "heteroscedastic_gaussian_nonlinear": 0.33942875680768136,
+          "kin8nm": 0.11113242302509158,
+          "student_t_heavy_tail": 0.31927048841773525,
+          "wine_quality_white": 0.41080277389126446
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.04133333333333337,
+          "california_housing": 0.11222222222222222,
+          "diabetes": 0.12769953051643193,
+          "heteroscedastic_gaussian_linear": 0.12833333333333333,
+          "heteroscedastic_gaussian_nonlinear": 0.08100000000000003,
+          "kin8nm": 0.09333333333333334,
+          "student_t_heavy_tail": 0.05100000000000001,
+          "wine_quality_white": 0.05666666666666668
+        },
+        "mean_fit_time": 0.533327468826125,
+        "model": "ngboost",
+        "params": {
+          "early_stopping_rounds": 50,
+          "learning_rate": 0.02,
+          "n_estimators": 3000
+        },
+        "row_count": 24,
+        "score": 4.438677407363238,
+        "tie_breaker_score": 0.08644855242566511,
+        "variant": "ngboost__lr0p02__est3000"
+      },
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/ngboost.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.5011225637512285,
+          "california_housing": 0.3294588060909761,
+          "diabetes": 33.22174899102297,
+          "heteroscedastic_gaussian_linear": 0.336297162586872,
+          "heteroscedastic_gaussian_nonlinear": 0.3394998638289354,
+          "kin8nm": 0.11112619202048525,
+          "student_t_heavy_tail": 0.31936753519928807,
+          "wine_quality_white": 0.4114163133958629
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.04200000000000004,
+          "california_housing": 0.11111111111111112,
+          "diabetes": 0.13004694835680752,
+          "heteroscedastic_gaussian_linear": 0.12866666666666668,
+          "heteroscedastic_gaussian_nonlinear": 0.08200000000000003,
+          "kin8nm": 0.09333333333333334,
+          "student_t_heavy_tail": 0.05133333333333334,
+          "wine_quality_white": 0.053333333333333344
+        },
+        "mean_fit_time": 0.5543454878788907,
+        "model": "ngboost",
+        "params": {
+          "early_stopping_rounds": 50,
+          "learning_rate": 0.02,
+          "n_estimators": 1000
+        },
+        "row_count": 24,
+        "score": 4.446254678487077,
+        "tie_breaker_score": 0.08647809076682318,
+        "variant": "ngboost__lr0p02__est1000"
+      },
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/ngboost.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.5077650626936595,
+          "california_housing": 0.32602874741164556,
+          "diabetes": 34.330108296021024,
+          "heteroscedastic_gaussian_linear": 0.3397972176827163,
+          "heteroscedastic_gaussian_nonlinear": 0.34131326465223016,
+          "kin8nm": 0.11136830311989207,
+          "student_t_heavy_tail": 0.3189715607775709,
+          "wine_quality_white": 0.42052407983505896
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.08733333333333337,
+          "california_housing": 0.17444444444444449,
+          "diabetes": 0.2521126760563381,
+          "heteroscedastic_gaussian_linear": 0.1656666666666667,
+          "heteroscedastic_gaussian_nonlinear": 0.12433333333333334,
+          "kin8nm": 0.17666666666666672,
+          "student_t_heavy_tail": 0.09900000000000002,
+          "wine_quality_white": 0.1377777777777778
+        },
+        "mean_fit_time": 0.29643773261341266,
+        "model": "ngboost",
+        "params": {
+          "early_stopping_rounds": 50,
+          "learning_rate": 0.05,
+          "n_estimators": 3000
+        },
+        "row_count": 24,
+        "score": 4.586984566524225,
+        "tie_breaker_score": 0.15216686228482007,
+        "variant": "ngboost__lr0p05__est3000"
+      },
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/ngboost.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.5077650626936595,
+          "california_housing": 0.32602874741164556,
+          "diabetes": 34.330108296021024,
+          "heteroscedastic_gaussian_linear": 0.3397972176827163,
+          "heteroscedastic_gaussian_nonlinear": 0.34131326465223016,
+          "kin8nm": 0.11136830311989207,
+          "student_t_heavy_tail": 0.3189715607775709,
+          "wine_quality_white": 0.42052407983505896
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.08733333333333337,
+          "california_housing": 0.17444444444444449,
+          "diabetes": 0.2521126760563381,
+          "heteroscedastic_gaussian_linear": 0.1656666666666667,
+          "heteroscedastic_gaussian_nonlinear": 0.12433333333333334,
+          "kin8nm": 0.17666666666666672,
+          "student_t_heavy_tail": 0.09900000000000002,
+          "wine_quality_white": 0.1377777777777778
+        },
+        "mean_fit_time": 0.30412954155084054,
+        "model": "ngboost",
+        "params": {
+          "early_stopping_rounds": 50,
+          "learning_rate": 0.05,
+          "n_estimators": 1000
+        },
+        "row_count": 24,
+        "score": 4.586984566524225,
+        "tie_breaker_score": 0.15216686228482007,
+        "variant": "ngboost__lr0p05__est1000"
+      },
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/ngboost.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.5274958266402517,
+          "california_housing": 0.3303556104058832,
+          "diabetes": 36.92693990953322,
+          "heteroscedastic_gaussian_linear": 0.3483716431333863,
+          "heteroscedastic_gaussian_nonlinear": 0.3483960921964005,
+          "kin8nm": 0.11440816288461711,
+          "student_t_heavy_tail": 0.32571414974817986,
+          "wine_quality_white": 0.4327040840695032
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.16700000000000004,
+          "california_housing": 0.27444444444444444,
+          "diabetes": 0.39765258215962446,
+          "heteroscedastic_gaussian_linear": 0.20800000000000005,
+          "heteroscedastic_gaussian_nonlinear": 0.17300000000000004,
+          "kin8nm": 0.30111111111111116,
+          "student_t_heavy_tail": 0.1436666666666667,
+          "wine_quality_white": 0.2188888888888889
+        },
+        "mean_fit_time": 0.21293046350668496,
+        "model": "ngboost",
+        "params": {
+          "early_stopping_rounds": 50,
+          "learning_rate": 0.1,
+          "n_estimators": 1000
+        },
+        "row_count": 24,
+        "score": 4.91929818482643,
+        "tie_breaker_score": 0.23547046165884197,
+        "variant": "ngboost__lr0p1__est1000"
+      },
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/ngboost.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.5274958266402517,
+          "california_housing": 0.3303556104058832,
+          "diabetes": 36.92693990953322,
+          "heteroscedastic_gaussian_linear": 0.3483716431333863,
+          "heteroscedastic_gaussian_nonlinear": 0.3483960921964005,
+          "kin8nm": 0.11440816288461711,
+          "student_t_heavy_tail": 0.32571414974817986,
+          "wine_quality_white": 0.4327040840695032
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.16700000000000004,
+          "california_housing": 0.27444444444444444,
+          "diabetes": 0.39765258215962446,
+          "heteroscedastic_gaussian_linear": 0.20800000000000005,
+          "heteroscedastic_gaussian_nonlinear": 0.17300000000000004,
+          "kin8nm": 0.30111111111111116,
+          "student_t_heavy_tail": 0.1436666666666667,
+          "wine_quality_white": 0.2188888888888889
+        },
+        "mean_fit_time": 0.21973778480120623,
+        "model": "ngboost",
+        "params": {
+          "early_stopping_rounds": 50,
+          "learning_rate": 0.1,
+          "n_estimators": 3000
+        },
+        "row_count": 24,
+        "score": 4.91929818482643,
+        "tie_breaker_score": 0.23547046165884197,
+        "variant": "ngboost__lr0p1__est3000"
+      }
+    ],
+    "qreg_lightgbm": [
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/qreg_lightgbm.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.4899328186715285,
+          "california_housing": 0.30342181222016057,
+          "diabetes": 31.899783451047977,
+          "heteroscedastic_gaussian_linear": 0.34353366785285666,
+          "heteroscedastic_gaussian_nonlinear": 0.34405994319757094,
+          "kin8nm": 0.09890806487123484,
+          "student_t_heavy_tail": 0.30878335310511595,
+          "wine_quality_white": 0.3934200784476943
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.12466666666666666,
+          "california_housing": 0.06111111111111115,
+          "diabetes": 0.09248826291079815,
+          "heteroscedastic_gaussian_linear": 0.10133333333333334,
+          "heteroscedastic_gaussian_nonlinear": 0.09366666666666663,
+          "kin8nm": 0.08000000000000003,
+          "student_t_heavy_tail": 0.0346666666666667,
+          "wine_quality_white": 0.008888888888888946
+        },
+        "mean_fit_time": 12.630202097071257,
+        "model": "qreg_lightgbm",
+        "params": {
+          "early_stopping_rounds": 30,
+          "learning_rate": 0.1,
+          "min_child_samples": 20,
+          "n_estimators": 500,
+          "n_jobs": -1,
+          "num_leaves": 31,
+          "quantile_count": 31
+        },
+        "row_count": 24,
+        "score": 4.272730398676767,
+        "tie_breaker_score": 0.07460269953051646,
+        "variant": "qreg_lightgbm__lr0p1__est500__leaves31__q31"
+      },
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/qreg_lightgbm.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.4887656191066964,
+          "california_housing": 0.30580337656217604,
+          "diabetes": 31.950368614943173,
+          "heteroscedastic_gaussian_linear": 0.34333753608637324,
+          "heteroscedastic_gaussian_nonlinear": 0.3450494847971134,
+          "kin8nm": 0.10001265056671328,
+          "student_t_heavy_tail": 0.3091404252123891,
+          "wine_quality_white": 0.3955162237587522
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.139,
+          "california_housing": 0.07333333333333336,
+          "diabetes": 0.09248826291079819,
+          "heteroscedastic_gaussian_linear": 0.09733333333333331,
+          "heteroscedastic_gaussian_nonlinear": 0.10466666666666664,
+          "kin8nm": 0.08000000000000003,
+          "student_t_heavy_tail": 0.02833333333333336,
+          "wine_quality_white": 0.008888888888888872
+        },
+        "mean_fit_time": 18.741456909803674,
+        "model": "qreg_lightgbm",
+        "params": {
+          "early_stopping_rounds": 30,
+          "learning_rate": 0.05,
+          "min_child_samples": 20,
+          "n_estimators": 500,
+          "n_jobs": -1,
+          "num_leaves": 31,
+          "quantile_count": 31
+        },
+        "row_count": 24,
+        "score": 4.279749241379173,
+        "tie_breaker_score": 0.07800547730829423,
+        "variant": "qreg_lightgbm__lr0p05__est500__leaves31__q31"
+      },
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/qreg_lightgbm.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.48919122133187,
+          "california_housing": 0.3032882729638429,
+          "diabetes": 31.984449882906013,
+          "heteroscedastic_gaussian_linear": 0.344285108461415,
+          "heteroscedastic_gaussian_nonlinear": 0.3448628008348056,
+          "kin8nm": 0.09998547612627409,
+          "student_t_heavy_tail": 0.30929797212548427,
+          "wine_quality_white": 0.395510737921767
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.14333333333333334,
+          "california_housing": 0.10111111111111111,
+          "diabetes": 0.09248826291079815,
+          "heteroscedastic_gaussian_linear": 0.09966666666666668,
+          "heteroscedastic_gaussian_nonlinear": 0.11733333333333333,
+          "kin8nm": 0.08666666666666671,
+          "student_t_heavy_tail": 0.04333333333333337,
+          "wine_quality_white": 0.026666666666666655
+        },
+        "mean_fit_time": 12.888490696098112,
+        "model": "qreg_lightgbm",
+        "params": {
+          "early_stopping_rounds": 30,
+          "learning_rate": 0.05,
+          "min_child_samples": 20,
+          "n_estimators": 500,
+          "n_jobs": -1,
+          "num_leaves": 31,
+          "quantile_count": 21
+        },
+        "row_count": 24,
+        "score": 4.283858934083934,
+        "tie_breaker_score": 0.08882492175273866,
+        "variant": "qreg_lightgbm__lr0p05__est500__leaves31__q21"
+      },
+      {
+        "config": "benchmarks/configs/probabilistic_baseline_hyperparams/qreg_lightgbm.yaml",
+        "dataset_count": 8,
+        "dataset_scores": {
+          "bimodal_mixture": 0.48996243023319475,
+          "california_housing": 0.3031939588588307,
+          "diabetes": 32.084858846090604,
+          "heteroscedastic_gaussian_linear": 0.3444289736351987,
+          "heteroscedastic_gaussian_nonlinear": 0.3454153237980635,
+          "kin8nm": 0.09933570775091524,
+          "student_t_heavy_tail": 0.3089694211465959,
+          "wine_quality_white": 0.39597460364847786
+        },
+        "dataset_tie_breaker_scores": {
+          "bimodal_mixture": 0.15700000000000003,
+          "california_housing": 0.09555555555555557,
+          "diabetes": 0.0948356807511737,
+          "heteroscedastic_gaussian_linear": 0.10600000000000002,
+          "heteroscedastic_gaussian_nonlinear": 0.12466666666666666,
+          "kin8nm": 0.08666666666666671,
+          "student_t_heavy_tail": 0.040000000000000036,
+          "wine_quality_white": 0.02777777777777779
+        },
+        "mean_fit_time": 8.757747915117458,
+        "model": "qreg_lightgbm",
+        "params": {
+          "early_stopping_rounds": 30,
+          "learning_rate": 0.1,
+          "min_child_samples": 20,
+          "n_estimators": 500,
+          "n_jobs": -1,
+          "num_leaves": 31,
+          "quantile_count": 21
+        },
+        "row_count": 24,
+        "score": 4.2965174081452355,
+        "tie_breaker_score": 0.09156279342723006,
+        "variant": "qreg_lightgbm__lr0p1__est500__leaves31__q21"
+      }
+    ]
+  },
+  "winners": {
+    "catboost_uncertainty": {
+      "dataset_count": 8,
+      "model": "catboost_uncertainty",
+      "params": {
+        "depth": 4,
+        "early_stopping_rounds": 50,
+        "iterations": 3000,
+        "learning_rate": 0.05,
+        "thread_count": -1
+      },
+      "row_count": 24,
+      "score": 4.216832085146955,
+      "selected_from_config": "benchmarks/configs/probabilistic_baseline_hyperparams/catboost_uncertainty.yaml",
+      "tie_breaker_score": 0.05553188575899846,
+      "variant": "catboost_uncertainty__d4__it3000__lr0p05"
+    },
+    "deep_ensemble": {
+      "dataset_count": 8,
+      "model": "deep_ensemble",
+      "params": {
+        "batch_size": 256,
+        "hidden_size": 50,
+        "learning_rate": 0.001,
+        "max_epochs": 150,
+        "n_ensembles": 5,
+        "n_layers": 1,
+        "patience": 15
+      },
+      "row_count": 24,
+      "score": 4.136656140116865,
+      "selected_from_config": "benchmarks/configs/probabilistic_baseline_hyperparams/deep_ensemble.yaml",
+      "tie_breaker_score": 0.03351447574334899,
+      "variant": "deep_ensemble__h50__lr0p001__ep150__ens5__layers1"
+    },
+    "ibug": {
+      "dataset_count": 8,
+      "model": "ibug",
+      "params": {
+        "k": 100,
+        "leaf_sample_trees": 64,
+        "learning_rate": 0.05,
+        "max_depth": 3,
+        "n_estimators": 300
+      },
+      "row_count": 24,
+      "score": 4.342745696855935,
+      "selected_from_config": "benchmarks/configs/probabilistic_baseline_hyperparams/ibug.yaml",
+      "tie_breaker_score": 0.02005183881064163,
+      "variant": "ibug__k100__leaf_sample_trees64__lr0p05__md3__est300"
+    },
+    "ngboost": {
+      "dataset_count": 8,
+      "model": "ngboost",
+      "params": {
+        "early_stopping_rounds": 50,
+        "learning_rate": 0.02,
+        "n_estimators": 3000
+      },
+      "row_count": 24,
+      "score": 4.438677407363238,
+      "selected_from_config": "benchmarks/configs/probabilistic_baseline_hyperparams/ngboost.yaml",
+      "tie_breaker_score": 0.08644855242566511,
+      "variant": "ngboost__lr0p02__est3000"
+    },
+    "qreg_lightgbm": {
+      "dataset_count": 8,
+      "model": "qreg_lightgbm",
+      "params": {
+        "early_stopping_rounds": 30,
+        "learning_rate": 0.1,
+        "min_child_samples": 20,
+        "n_estimators": 500,
+        "n_jobs": -1,
+        "num_leaves": 31,
+        "quantile_count": 31
+      },
+      "row_count": 24,
+      "score": 4.272730398676767,
+      "selected_from_config": "benchmarks/configs/probabilistic_baseline_hyperparams/qreg_lightgbm.yaml",
+      "tie_breaker_score": 0.07460269953051646,
+      "variant": "qreg_lightgbm__lr0p1__est500__leaves31__q31"
+    }
+  }
+}

@@ -1,0 +1,877 @@
+[
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.02,
+    "per_slice_rmse":86.7177274798,
+    "per_slice_relative_rmse":1.0140587642
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.06,
+    "per_slice_rmse":63.7124815435,
+    "per_slice_relative_rmse":1.0097664925
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.1,
+    "per_slice_rmse":46.7499054354,
+    "per_slice_relative_rmse":1.0041957315
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.14,
+    "per_slice_rmse":34.2748699549,
+    "per_slice_relative_rmse":0.997825618
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.18,
+    "per_slice_rmse":24.9785107956,
+    "per_slice_relative_rmse":0.9855679597
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.22,
+    "per_slice_rmse":18.0492604633,
+    "per_slice_relative_rmse":0.9652074067
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.26,
+    "per_slice_rmse":12.930174551,
+    "per_slice_relative_rmse":0.9371450622
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.3,
+    "per_slice_rmse":9.0216317824,
+    "per_slice_relative_rmse":0.886193848
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.34,
+    "per_slice_rmse":6.1295149979,
+    "per_slice_relative_rmse":0.8160390569
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.38,
+    "per_slice_rmse":4.0601677062,
+    "per_slice_relative_rmse":0.7326052147
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.42,
+    "per_slice_rmse":2.6105301358,
+    "per_slice_relative_rmse":0.6384045063
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.46,
+    "per_slice_rmse":1.671559769,
+    "per_slice_relative_rmse":0.5540262506
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.5,
+    "per_slice_rmse":1.2337493005,
+    "per_slice_relative_rmse":0.5542128
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.54,
+    "per_slice_rmse":0.9359864707,
+    "per_slice_relative_rmse":0.5698498045
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.58,
+    "per_slice_rmse":0.6770188854,
+    "per_slice_relative_rmse":0.5586410119
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.62,
+    "per_slice_rmse":0.4509277019,
+    "per_slice_relative_rmse":0.5042897584
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.66,
+    "per_slice_rmse":0.2810739356,
+    "per_slice_relative_rmse":0.426024923
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.7,
+    "per_slice_rmse":0.1682999406,
+    "per_slice_relative_rmse":0.3457320125
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.74,
+    "per_slice_rmse":0.0966865076,
+    "per_slice_relative_rmse":0.2691923446
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.78,
+    "per_slice_rmse":0.0548282672,
+    "per_slice_relative_rmse":0.206891454
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.82,
+    "per_slice_rmse":0.0316627558,
+    "per_slice_relative_rmse":0.1619302335
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.86,
+    "per_slice_rmse":0.0183867474,
+    "per_slice_relative_rmse":0.1274457448
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.9,
+    "per_slice_rmse":0.0110268446,
+    "per_slice_relative_rmse":0.1035888198
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.94,
+    "per_slice_rmse":0.0069214442,
+    "per_slice_relative_rmse":0.0881250857
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.98,
+    "per_slice_rmse":0.0044834191,
+    "per_slice_relative_rmse":0.0773665746
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.02,
+    "per_slice_rmse":0.089333479,
+    "per_slice_relative_rmse":1.0140587643
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.06,
+    "per_slice_rmse":0.1205627872,
+    "per_slice_relative_rmse":1.0097664925
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.1,
+    "per_slice_rmse":0.1624994499,
+    "per_slice_relative_rmse":1.0041957315
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.14,
+    "per_slice_rmse":0.2188413443,
+    "per_slice_relative_rmse":0.9978256181
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.18,
+    "per_slice_rmse":0.2929560695,
+    "per_slice_relative_rmse":0.9855679596
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.22,
+    "per_slice_rmse":0.3888461198,
+    "per_slice_relative_rmse":0.9652074066
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.26,
+    "per_slice_rmse":0.5116878972,
+    "per_slice_relative_rmse":0.9371450623
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.3,
+    "per_slice_rmse":0.6557952311,
+    "per_slice_relative_rmse":0.886193848
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.34,
+    "per_slice_rmse":0.8184490868,
+    "per_slice_relative_rmse":0.8160390569
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.38,
+    "per_slice_rmse":0.9958454159,
+    "per_slice_relative_rmse":0.7326052144
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.42,
+    "per_slice_rmse":1.1761401255,
+    "per_slice_relative_rmse":0.6384045062
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.46,
+    "per_slice_rmse":1.383358253,
+    "per_slice_relative_rmse":0.5540262506
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.5,
+    "per_slice_rmse":1.875521619,
+    "per_slice_relative_rmse":0.5542128002
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.54,
+    "per_slice_rmse":2.6136481715,
+    "per_slice_relative_rmse":0.5698498045
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.58,
+    "per_slice_rmse":3.4726477929,
+    "per_slice_relative_rmse":0.5586410121
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.62,
+    "per_slice_rmse":4.2486335109,
+    "per_slice_relative_rmse":0.5042897585
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.66,
+    "per_slice_rmse":4.8645797597,
+    "per_slice_relative_rmse":0.426024923
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.7,
+    "per_slice_rmse":5.3504599278,
+    "per_slice_relative_rmse":0.3457320124
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.74,
+    "per_slice_rmse":5.6461891929,
+    "per_slice_relative_rmse":0.2691923445
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.78,
+    "per_slice_rmse":5.8813425213,
+    "per_slice_relative_rmse":0.2068914539
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.82,
+    "per_slice_rmse":6.2388287271,
+    "per_slice_relative_rmse":0.1619302335
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.86,
+    "per_slice_rmse":6.6549019463,
+    "per_slice_relative_rmse":0.1274457449
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.9,
+    "per_slice_rmse":7.3311213047,
+    "per_slice_relative_rmse":0.1035888197
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.94,
+    "per_slice_rmse":8.4527548295,
+    "per_slice_relative_rmse":0.0881250856
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.98,
+    "per_slice_rmse":10.0575751665,
+    "per_slice_relative_rmse":0.0773665742
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.02,
+    "per_slice_rmse":1.0095515228,
+    "per_slice_relative_rmse":1.0140587643
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.06,
+    "per_slice_rmse":1.0052783292,
+    "per_slice_relative_rmse":1.0097664926
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.1,
+    "per_slice_rmse":0.9997323288,
+    "per_slice_relative_rmse":1.0041957315
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.14,
+    "per_slice_rmse":0.9933905288,
+    "per_slice_relative_rmse":0.997825618
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.18,
+    "per_slice_rmse":0.9811873526,
+    "per_slice_relative_rmse":0.9855679595
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.22,
+    "per_slice_rmse":0.9609172973,
+    "per_slice_relative_rmse":0.9652074066
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.26,
+    "per_slice_rmse":0.9329796832,
+    "per_slice_relative_rmse":0.9371450623
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.3,
+    "per_slice_rmse":0.8822549345,
+    "per_slice_relative_rmse":0.8861938479
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.34,
+    "per_slice_rmse":0.8124119642,
+    "per_slice_relative_rmse":0.8160390569
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.38,
+    "per_slice_rmse":0.729348965,
+    "per_slice_relative_rmse":0.7326052147
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.42,
+    "per_slice_rmse":0.6355669556,
+    "per_slice_relative_rmse":0.6384045064
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.46,
+    "per_slice_rmse":0.5515637402,
+    "per_slice_relative_rmse":0.5540262505
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.5,
+    "per_slice_rmse":0.5517494605,
+    "per_slice_relative_rmse":0.5542128
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.54,
+    "per_slice_rmse":0.5673169625,
+    "per_slice_relative_rmse":0.5698498045
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.58,
+    "per_slice_rmse":0.5561579903,
+    "per_slice_relative_rmse":0.558641012
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.62,
+    "per_slice_rmse":0.5020483146,
+    "per_slice_relative_rmse":0.5042897584
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.66,
+    "per_slice_rmse":0.424131347,
+    "per_slice_relative_rmse":0.4260249229
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.7,
+    "per_slice_rmse":0.3441953188,
+    "per_slice_relative_rmse":0.3457320124
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.74,
+    "per_slice_rmse":0.2679958508,
+    "per_slice_relative_rmse":0.2691923445
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.78,
+    "per_slice_rmse":0.2059718723,
+    "per_slice_relative_rmse":0.2068914538
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.82,
+    "per_slice_rmse":0.1612104933,
+    "per_slice_relative_rmse":0.1619302334
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.86,
+    "per_slice_rmse":0.1268792799,
+    "per_slice_relative_rmse":0.1274457449
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.9,
+    "per_slice_rmse":0.1031283929,
+    "per_slice_relative_rmse":0.1035888196
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.94,
+    "per_slice_rmse":0.0877333914,
+    "per_slice_relative_rmse":0.0881250858
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.98,
+    "per_slice_rmse":0.077022699,
+    "per_slice_relative_rmse":0.0773665743
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.02,
+    "per_slice_rmse":2.1825038945,
+    "per_slice_relative_rmse":0.964221898
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.06,
+    "per_slice_rmse":1.776477424,
+    "per_slice_relative_rmse":0.803193651
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.1,
+    "per_slice_rmse":1.4567417494,
+    "per_slice_relative_rmse":0.666096276
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.14,
+    "per_slice_rmse":1.2627037672,
+    "per_slice_relative_rmse":0.5854521634
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.18,
+    "per_slice_rmse":1.2757735088,
+    "per_slice_relative_rmse":0.6020119882
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.22,
+    "per_slice_rmse":1.3314381725,
+    "per_slice_relative_rmse":0.6420070216
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.26,
+    "per_slice_rmse":1.3897929966,
+    "per_slice_relative_rmse":0.6876990125
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.3,
+    "per_slice_rmse":1.3925000572,
+    "per_slice_relative_rmse":0.7102523461
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.34,
+    "per_slice_rmse":1.3933551873,
+    "per_slice_relative_rmse":0.7360305934
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.38,
+    "per_slice_rmse":1.3652874647,
+    "per_slice_relative_rmse":0.7506579688
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.42,
+    "per_slice_rmse":1.3231126294,
+    "per_slice_relative_rmse":0.7611982882
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.46,
+    "per_slice_rmse":1.2584429187,
+    "per_slice_relative_rmse":0.761829919
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.5,
+    "per_slice_rmse":1.1920447636,
+    "per_slice_relative_rmse":0.7638887181
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.54,
+    "per_slice_rmse":1.1254359554,
+    "per_slice_relative_rmse":0.768271165
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.58,
+    "per_slice_rmse":1.0502832,
+    "per_slice_relative_rmse":0.7688733962
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.62,
+    "per_slice_rmse":0.9704647734,
+    "per_slice_relative_rmse":0.7672464734
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.66,
+    "per_slice_rmse":0.8903832507,
+    "per_slice_relative_rmse":0.7658425028
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.7,
+    "per_slice_rmse":0.811166912,
+    "per_slice_relative_rmse":0.7649290292
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.74,
+    "per_slice_rmse":0.7299273959,
+    "per_slice_relative_rmse":0.7606929878
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.78,
+    "per_slice_rmse":0.6519137104,
+    "per_slice_relative_rmse":0.7570505312
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.82,
+    "per_slice_rmse":0.5820619492,
+    "per_slice_relative_rmse":0.7596184601
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.86,
+    "per_slice_rmse":0.5119290703,
+    "per_slice_relative_rmse":0.7573524604
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.9,
+    "per_slice_rmse":0.4465774035,
+    "per_slice_relative_rmse":0.7555867918
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.94,
+    "per_slice_rmse":0.3854931336,
+    "per_slice_relative_rmse":0.7526475424
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.98,
+    "per_slice_rmse":0.3301641706,
+    "per_slice_relative_rmse":0.7506122547
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.02,
+    "per_slice_rmse":1.0216718602,
+    "per_slice_relative_rmse":0.7286757021
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.06,
+    "per_slice_rmse":1.003819766,
+    "per_slice_relative_rmse":0.7159432507
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.1,
+    "per_slice_rmse":0.9484470892,
+    "per_slice_relative_rmse":0.6764504099
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.14,
+    "per_slice_rmse":0.8777020697,
+    "per_slice_relative_rmse":0.6259937234
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.18,
+    "per_slice_rmse":0.8147353418,
+    "per_slice_relative_rmse":0.5810846617
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.22,
+    "per_slice_rmse":0.7502404779,
+    "per_slice_relative_rmse":0.5350857044
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.26,
+    "per_slice_rmse":0.7285710522,
+    "per_slice_relative_rmse":0.51963066
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.3,
+    "per_slice_rmse":0.7796378539,
+    "per_slice_relative_rmse":0.5560524692
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.34,
+    "per_slice_rmse":0.8319642527,
+    "per_slice_relative_rmse":0.5933726469
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.38,
+    "per_slice_rmse":0.9157493715,
+    "per_slice_relative_rmse":0.653129779
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.42,
+    "per_slice_rmse":0.973015976,
+    "per_slice_relative_rmse":0.6939734049
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.46,
+    "per_slice_rmse":1.0216669173,
+    "per_slice_relative_rmse":0.7286721767
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.5,
+    "per_slice_rmse":1.0484277031,
+    "per_slice_relative_rmse":0.7477584755
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.54,
+    "per_slice_rmse":1.0643137912,
+    "per_slice_relative_rmse":0.7590887341
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.58,
+    "per_slice_rmse":1.054396623,
+    "per_slice_relative_rmse":0.7520156221
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.62,
+    "per_slice_rmse":1.0437691968,
+    "per_slice_relative_rmse":0.7444359407
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.66,
+    "per_slice_rmse":1.0304922057,
+    "per_slice_relative_rmse":0.7349665394
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.7,
+    "per_slice_rmse":1.0030960848,
+    "per_slice_relative_rmse":0.7154271076
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.74,
+    "per_slice_rmse":0.9750210256,
+    "per_slice_relative_rmse":0.6954034442
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.78,
+    "per_slice_rmse":0.9402783047,
+    "per_slice_relative_rmse":0.6706242782
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.82,
+    "per_slice_rmse":0.9028414693,
+    "per_slice_relative_rmse":0.6439236189
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.86,
+    "per_slice_rmse":0.8706714543,
+    "per_slice_relative_rmse":0.6209793555
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.9,
+    "per_slice_rmse":0.8362467025,
+    "per_slice_relative_rmse":0.5964269711
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.94,
+    "per_slice_rmse":0.8009388456,
+    "per_slice_relative_rmse":0.5712447395
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.98,
+    "per_slice_rmse":0.7696003432,
+    "per_slice_relative_rmse":0.5488935266
+  }
+]

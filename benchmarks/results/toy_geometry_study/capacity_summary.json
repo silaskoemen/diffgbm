@@ -1,0 +1,602 @@
+[
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.1,
+    "n_estimators":5,
+    "capacity_rmse":46.3575683185,
+    "capacity_relative_rmse":0.9957682651
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.1,
+    "n_estimators":15,
+    "capacity_rmse":46.2744501262,
+    "capacity_relative_rmse":0.9939828725
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.1,
+    "n_estimators":45,
+    "capacity_rmse":46.4771755546,
+    "capacity_relative_rmse":0.9983374484
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.1,
+    "n_estimators":135,
+    "capacity_rmse":46.9271650435,
+    "capacity_relative_rmse":1.0080032973
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.1,
+    "n_estimators":400,
+    "capacity_rmse":47.7458362798,
+    "capacity_relative_rmse":1.0255884914
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.5,
+    "n_estimators":5,
+    "capacity_rmse":1.8627198335,
+    "capacity_relative_rmse":0.8367527943
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.5,
+    "n_estimators":15,
+    "capacity_rmse":1.5110022618,
+    "capacity_relative_rmse":0.678757665
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.5,
+    "n_estimators":45,
+    "capacity_rmse":1.270362629,
+    "capacity_relative_rmse":0.5706598816
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.5,
+    "n_estimators":135,
+    "capacity_rmse":1.2304940747,
+    "capacity_relative_rmse":0.5527505193
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.5,
+    "n_estimators":400,
+    "capacity_rmse":1.2496669256,
+    "capacity_relative_rmse":0.56136316
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.9,
+    "n_estimators":5,
+    "capacity_rmse":0.0748279555,
+    "capacity_relative_rmse":0.7029517393
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.9,
+    "n_estimators":15,
+    "capacity_rmse":0.0381404943,
+    "capacity_relative_rmse":0.3583009402
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.9,
+    "n_estimators":45,
+    "capacity_rmse":0.0119069142,
+    "capacity_relative_rmse":0.1118564048
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.9,
+    "n_estimators":135,
+    "capacity_rmse":0.0110640157,
+    "capacity_relative_rmse":0.1039380141
+  },
+  {
+    "variant":"ve_score",
+    "label":"VE score",
+    "t":0.9,
+    "n_estimators":400,
+    "capacity_rmse":0.0112057115,
+    "capacity_relative_rmse":0.1052691379
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.1,
+    "n_estimators":5,
+    "capacity_rmse":0.1611357132,
+    "capacity_relative_rmse":0.995768265
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.1,
+    "n_estimators":15,
+    "capacity_rmse":0.1608468,
+    "capacity_relative_rmse":0.9939828724
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.1,
+    "n_estimators":45,
+    "capacity_rmse":0.1615514597,
+    "capacity_relative_rmse":0.9983374484
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.1,
+    "n_estimators":135,
+    "capacity_rmse":0.1631155921,
+    "capacity_relative_rmse":1.0080032973
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.1,
+    "n_estimators":400,
+    "capacity_rmse":0.1659612369,
+    "capacity_relative_rmse":1.0255884915
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.5,
+    "n_estimators":5,
+    "capacity_rmse":2.8316703554,
+    "capacity_relative_rmse":0.836752795
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.5,
+    "n_estimators":15,
+    "capacity_rmse":2.2969961648,
+    "capacity_relative_rmse":0.6787576659
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.5,
+    "n_estimators":45,
+    "capacity_rmse":1.9311804875,
+    "capacity_relative_rmse":0.5706598819
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.5,
+    "n_estimators":135,
+    "capacity_rmse":1.8705730882,
+    "capacity_relative_rmse":0.5527505195
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.5,
+    "n_estimators":400,
+    "capacity_rmse":1.8997192818,
+    "capacity_relative_rmse":0.56136316
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.9,
+    "n_estimators":5,
+    "capacity_rmse":49.7488482961,
+    "capacity_relative_rmse":0.7029517401
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.9,
+    "n_estimators":15,
+    "capacity_rmse":25.3574436367,
+    "capacity_relative_rmse":0.3583009404
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.9,
+    "n_estimators":45,
+    "capacity_rmse":7.9162294941,
+    "capacity_relative_rmse":0.1118564045
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.9,
+    "n_estimators":135,
+    "capacity_rmse":7.3558342624,
+    "capacity_relative_rmse":0.1039380141
+  },
+  {
+    "variant":"ve_raw_velocity",
+    "label":"VE raw velocity",
+    "t":0.9,
+    "n_estimators":400,
+    "capacity_rmse":7.4500396954,
+    "capacity_relative_rmse":0.1052691378
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.1,
+    "n_estimators":5,
+    "capacity_rmse":0.9913423204,
+    "capacity_relative_rmse":0.9957682651
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.1,
+    "n_estimators":15,
+    "capacity_rmse":0.9895648634,
+    "capacity_relative_rmse":0.9939828725
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.1,
+    "n_estimators":45,
+    "capacity_rmse":0.9939000842,
+    "capacity_relative_rmse":0.9983374483
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.1,
+    "n_estimators":135,
+    "capacity_rmse":1.0035229709,
+    "capacity_relative_rmse":1.0080032973
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.1,
+    "n_estimators":400,
+    "capacity_rmse":1.0210300032,
+    "capacity_relative_rmse":1.0255884915
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.5,
+    "n_estimators":5,
+    "capacity_rmse":0.8330336339,
+    "capacity_relative_rmse":0.8367527941
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.5,
+    "n_estimators":15,
+    "capacity_rmse":0.6757407542,
+    "capacity_relative_rmse":0.6787576648
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.5,
+    "n_estimators":45,
+    "capacity_rmse":0.5681234388,
+    "capacity_relative_rmse":0.5706598814
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.5,
+    "n_estimators":135,
+    "capacity_rmse":0.5502936795,
+    "capacity_relative_rmse":0.5527505194
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.5,
+    "n_estimators":400,
+    "capacity_rmse":0.558868039,
+    "capacity_relative_rmse":0.56136316
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.9,
+    "n_estimators":5,
+    "capacity_rmse":0.6998272927,
+    "capacity_relative_rmse":0.7029517401
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.9,
+    "n_estimators":15,
+    "capacity_rmse":0.3567083816,
+    "capacity_relative_rmse":0.358300941
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.9,
+    "n_estimators":45,
+    "capacity_rmse":0.1113592304,
+    "capacity_relative_rmse":0.1118564045
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.9,
+    "n_estimators":135,
+    "capacity_rmse":0.1034760351,
+    "capacity_relative_rmse":0.103938014
+  },
+  {
+    "variant":"ve_edm_noise",
+    "label":"VE EDM\/noise",
+    "t":0.9,
+    "n_estimators":400,
+    "capacity_rmse":0.1048012423,
+    "capacity_relative_rmse":0.1052691377
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.1,
+    "n_estimators":5,
+    "capacity_rmse":1.9085150018,
+    "capacity_relative_rmse":0.8726699402
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.1,
+    "n_estimators":15,
+    "capacity_rmse":1.6260755397,
+    "capacity_relative_rmse":0.7435242807
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.1,
+    "n_estimators":45,
+    "capacity_rmse":1.4617172185,
+    "capacity_relative_rmse":0.668371313
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.1,
+    "n_estimators":135,
+    "capacity_rmse":1.4631399768,
+    "capacity_relative_rmse":0.6690218703
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.1,
+    "n_estimators":400,
+    "capacity_rmse":1.4891015101,
+    "capacity_relative_rmse":0.6808928012
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.5,
+    "n_estimators":5,
+    "capacity_rmse":1.3824064067,
+    "capacity_relative_rmse":0.8858766803
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.5,
+    "n_estimators":15,
+    "capacity_rmse":1.2352936765,
+    "capacity_relative_rmse":0.7916035806
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.5,
+    "n_estimators":45,
+    "capacity_rmse":1.1875483079,
+    "capacity_relative_rmse":0.7610072896
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.5,
+    "n_estimators":135,
+    "capacity_rmse":1.1979608415,
+    "capacity_relative_rmse":0.767679872
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.5,
+    "n_estimators":400,
+    "capacity_rmse":1.2212069269,
+    "capacity_relative_rmse":0.7825764791
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.9,
+    "n_estimators":5,
+    "capacity_rmse":0.5199372676,
+    "capacity_relative_rmse":0.8797080391
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.9,
+    "n_estimators":15,
+    "capacity_rmse":0.4623005421,
+    "capacity_relative_rmse":0.7821895616
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.9,
+    "n_estimators":45,
+    "capacity_rmse":0.4441603039,
+    "capacity_relative_rmse":0.7514971793
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.9,
+    "n_estimators":135,
+    "capacity_rmse":0.449635058,
+    "capacity_relative_rmse":0.7607601914
+  },
+  {
+    "variant":"vp_velocity",
+    "label":"VP velocity",
+    "t":0.9,
+    "n_estimators":400,
+    "capacity_rmse":0.4595260851,
+    "capacity_relative_rmse":0.7774953182
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.1,
+    "n_estimators":5,
+    "capacity_rmse":1.1918923646,
+    "capacity_relative_rmse":0.8500801867
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.1,
+    "n_estimators":15,
+    "capacity_rmse":1.0088841228,
+    "capacity_relative_rmse":0.7195552458
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.1,
+    "n_estimators":45,
+    "capacity_rmse":0.9444683886,
+    "capacity_relative_rmse":0.6736127254
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.1,
+    "n_estimators":135,
+    "capacity_rmse":0.9521003873,
+    "capacity_relative_rmse":0.6790560112
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.1,
+    "n_estimators":400,
+    "capacity_rmse":0.9697823621,
+    "capacity_relative_rmse":0.6916671302
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.5,
+    "n_estimators":5,
+    "capacity_rmse":1.2392687905,
+    "capacity_relative_rmse":0.88386995
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.5,
+    "n_estimators":15,
+    "capacity_rmse":1.104067576,
+    "capacity_relative_rmse":0.7874418856
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.5,
+    "n_estimators":45,
+    "capacity_rmse":1.0464161417,
+    "capacity_relative_rmse":0.7463237919
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.5,
+    "n_estimators":135,
+    "capacity_rmse":1.0543760759,
+    "capacity_relative_rmse":0.7520009676
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.5,
+    "n_estimators":400,
+    "capacity_rmse":1.0784350347,
+    "capacity_relative_rmse":0.7691602722
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.9,
+    "n_estimators":5,
+    "capacity_rmse":1.1504994505,
+    "capacity_relative_rmse":0.8205579771
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.9,
+    "n_estimators":15,
+    "capacity_rmse":0.9189984898,
+    "capacity_relative_rmse":0.6554471116
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.9,
+    "n_estimators":45,
+    "capacity_rmse":0.8327034263,
+    "capacity_relative_rmse":0.5938998395
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.9,
+    "n_estimators":135,
+    "capacity_rmse":0.8398385841,
+    "capacity_relative_rmse":0.5989887691
+  },
+  {
+    "variant":"linear_velocity",
+    "label":"Linear velocity",
+    "t":0.9,
+    "n_estimators":400,
+    "capacity_rmse":0.855020672,
+    "capacity_relative_rmse":0.6098169214
+  }
+]

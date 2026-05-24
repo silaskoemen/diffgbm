@@ -9,6 +9,7 @@ __pycache__
 
 # Temp/storage files
 plans
+explore/
 
 # Optuna studies
 **/*.db

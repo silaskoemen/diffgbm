@@ -292,6 +292,76 @@ class LightGBMQuantileBaseline(SampleBaseline):
         return samples[:, :, None]
 
 
+class QuantileRandomForestBaseline(SampleBaseline):
+    def __init__(
+        self,
+        quantile_count: int = 99,
+        n_estimators: int = 500,
+        max_depth: int | None = None,
+        min_samples_leaf: int = 1,
+        max_samples_leaf: int | None = None,
+        max_features: float | str = 1.0,
+        n_jobs: int | None = -1,
+        weighted_quantile: bool = True,
+        weighted_leaves: bool = False,
+        seed: int | None = None,
+    ) -> None:
+        self.quantile_count = quantile_count
+        self.n_estimators = n_estimators
+        self.max_depth = max_depth
+        self.min_samples_leaf = min_samples_leaf
+        self.max_samples_leaf = max_samples_leaf
+        self.max_features = max_features
+        self.n_jobs = n_jobs
+        self.weighted_quantile = weighted_quantile
+        self.weighted_leaves = weighted_leaves
+        self.seed = seed
+        self.model = None
+        self.n_estimators_true = n_estimators
+        self.quantiles = np.linspace(
+            1.0 / (quantile_count + 1),
+            quantile_count / (quantile_count + 1),
+            quantile_count,
+        )
+
+    def fit(self, X: ndarray, y: ndarray) -> QuantileRandomForestBaseline:
+        qf = _require("quantile_forest", "Install the bench extras with pixi before running.")
+        y = _ensure_2d_y(y)
+        if y.shape[1] != 1:
+            raise ValueError("QuantileRandomForestBaseline currently supports one-dimensional y.")
+        self.model = qf.RandomForestQuantileRegressor(
+            n_estimators=self.n_estimators,
+            max_depth=self.max_depth,
+            min_samples_leaf=self.min_samples_leaf,
+            max_samples_leaf=self.max_samples_leaf,
+            max_features=self.max_features,
+            n_jobs=self.n_jobs,
+            random_state=self.seed,
+        )
+        self.model.fit(X, y[:, 0])
+        return self
+
+    def sample(self, X: ndarray, n_samples: int = 200, seed: int | None = None, **kwargs) -> ndarray:
+        del kwargs
+        if self.model is None:
+            raise ValueError("QuantileRandomForestBaseline must be fit before sampling.")
+        rng = np.random.default_rng(seed)
+        quantile_preds = np.asarray(
+            self.model.predict(
+                X,
+                quantiles=self.quantiles.tolist(),
+                weighted_quantile=self.weighted_quantile,
+                weighted_leaves=self.weighted_leaves,
+            )
+        )
+        quantile_preds = np.sort(quantile_preds, axis=1)
+        uniforms = rng.uniform(size=(n_samples, X.shape[0]))
+        samples = np.empty((n_samples, X.shape[0]), dtype=np.float64)
+        for i in range(X.shape[0]):
+            samples[:, i] = np.interp(uniforms[:, i], self.quantiles, quantile_preds[i])
+        return samples[:, :, None]
+
+
 class DeepEnsembleBaseline(ScaledRegressorMixin, SampleBaseline):
     """Lean PyTorch deep ensemble baseline.
 
@@ -765,6 +835,7 @@ BASELINE_BUILDERS = {
     "ibug": IBUGXGBoostBaseline,
     "drf": DistributionalRandomForestBaseline,
     "qreg_lightgbm": LightGBMQuantileBaseline,
+    "quantile_forest": QuantileRandomForestBaseline,
     "deep_ensemble": DeepEnsembleBaseline,
     "card": CARDRegressionBaseline,
     "catboost_uncertainty": CatBoostUncertaintyBaseline,

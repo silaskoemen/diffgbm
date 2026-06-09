@@ -62,6 +62,7 @@ pytorch = ">=2.4,<3"
 matplotlib = "*"
 optuna = ">=4.8.0,<5"
 loguru = ">=0.7.3,<0.8"
+quantile-forest = ">=1.4.1,<2"
 
 [feature.bench.tasks]
 bench-smoke = "python -m benchmarks.run --config benchmarks/configs/smoke.yaml"

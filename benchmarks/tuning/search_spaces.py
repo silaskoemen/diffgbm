@@ -230,6 +230,23 @@ LGBM_QUANTILE = SearchSpace(
 )
 
 
+QUANTILE_FOREST = SearchSpace(
+    model="quantile_forest",
+    tunable=lambda t: {
+        "n_estimators": t.suggest_int("n_estimators", 100, 1000, log=True),
+        "min_samples_leaf": t.suggest_int("min_samples_leaf", 1, 20, log=True),
+        "max_features": t.suggest_categorical("max_features", [0.5, 0.75, 1.0, "sqrt"]),
+        "max_samples_leaf": t.suggest_categorical("max_samples_leaf", [1, 5, None]),
+    },
+    fixed={
+        "quantile_count": 99,
+        "n_jobs": -1,
+        "weighted_quantile": True,
+        "weighted_leaves": False,
+    },
+)
+
+
 DEEP_ENSEMBLE = SearchSpace(
     model="deep_ensemble",
     tunable=lambda t: {
@@ -275,6 +292,7 @@ SPACES: dict[str, SearchSpace] = {
     "ibug": IBUG,
     "drf": DRF,
     "qreg_lightgbm": LGBM_QUANTILE,
+    "quantile_forest": QUANTILE_FOREST,
     "deep_ensemble": DEEP_ENSEMBLE,
     "card": CARD,
     "catboost_uncertainty": CATBOOST,

@@ -90,9 +90,9 @@ We use this identity operationally: it lets a velocity-trained Treeffuser enter 
 \begin{equation}\label{eq:sde}
 \dd y_\tau = \left(-v_\theta + \tfrac{\varepsilon^2}{2}\, s_\theta\right) \dd \tau + \varepsilon\, \dd W_\tau,
 \end{equation}
-where $\tau = 1 - t$ is reverse time and $s_\theta$ is the score from \eqref{eq:score}. The choice $\varepsilon \equiv 0$ recovers the deterministic probability-flow ODE; positive $\varepsilon(t)$ broadens samples, with exact marginal preservation only for the true velocity/score. We use the schedule $\varepsilon(t) = c\, t$, which vanishes at the data endpoint where the learned score's $1/\beta(t)$ factor would otherwise dominate (see Proposition~\ref{prop:endpoint-amp}).
+where $\tau = 1 - t$ is reverse time and $s_\theta$ is the score from \eqref{eq:score}. The choice $\varepsilon \equiv 0$ recovers the deterministic probability-flow ODE; positive $\varepsilon(t)$ broadens samples, with exact marginal preservation only for the true velocity/score. We use the schedule $\varepsilon(t) = c\, t$, which vanishes at the data endpoint and suppresses recovered-score error in the stochastic drift (see Proposition~\ref{prop:endpoint-amp}).
 
-\paragraph{Why these choices suit trees.} Eq.~\eqref{eq:score} makes FM compatible with stochastic-interpolant samplers; variance-preserving paths keep the tree input $y_t$ near unit scale, unlike a linear path with $\Var(y_t)\approx(1-t)^2+t^2$; and $\varepsilon=0$ avoids the endpoint-sensitive $1/\beta(t)$ score-error factor (Appendix~\ref{app:theory}).
+\paragraph{Why these choices suit trees.} Eq.~\eqref{eq:score} makes FM compatible with stochastic-interpolant samplers; variance-preserving paths keep the tree input $y_t$ near unit scale, unlike a linear path with $\Var(y_t)\approx(1-t)^2+t^2$; and $\varepsilon=0$ avoids recovered-score error in the stochastic drift (Appendix~\ref{app:theory}).
 
 \subsection{Implementation Notes}\label{sec:impl}
 The FM code reuses Treeffuser's per-output-dimension LightGBM fitter and feature pipeline; only the target and prior change. Sampling uses the same Heun integrator and residualizer as the score path, and both training and sampling avoid the singular endpoint with $t \geq 10^{-5}$.
@@ -189,54 +189,71 @@ Because $p(y_t\mid y_0,x)=\Norm(\alpha y_0,\beta^2 I)$, the conditional score is
 
 At a fixed $t$ with $\alpha(t)\neq0$, the same identity inverts to $v(y_t,x,t)=\alpha'(t)y_t/\alpha(t)-W(t)\beta(t)\nabla\log p_t(y_t\mid x)/\alpha(t)$. Thus score and velocity have the same conditional structure as functions of $y_t$ at that time; the practical differences studied here come from path-dependent scale variation across $t$, feature geometry, and sampler dynamics rather than an intrinsic fixed-$t$ smoothness advantage.
 
-\begin{proposition}[Path-induced feature variance]\label{prop:path-variance}
-Let $y_0,z$ be independent with $\Var(y_0)=\Var(z)=I$ after standardization, and let $y_t=\alpha(t)y_0+\beta(t)z$. Then $\Var(y_t)=\alpha(t)^2+\beta(t)^2$. For the three paths used in this paper:
-\begin{itemize}
-  \item Linear ($\alpha=1-t$, $\beta=t$): $\Var(y_t)=(1-t)^2+t^2$, with minimum $1/2$ at $t=1/2$.
-  \item Trigonometric ($\alpha=\cos(\pi t/2)$, $\beta=\sin(\pi t/2)$): $\Var(y_t)=1$ for all $t$.
-  \item VP ($\alpha^2(t)=e^{-T(t)}$, $\beta^2(t)=1-e^{-T(t)}$): $\Var(y_t)=1$ for all $t$.
-\end{itemize}
-\end{proposition}
-\emph{Proof.} Independence and unit variance give $\Var(y_t)=\alpha^2\Var(y_0)+\beta^2\Var(z)=\alpha^2+\beta^2$. Substituting the three path definitions yields the listed expressions; the trig and VP identities follow from $\cos^2+\sin^2=1$ and from $\alpha^2+\beta^2=e^{-T}+(1-e^{-T})=1$. \hfill$\square$
-
-\paragraph{Consequence for tree features.} Proposition~\ref{prop:path-variance} formalises why trig and VP paths keep the tree input near unit scale across the entire path, whereas the linear path compresses to half-variance at $t=1/2$. For histogram-split trees this matters because the empirical distribution of $y_t$ determines both candidate split locations and where leaf resolution is spent.
-
-\begin{proposition}[Shared histogram-bin approximation]\label{prop:histogram-bins}
-Consider one scalar noised-response feature and a finite histogram partition $\mathcal{P}_{\bar p}=\{I_1,\ldots,I_B\}$ whose bins have equal mass under the pooled path marginal
+\paragraph{Path-induced feature scale.} If $y_0$ and $z$ are independent with unit variance after standardization, then the path feature satisfies
 \[
-\bar p(y)=\int p(t)\,p_t(y)\,\dd t.
+\Var(y_t)=\alpha(t)^2+\beta(t)^2.
 \]
-Let $\mathcal{H}(\mathcal{P}_{\bar p})$ be the functions that are constant on each $I_b$, and let $f_t(y)=\E[T_t\mid y_t=y,x,t]$ denote the scalar regression function for a score, denoising, noise, or velocity target at a selected time $t$ with covariate value $x$ fixed. Then
+Thus the linear path has $\Var(y_t)=(1-t)^2+t^2$ and compresses to variance $1/2$ at $t=1/2$, whereas the trigonometric and VP paths keep $\Var(y_t)=1$ for all $t$. This identity is elementary; its role here is to connect path choice to the empirical distribution from which histogram split candidates are built.
+
+\begin{proposition}[Pooled histogram-bin proxy]\label{prop:histogram-bins}
+Fix a scalar noised-response feature and a finite partition $\mathcal{P}=\{I_1,\ldots,I_B\}$. Let $\mathcal{H}(\mathcal{P})$ be the functions that are constant on each $I_b$, and let
 \[
-\inf_{g\in\mathcal{H}(\mathcal{P}_{\bar p})}
-  \E_{p_t}\!\left[(f_t(y_t)-g(y_t))^2\right]
+A_t(\mathcal{P})
+=
+\inf_{g\in\mathcal{H}(\mathcal{P})}
+  \E_{p_t}\!\left[(f_t(y_t)-g(y_t))^2\right],
+\qquad
+f_t(y)=\E[T_t\mid y_t=y,x,t],
+\]
+where $T_t$ is the scalar score, denoising, noise, or velocity target at time $t$ with covariate value $x$ fixed. Then
+\[
+A_t(\mathcal{P})
 \leq
 \sum_{b=1}^B p_t(I_b)\,
   \operatorname{osc}_{I_b}(f_t)^2,
 \]
-where $\operatorname{osc}_{I_b}(f_t)=\sup_{y,y'\in I_b}|f_t(y)-f_t(y')|$. If $f_t$ is $L_t$-Lipschitz on the relevant bins, the right-hand side is at most $L_t^2\sum_b p_t(I_b)|I_b|^2$.
-\end{proposition}
-\emph{Proof.} The best piecewise-constant approximation on a fixed bin partition cannot be worse than any particular constant choice on each bin. Choosing any value between the infimum and supremum of $f_t$ on $I_b$ gives pointwise squared error at most $\operatorname{osc}_{I_b}(f_t)^2$ on that bin, and integration under $p_t$ gives the first bound. The Lipschitz bound follows from $\operatorname{osc}_{I_b}(f_t)\leq L_t|I_b|$. \hfill$\square$
-
-\paragraph{Shared-bin mismatch.} Proposition~\ref{prop:histogram-bins} is a single-feature proxy for the split candidates available to a histogram tree, not a theory of the full boosted LightGBM ensemble. Its useful comparison is against an oracle partition that can choose $B$ bins separately for each $p_t$. The excess cost of using one pooled partition,
+where $\operatorname{osc}_{I_b}(f_t)=\sup_{y,y'\in I_b}|f_t(y)-f_t(y')|$. If $f_t$ is $L_t$-Lipschitz on the bins, then
 \[
-\Delta_t(B)=
-\inf_{g\in\mathcal{H}(\mathcal{P}_{\bar p})}
-  \E_{p_t}\!\left[(f_t(y_t)-g(y_t))^2\right]
--
-\inf_{g\in\mathcal{H}(\mathcal{P}^*_t)}
-  \E_{p_t}\!\left[(f_t(y_t)-g(y_t))^2\right],
+A_t(\mathcal{P}) \leq L_t^2\sum_{b=1}^B p_t(I_b)|I_b|^2.
 \]
-where $\mathcal{P}^*_t$ is the best $B$-bin partition for time $t$, captures the finite shared-bin cost. VP and trigonometric paths keep the $p_t$ family near unit scale, so pooled bins are close to useful per-time bins. VE paths mix data-scale low-noise features with expanded high-noise features; a single pooled histogram must compromise across regimes. EDM input preconditioning and VP-FM both reduce this mismatch. Figure~\ref{fig:toy-preconditioning}(b) illustrates the same effect empirically: the published-style VE target is stable, but the unpreconditioned tree input expands across noise levels, whereas EDM and VP-FM keep the feature scale closer to a shared-bin regime. This is a comparative statement about shared finite bins, not a claim that the fixed-time VE regression function must become rough: for example, $\E[z\mid y_t,x,t]$ can become smoother as $\sigma$ grows even while the pooled histogram becomes a poorer substitute for per-time resolution.
+Moreover, in a compact-support proxy with smooth positive density $q$ and equal-$q$-mass bins $\mathcal{P}_q$, the high-resolution scaling is
+\[
+A_t(\mathcal{P}_q)
+\lesssim
+\frac{L_t^2}{B^2}\int \frac{p_t(y)}{q(y)^2}\,\dd y,
+\]
+up to lower-order bin-width terms.
+\end{proposition}
+\emph{Proof.} The best piecewise-constant approximation on a fixed partition cannot be worse than any particular constant choice on each bin. Choosing any value between the infimum and supremum of $f_t$ on $I_b$ gives pointwise squared error at most $\operatorname{osc}_{I_b}(f_t)^2$ on that bin, and integration under $p_t$ gives the first bound. The Lipschitz bound follows from $\operatorname{osc}_{I_b}(f_t)\leq L_t|I_b|$. For the high-resolution proxy, an equal-$q$-mass bin has $|I_b|\approx 1/(B q(\xi_b))$ for some $\xi_b\in I_b$, so
+\[
+\sum_b p_t(I_b)|I_b|^2
+\approx
+\sum_b p_t(\xi_b)|I_b|^3
+=\frac{1}{B^2}\sum_b \frac{p_t(\xi_b)}{q(\xi_b)^3}\frac{1}{B}
+\to \frac{1}{B^2}\int \frac{p_t(y)}{q(y)^2}\,\dd y,
+\]
+where the last step is a Riemann sum under the measure with density $q$. \hfill$\square$
 
-\paragraph{Residualization removes predictable location.} Residualization is an exact reparameterization in the infinite-capacity limit: for any fixed $\hat\mu(x)$, modelling $r=y-\hat\mu(x)$ exactly and returning $y=r+\hat\mu(x)$ recovers the same conditional distribution. Its empirical value is finite-model conditioning. If $\mu(x)=\E[y\mid x]$ and $r=y-\mu(x)$, then $\E[\|r\|^2\mid x]=\mathrm{tr}\,\Var(y\mid x)\leq \E[\|y\|^2\mid x]$, so diffusion or FM on residuals removes a deterministic location component that would otherwise be present at every noise level. The inequality also explains the large-dataset caveat: a fixed residualizer can become a bottleneck once the inner score/velocity model has enough data to represent the mean directly.
+\paragraph{Shared-bin mismatch.} Proposition~\ref{prop:histogram-bins} is a one-feature proxy for the finite split resolution available to a histogram tree, not a theory of the full boosted LightGBM ensemble. In the benchmark, rows from many noise levels are pooled before tree fitting, so a natural proxy is $q=\bar p$ with
+\[
+\bar p(y)=\int p(t)\,p_t(y)\,\dd t.
+\]
+The high-resolution term $\int p_t/\bar p^2$ is large when $\bar p$ allocates little bin density to regions where a particular $p_t$ still places mass. VE paths create exactly this compromise by mixing data-scale low-noise features with expanded high-noise features; a single pooled histogram must spend resolution across both regimes. EDM input preconditioning and VP-FM both reduce this mismatch by keeping the tree feature scale closer to a common range across $t$. Figure~\ref{fig:toy-preconditioning}(b) illustrates the same effect empirically: the published-style VE target is stable, but the unpreconditioned tree input expands across noise levels, whereas EDM and VP-FM keep the feature scale closer to a shared-bin regime. This is a finite-bin conditioning statement, not a claim that the fixed-time VE regression function is intrinsically rough.
+
+\paragraph{Residualization removes predictable location.} Residualization is an exact reparameterization in the infinite-capacity limit: for any fixed $\hat\mu(x)$, modelling $r=y-\hat\mu(x)$ exactly and returning $y=r+\hat\mu(x)$ recovers the same conditional distribution. Its empirical value is finite-model conditioning. In the scalar case, if $\mu(X)=\E[Y\mid X]$ and $R=Y-\mu(X)$, the law of total variance gives
+\[
+\Var(Y)=\E[\Var(Y\mid X)]+\Var(\mu(X)),
+\qquad
+\Var(R)=\E[\Var(Y\mid X)].
+\]
+For vector-valued responses the same statement applies to the trace of the covariance. Thus residualization removes predictable location variation before noised responses are pooled into histogram bins. The large-dataset caveat remains: a fixed residualizer can become a bottleneck once the inner score or velocity model has enough data to represent the conditional mean directly.
 
 \begin{proposition}[Endpoint score-error amplification]\label{prop:endpoint-amp}
 Let $v_\theta(y_t,x,t)=v(y_t,x,t)+\delta(y_t,x,t)$ be an approximate velocity with pointwise error $\delta$, and let $\hat s_\theta,s$ denote the implied and true scores from Lemma~\ref{lem:wronskian-score}. Then
 \[
 \hat s_\theta(y_t,x,t)-s(y_t,x,t)=-\frac{\alpha(t)}{W(t)\,\beta(t)}\,\delta(y_t,x,t),
 \]
-so the pointwise score-error gain is $|\alpha(t)/(W(t)\beta(t))|$. For all three paths considered here $W(t)\to\alpha(0)\beta'(0)>0$ is bounded near $t=0$ while $\beta(t)\to 0$, so the gain diverges at the data endpoint.
+so the pointwise score-error gain is $|\alpha(t)/(W(t)\beta(t))|$. For the linear and trigonometric paths, $\beta(t)\asymp t$ and $W(t)$ is bounded away from zero near $t=0$, so this gain diverges like $1/t$. For the VP path used here, $\beta(t)\asymp\sqrt{t}$ and $W(t)\asymp1/\sqrt{t}$, so $W(t)\beta(t)$ is bounded away from zero and the velocity-to-score gain remains bounded.
 \end{proposition}
 \emph{Proof.} Eq.~\eqref{eq:score} is linear in $v$, so
 \[
@@ -245,23 +262,19 @@ so the pointwise score-error gain is $|\alpha(t)/(W(t)\beta(t))|$. For all three
 =-\frac{\alpha(t)\,\delta}{W(t)\beta(t)}. \tag*{$\square$}
 \]
 
-\paragraph{Endpoint amplification.} Proposition~\ref{prop:endpoint-amp} therefore predicts that any stochasticity schedule with $\varepsilon(t)\not\to 0$ as $t\to 0$ injects high-gain approximate score into the SDE drift. In Eq.~\eqref{eq:sde}, the recovered-score contribution to the drift error is
+\paragraph{Endpoint amplification.} Proposition~\ref{prop:endpoint-amp} therefore predicts that any stochasticity schedule with $\varepsilon(t)\not\to 0$ as $t\to 0$ injects recovered-score error into the SDE drift. In Eq.~\eqref{eq:sde}, the recovered-score contribution to the drift error is
 \[
 \frac{\varepsilon(t)^2}{2}(\hat s_\theta-s)
 =-\frac{\varepsilon(t)^2\alpha(t)}{2W(t)\beta(t)}\,\delta.
 \]
-Near the data endpoint for the paths used here, $\beta(t)\asymp t$, $\alpha(t)\asymp1$, and $W(t)$ stays bounded away from zero, so this term scales like $\varepsilon(t)^2\delta/t$. Constant stochasticity amplifies endpoint velocity error, $\varepsilon(t)\asymp\sqrt{t}$ leaves a non-vanishing endpoint drift-error scale, $\varepsilon(t)=ct$ makes this recovered-score contribution vanish, and $\varepsilon\equiv0$ removes it entirely. This is why $\varepsilon(t)=ct$ and the deterministic corner are the two natural schedules in \S\ref{sec:fm}.
+More generally, if $\beta(t)\asymp t^a$, $\varepsilon(t)\asymp t^b$, $\alpha(t)\asymp1$, and $W(t)\asymp t^{a-1}$ near the data endpoint, this drift-error contribution scales as $t^{2b+1-2a}\delta$. Linear and trigonometric paths have $a=1$, so constant stochasticity diverges, $\varepsilon(t)\asymp\sqrt{t}$ leaves a non-vanishing endpoint error scale, and $\varepsilon(t)=ct$ makes the recovered-score contribution vanish. The VP path used here has $a=1/2$, so the velocity-to-score gain is milder, but vanishing stochasticity still suppresses the endpoint contribution and $\varepsilon\equiv0$ removes it entirely. This is why $\varepsilon(t)=ct$ and the deterministic corner are the two natural schedules in \S\ref{sec:fm}.
 
-\begin{proposition}[Population equivalence on the VE path]\label{prop:ve-equivalence}
-For a VE path $y_t=y_0+\beta(t)z$ with $\beta'(t)>0$, training a normalized velocity model $\nu_\theta$ against $u_t/\beta'(t)=z$ implies the same population score as VE noise prediction and VE denoising/EDM score reconstruction:
+\paragraph{VE population identity.} On a VE path $y_t=y_0+\beta(t)z$ with $\beta'(t)>0$, normalized velocity, noise prediction, and denoising score recovery imply the same population score:
 \[
 s_t(y_t,x)=-\frac{\E[z\mid y_t,x,t]}{\beta(t)}
           =\frac{\E[y_0\mid y_t,x,t]-y_t}{\beta(t)^2}.
 \]
-\end{proposition}
-\emph{Proof.} For VE, $\alpha=1$, $\alpha'=0$, $u_t=\beta'(t)z$, and $W=\beta'(t)$. Lemma~\ref{lem:wronskian-score} gives $s_t=-\E[u_t\mid y_t,x,t]/(\beta(t)\beta'(t))=-\E[z\mid y_t,x,t]/\beta(t)$. Since $y_t=y_0+\beta(t)z$, $\E[y_0\mid y_t,x,t]=y_t-\beta(t)\E[z\mid y_t,x,t]$, which gives the denoising form. Noise prediction estimates $-\E[z\mid y_t,x,t]$ and EDM reconstructs the same population denoiser after its skip/output/input preconditioning. \hfill$\square$
-
-Proposition~\ref{prop:ve-equivalence} is a population identity, not a claim that the finite LightGBM problems are identical. EDM fits the preconditioned denoising residual $F=(y_0-c_{\mathrm{skip}}y_t)/c_{\mathrm{out}}$ and reconstructs $D_\theta=c_{\mathrm{skip}}y_t+c_{\mathrm{out}}F_\theta$, whereas normalized VE-FM would fit $z$ directly. They imply the same score at the optimum but present different targets and feature scalings to LightGBM. This is the useful interpretation of the score$^+$--FM tie: both improve the conditioning of the regression problem seen by the tree ensemble, EDM by preconditioning the VE score objective and VP-FM by choosing a better-conditioned probability path.
+Indeed, for VE, $\alpha=1$, $\alpha'=0$, $u_t=\beta'(t)z$, and $W=\beta'(t)$; Lemma~\ref{lem:wronskian-score} gives $s_t=-\E[z\mid y_t,x,t]/\beta(t)$, and $y_t=y_0+\beta(t)z$ gives the denoising form. This identity is not a claim that the finite LightGBM problems are identical. EDM fits the preconditioned denoising residual $F=(y_0-c_{\mathrm{skip}}y_t)/c_{\mathrm{out}}$ and reconstructs $D_\theta=c_{\mathrm{skip}}y_t+c_{\mathrm{out}}F_\theta$, whereas normalized VE-FM would fit $z$ directly. They imply the same score at the optimum but present different targets and feature scalings to LightGBM. This is the useful interpretation of the score$^+$--FM tie: both improve the conditioning of the regression problem seen by the tree ensemble, EDM by preconditioning the VE score objective and VP-FM by choosing a better-conditioned probability path.
 
 \begin{table}[!h]
   \centering
@@ -516,7 +529,7 @@ In this fixed diagnostic sweep, no tested SDE setting Pareto-dominates $\varepsi
 
 \subsection{Schedule Shape}\label{app:stoch-schedule}
 
-The schedule $\varepsilon(t) = c\,t$ (linear) is the headline form. The $\sqrt{t}$ alternative was tested for parity at $\varepsilon \in \{0.5, 1.0\}$ and produces statistically indistinguishable CRPSS (Table~\ref{tab:stoch-eps}). Both schedules vanish at the data endpoint, which prevents the $1/\beta(t)$ blow-up in the velocity-to-score conversion (Eq.~\eqref{eq:score}); neither shape helps once $\varepsilon$ is small.
+The schedule $\varepsilon(t) = c\,t$ (linear) is the headline form. The $\sqrt{t}$ alternative was tested for parity at $\varepsilon \in \{0.5, 1.0\}$ and produces statistically indistinguishable CRPSS (Table~\ref{tab:stoch-eps}). Both schedules vanish at the data endpoint, which suppresses recovered-score error in the stochastic drift (Eq.~\eqref{eq:score} and Proposition~\ref{prop:endpoint-amp}); neither shape helps once $\varepsilon$ is small.
 
 \section{Path Choice}\label{app:path}
 

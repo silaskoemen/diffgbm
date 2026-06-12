@@ -1,0 +1,55 @@
+protocol:
+  dataset: naval
+  space_name: ablate_score_resid_noise_heun25
+  protocol_version: mechanism-ablation-v1
+  n_train: 10741
+  n_test: 1193
+  x_dim: 3
+  master_seed: 0
+  n_folds: 6
+  n_samples: 100
+  space_fingerprint: b34b665f99a43c45
+protocol_fingerprint: 61da8b66bea92444
+model: treeffuser
+best_value_crps: 0.0002225689300038144
+best_tunable:
+  n_estimators: 883
+  learning_rate: 0.05910317077425309
+  num_leaves: 160
+  max_depth: 10
+  min_child_samples: 97
+  subsample: 0.6917207594128889
+params:
+  early_stopping_rounds: 50
+  n_repeats: 30
+  subsample_freq: 1
+  verbose: -1
+  training_objective: score
+  score_parameterization: noise
+  noise_features: raw_time
+  t_sampling: uniform
+  residualize: mean
+  residualize_k_folds: 5
+  extra_residualizer_params:
+    n_estimators: 300
+    learning_rate: 0.05
+    max_depth: -1
+    num_leaves: 63
+    min_child_samples: 10
+  sde_name: vesde
+  n_estimators: 883
+  learning_rate: 0.05910317077425309
+  num_leaves: 160
+  max_depth: 10
+  min_child_samples: 97
+  subsample: 0.6917207594128889
+sampler:
+  n_samples: 200
+  n_parallel: 20
+  n_steps: 25
+  method: heun
+  pf_ode: true
+n_trials_target: 25
+n_trials_finite: 25
+n_trials_failed: 0
+storage: /Users/silaskoemen/Documents/Projects/treeffuser/benchmarks/results/mechanism_ablation/studies/naval__ablate_score_resid_noise_heun25__61da8b66bea92444.db

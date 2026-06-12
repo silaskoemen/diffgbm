@@ -1,0 +1,55 @@
+protocol:
+  dataset: protein
+  space_name: ablate_score_resid_noise_heun25
+  protocol_version: mechanism-ablation-v1
+  n_train: 41157
+  n_test: 4573
+  x_dim: 3
+  master_seed: 0
+  n_folds: 6
+  n_samples: 100
+  space_fingerprint: b34b665f99a43c45
+protocol_fingerprint: f72c45d28ca4fd02
+model: treeffuser
+best_value_crps: 1.8067476710274293
+best_tunable:
+  n_estimators: 2178
+  learning_rate: 0.1607550791834226
+  num_leaves: 213
+  max_depth: -1
+  min_child_samples: 87
+  subsample: 0.7560491057196523
+params:
+  early_stopping_rounds: 50
+  n_repeats: 30
+  subsample_freq: 1
+  verbose: -1
+  training_objective: score
+  score_parameterization: noise
+  noise_features: raw_time
+  t_sampling: uniform
+  residualize: mean
+  residualize_k_folds: 5
+  extra_residualizer_params:
+    n_estimators: 300
+    learning_rate: 0.05
+    max_depth: -1
+    num_leaves: 63
+    min_child_samples: 10
+  sde_name: vesde
+  n_estimators: 2178
+  learning_rate: 0.1607550791834226
+  num_leaves: 213
+  max_depth: -1
+  min_child_samples: 87
+  subsample: 0.7560491057196523
+sampler:
+  n_samples: 200
+  n_parallel: 20
+  n_steps: 25
+  method: heun
+  pf_ode: true
+n_trials_target: 25
+n_trials_finite: 25
+n_trials_failed: 0
+storage: /Users/silaskoemen/Documents/Projects/treeffuser/benchmarks/results/mechanism_ablation/studies/protein__ablate_score_resid_noise_heun25__f72c45d28ca4fd02.db

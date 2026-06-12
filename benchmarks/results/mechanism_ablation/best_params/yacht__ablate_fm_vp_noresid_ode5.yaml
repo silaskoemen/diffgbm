@@ -1,0 +1,48 @@
+protocol:
+  dataset: yacht
+  space_name: ablate_fm_vp_noresid_ode5
+  protocol_version: mechanism-ablation-v1
+  n_train: 277
+  n_test: 31
+  x_dim: 3
+  master_seed: 0
+  n_folds: 6
+  n_samples: 100
+  space_fingerprint: 8423750d3ee9168a
+protocol_fingerprint: 36741939e59ac459
+model: treeffuser
+best_value_crps: 1.2396211768091723
+best_tunable:
+  n_estimators: 702
+  learning_rate: 0.005308360574793519
+  num_leaves: 97
+  max_depth: 8
+  min_child_samples: 62
+  subsample: 0.502243410036584
+params:
+  early_stopping_rounds: 50
+  n_repeats: 30
+  subsample_freq: 1
+  verbose: -1
+  training_objective: flow_matching
+  flow_path: vp
+  noise_features: raw_time
+  residualize: 'off'
+  n_estimators: 702
+  learning_rate: 0.005308360574793519
+  num_leaves: 97
+  max_depth: 8
+  min_child_samples: 62
+  subsample: 0.502243410036584
+sampler:
+  n_samples: 200
+  n_parallel: 20
+  n_steps: 5
+  method: heun
+  pf_ode: false
+  velocity_stochasticity: 0.0
+  velocity_stochasticity_schedule: linear
+n_trials_target: 25
+n_trials_finite: 25
+n_trials_failed: 0
+storage: /Users/silaskoemen/Documents/Projects/treeffuser/benchmarks/results/mechanism_ablation/studies/yacht__ablate_fm_vp_noresid_ode5__36741939e59ac459.db

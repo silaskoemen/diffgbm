@@ -1,0 +1,63 @@
+# Mechanism-ablation manifest for the fold-0 tuning / folds-1..5 evaluation
+# protocol. Outputs are kept separate from the headline tuning artifacts.
+#
+# The ablation rows share the same LightGBM tunable surface; only fixed
+# method-defining parameters and bound samplers differ.
+
+protocol:
+  version: mechanism-ablation-v1
+  master_seed: 0
+  n_folds: 6
+  n_trials: 25
+  n_samples: 100
+  max_attempts_multiplier: 2
+  results_dir: benchmarks/results/mechanism_ablation/studies
+  configs_dir: benchmarks/results/mechanism_ablation/best_params
+  eval_results_dir: benchmarks/results/mechanism_ablation/eval
+  status_path: benchmarks/results/mechanism_ablation/batch_status.jsonl
+
+datasets:
+  - name: yacht
+    n_train: 277
+    n_test: 31
+  - name: concrete
+    n_train: 927
+    n_test: 103
+  - name: energy
+    n_train: 691
+    n_test: 77
+  - name: diabetes
+    n_train: 400
+    n_test: 42
+  - name: wine
+    n_train: 5847
+    n_test: 650
+  - name: kin8nm
+    n_train: 7372
+    n_test: 820
+  - name: power_plant
+    n_train: 8611
+    n_test: 957
+  - name: naval
+    n_train: 10741
+    n_test: 1193
+  - name: california_housing
+    n_train: 18576
+    n_test: 2064
+  - name: protein
+    n_train: 41157
+    n_test: 4573
+
+spaces:
+  # Score-side progression.
+  - name: ablate_score_noise_euler50
+  - name: ablate_score_noise_heun25
+  - name: ablate_score_resid_noise_heun25
+  - name: ablate_score_resid_edm_rawtime_heun25
+  - name: ablate_score_resid_edm_logstd_uniform_heun25
+  - name: ablate_score_plus_heun25
+
+  # Flow-matching geometry and residualization checks.
+  - name: ablate_fm_linear_resid_ode5
+  - name: ablate_fm_vp_noresid_ode5
+  - name: ablate_fm_vp_resid_ode5

@@ -1,0 +1,48 @@
+protocol:
+  dataset: wine
+  space_name: ablate_score_noise_heun25
+  protocol_version: mechanism-ablation-v1
+  n_train: 5847
+  n_test: 650
+  x_dim: 3
+  master_seed: 0
+  n_folds: 6
+  n_samples: 100
+  space_fingerprint: 954153cfae5e519a
+protocol_fingerprint: 922fbb9e513cdacc
+model: treeffuser
+best_value_crps: 0.33737853664935424
+best_tunable:
+  n_estimators: 688
+  learning_rate: 0.1473502744239663
+  num_leaves: 47
+  max_depth: -1
+  min_child_samples: 76
+  subsample: 0.7584851336940228
+params:
+  early_stopping_rounds: 50
+  n_repeats: 30
+  subsample_freq: 1
+  verbose: -1
+  training_objective: score
+  score_parameterization: noise
+  noise_features: raw_time
+  t_sampling: uniform
+  residualize: 'off'
+  sde_name: vesde
+  n_estimators: 688
+  learning_rate: 0.1473502744239663
+  num_leaves: 47
+  max_depth: -1
+  min_child_samples: 76
+  subsample: 0.7584851336940228
+sampler:
+  n_samples: 200
+  n_parallel: 20
+  n_steps: 25
+  method: heun
+  pf_ode: true
+n_trials_target: 25
+n_trials_finite: 25
+n_trials_failed: 0
+storage: /Users/silaskoemen/Documents/Projects/treeffuser/benchmarks/results/mechanism_ablation/studies/wine__ablate_score_noise_heun25__922fbb9e513cdacc.db

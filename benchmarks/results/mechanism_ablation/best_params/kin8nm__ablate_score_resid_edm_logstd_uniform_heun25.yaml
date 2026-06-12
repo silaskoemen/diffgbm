@@ -1,0 +1,57 @@
+protocol:
+  dataset: kin8nm
+  space_name: ablate_score_resid_edm_logstd_uniform_heun25
+  protocol_version: mechanism-ablation-v1
+  n_train: 7372
+  n_test: 820
+  x_dim: 3
+  master_seed: 0
+  n_folds: 6
+  n_samples: 100
+  space_fingerprint: 93ce19a13cce629c
+protocol_fingerprint: 22243e5e5c0c40c5
+model: treeffuser
+best_value_crps: 0.05537058481395979
+best_tunable:
+  n_estimators: 212
+  learning_rate: 0.04579626763182155
+  num_leaves: 231
+  max_depth: -1
+  min_child_samples: 60
+  subsample: 0.8964621025809648
+params:
+  early_stopping_rounds: 50
+  n_repeats: 30
+  subsample_freq: 1
+  verbose: -1
+  training_objective: score
+  score_parameterization: edm
+  noise_features: raw_time_log_std
+  t_sampling: uniform
+  residualize: mean
+  residualize_k_folds: 5
+  extra_residualizer_params:
+    n_estimators: 300
+    learning_rate: 0.05
+    max_depth: -1
+    num_leaves: 63
+    min_child_samples: 10
+  sde_name: vesde
+  sde_hyperparam_min: 0.01
+  sde_hyperparam_max: 20.0
+  n_estimators: 212
+  learning_rate: 0.04579626763182155
+  num_leaves: 231
+  max_depth: -1
+  min_child_samples: 60
+  subsample: 0.8964621025809648
+sampler:
+  n_samples: 200
+  n_parallel: 20
+  n_steps: 25
+  method: heun
+  pf_ode: true
+n_trials_target: 25
+n_trials_finite: 25
+n_trials_failed: 0
+storage: /Users/silaskoemen/Documents/Projects/treeffuser/benchmarks/results/mechanism_ablation/studies/kin8nm__ablate_score_resid_edm_logstd_uniform_heun25__22243e5e5c0c40c5.db

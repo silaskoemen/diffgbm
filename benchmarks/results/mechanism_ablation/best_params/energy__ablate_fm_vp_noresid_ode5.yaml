@@ -1,0 +1,48 @@
+protocol:
+  dataset: energy
+  space_name: ablate_fm_vp_noresid_ode5
+  protocol_version: mechanism-ablation-v1
+  n_train: 691
+  n_test: 77
+  x_dim: 3
+  master_seed: 0
+  n_folds: 6
+  n_samples: 100
+  space_fingerprint: 8423750d3ee9168a
+protocol_fingerprint: 6753e21c372a8f0b
+model: treeffuser
+best_value_crps: 0.7074413067698808
+best_tunable:
+  n_estimators: 385
+  learning_rate: 0.03175138798050094
+  num_leaves: 91
+  max_depth: 4
+  min_child_samples: 42
+  subsample: 0.5650859519955662
+params:
+  early_stopping_rounds: 50
+  n_repeats: 30
+  subsample_freq: 1
+  verbose: -1
+  training_objective: flow_matching
+  flow_path: vp
+  noise_features: raw_time
+  residualize: 'off'
+  n_estimators: 385
+  learning_rate: 0.03175138798050094
+  num_leaves: 91
+  max_depth: 4
+  min_child_samples: 42
+  subsample: 0.5650859519955662
+sampler:
+  n_samples: 200
+  n_parallel: 20
+  n_steps: 5
+  method: heun
+  pf_ode: false
+  velocity_stochasticity: 0.0
+  velocity_stochasticity_schedule: linear
+n_trials_target: 25
+n_trials_finite: 25
+n_trials_failed: 0
+storage: /Users/silaskoemen/Documents/Projects/treeffuser/benchmarks/results/mechanism_ablation/studies/energy__ablate_fm_vp_noresid_ode5__6753e21c372a8f0b.db

@@ -1,0 +1,48 @@
+protocol:
+  dataset: power_plant
+  space_name: ablate_score_noise_heun25
+  protocol_version: mechanism-ablation-v1
+  n_train: 8611
+  n_test: 957
+  x_dim: 3
+  master_seed: 0
+  n_folds: 6
+  n_samples: 100
+  space_fingerprint: 954153cfae5e519a
+protocol_fingerprint: 85372c543e5fa8b6
+model: treeffuser
+best_value_crps: 1.7323097819502302
+best_tunable:
+  n_estimators: 1706
+  learning_rate: 0.02042381402566498
+  num_leaves: 151
+  max_depth: -1
+  min_child_samples: 79
+  subsample: 0.9350060741234096
+params:
+  early_stopping_rounds: 50
+  n_repeats: 30
+  subsample_freq: 1
+  verbose: -1
+  training_objective: score
+  score_parameterization: noise
+  noise_features: raw_time
+  t_sampling: uniform
+  residualize: 'off'
+  sde_name: vesde
+  n_estimators: 1706
+  learning_rate: 0.02042381402566498
+  num_leaves: 151
+  max_depth: -1
+  min_child_samples: 79
+  subsample: 0.9350060741234096
+sampler:
+  n_samples: 200
+  n_parallel: 20
+  n_steps: 25
+  method: heun
+  pf_ode: true
+n_trials_target: 25
+n_trials_finite: 25
+n_trials_failed: 0
+storage: /Users/silaskoemen/Documents/Projects/treeffuser/benchmarks/results/mechanism_ablation/studies/power_plant__ablate_score_noise_heun25__85372c543e5fa8b6.db

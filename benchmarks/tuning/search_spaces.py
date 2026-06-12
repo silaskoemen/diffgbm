@@ -95,6 +95,35 @@ _RESIDUALIZER_C = {
 }
 
 
+_SCORE_EULER50_SAMPLER = {
+    "n_samples": 200,
+    "n_parallel": 20,
+    "n_steps": 50,
+    "method": "euler",
+    "pf_ode": False,
+}
+
+
+_SCORE_HEUN25_SAMPLER = {
+    "n_samples": 200,
+    "n_parallel": 20,
+    "n_steps": 25,
+    "method": "heun",
+    "pf_ode": True,
+}
+
+
+_FM_ODE5_SAMPLER = {
+    "n_samples": 200,
+    "n_parallel": 20,
+    "n_steps": 5,
+    "method": "heun",
+    "pf_ode": False,
+    "velocity_stochasticity": 0.0,
+    "velocity_stochasticity_schedule": "linear",
+}
+
+
 # ---------------------------------------------------------------------------
 # Treeffuser variants
 # ---------------------------------------------------------------------------
@@ -111,13 +140,7 @@ TREEFFUSER_PUBLISHED = SearchSpace(
         "residualize": "off",
         "sde_name": "vesde",
     },
-    sampler={
-        "n_samples": 200,
-        "n_parallel": 20,
-        "n_steps": 50,
-        "method": "euler",
-        "pf_ode": False,
-    },
+    sampler=_SCORE_EULER50_SAMPLER,
 )
 
 
@@ -139,13 +162,7 @@ TREEFFUSER_SCORE_PLUS = SearchSpace(
         "sde_hyperparam_min": 0.01,
         "sde_hyperparam_max": 20.0,
     },
-    sampler={
-        "n_samples": 200,
-        "n_parallel": 20,
-        "n_steps": 25,
-        "method": "heun",
-        "pf_ode": True,
-    },
+    sampler=_SCORE_HEUN25_SAMPLER,
 )
 
 
@@ -161,15 +178,169 @@ TREEFFUSER_FM = SearchSpace(
         "residualize_k_folds": 5,
         "extra_residualizer_params": _RESIDUALIZER_C,
     },
-    sampler={
-        "n_samples": 200,
-        "n_parallel": 20,
-        "n_steps": 5,
-        "method": "heun",
-        "pf_ode": False,
-        "velocity_stochasticity": 0.0,
-        "velocity_stochasticity_schedule": "linear",
+    sampler=_FM_ODE5_SAMPLER,
+)
+
+
+# ---------------------------------------------------------------------------
+# Treeffuser mechanism-ablation variants
+# ---------------------------------------------------------------------------
+
+ABLATE_SCORE_NOISE_EULER50 = SearchSpace(
+    model="treeffuser",
+    tunable=_treeffuser_lgbm_tunable,
+    fixed={
+        **_TREEFFUSER_LGBM_FIXED,
+        "training_objective": "score",
+        "score_parameterization": "noise",
+        "noise_features": "raw_time",
+        "t_sampling": "uniform",
+        "residualize": "off",
+        "sde_name": "vesde",
     },
+    sampler=_SCORE_EULER50_SAMPLER,
+)
+
+
+ABLATE_SCORE_NOISE_HEUN25 = SearchSpace(
+    model="treeffuser",
+    tunable=_treeffuser_lgbm_tunable,
+    fixed={
+        **_TREEFFUSER_LGBM_FIXED,
+        "training_objective": "score",
+        "score_parameterization": "noise",
+        "noise_features": "raw_time",
+        "t_sampling": "uniform",
+        "residualize": "off",
+        "sde_name": "vesde",
+    },
+    sampler=_SCORE_HEUN25_SAMPLER,
+)
+
+
+ABLATE_SCORE_RESID_NOISE_HEUN25 = SearchSpace(
+    model="treeffuser",
+    tunable=_treeffuser_lgbm_tunable,
+    fixed={
+        **_TREEFFUSER_LGBM_FIXED,
+        "training_objective": "score",
+        "score_parameterization": "noise",
+        "noise_features": "raw_time",
+        "t_sampling": "uniform",
+        "residualize": "mean",
+        "residualize_k_folds": 5,
+        "extra_residualizer_params": _RESIDUALIZER_C,
+        "sde_name": "vesde",
+    },
+    sampler=_SCORE_HEUN25_SAMPLER,
+)
+
+
+ABLATE_SCORE_RESID_EDM_RAWTIME_HEUN25 = SearchSpace(
+    model="treeffuser",
+    tunable=_treeffuser_lgbm_tunable,
+    fixed={
+        **_TREEFFUSER_LGBM_FIXED,
+        "training_objective": "score",
+        "score_parameterization": "edm",
+        "noise_features": "raw_time",
+        "t_sampling": "uniform",
+        "residualize": "mean",
+        "residualize_k_folds": 5,
+        "extra_residualizer_params": _RESIDUALIZER_C,
+        "sde_name": "vesde",
+        "sde_hyperparam_min": 0.01,
+        "sde_hyperparam_max": 20.0,
+    },
+    sampler=_SCORE_HEUN25_SAMPLER,
+)
+
+
+ABLATE_SCORE_RESID_EDM_LOGSTD_UNIFORM_HEUN25 = SearchSpace(
+    model="treeffuser",
+    tunable=_treeffuser_lgbm_tunable,
+    fixed={
+        **_TREEFFUSER_LGBM_FIXED,
+        "training_objective": "score",
+        "score_parameterization": "edm",
+        "noise_features": "raw_time_log_std",
+        "t_sampling": "uniform",
+        "residualize": "mean",
+        "residualize_k_folds": 5,
+        "extra_residualizer_params": _RESIDUALIZER_C,
+        "sde_name": "vesde",
+        "sde_hyperparam_min": 0.01,
+        "sde_hyperparam_max": 20.0,
+    },
+    sampler=_SCORE_HEUN25_SAMPLER,
+)
+
+
+ABLATE_SCORE_PLUS_HEUN25 = SearchSpace(
+    model="treeffuser",
+    tunable=_treeffuser_lgbm_tunable,
+    fixed={
+        **_TREEFFUSER_LGBM_FIXED,
+        "training_objective": "score",
+        "score_parameterization": "edm",
+        "noise_features": "raw_time_log_std",
+        "t_sampling": "log_sigma_normal",
+        "log_sigma_p_mean": -1.2,
+        "log_sigma_p_std": 1.2,
+        "residualize": "mean",
+        "residualize_k_folds": 5,
+        "extra_residualizer_params": _RESIDUALIZER_C,
+        "sde_name": "vesde",
+        "sde_hyperparam_min": 0.01,
+        "sde_hyperparam_max": 20.0,
+    },
+    sampler=_SCORE_HEUN25_SAMPLER,
+)
+
+
+ABLATE_FM_LINEAR_RESID_ODE5 = SearchSpace(
+    model="treeffuser",
+    tunable=_treeffuser_lgbm_tunable,
+    fixed={
+        **_TREEFFUSER_LGBM_FIXED,
+        "training_objective": "flow_matching",
+        "flow_path": "linear",
+        "noise_features": "raw_time",
+        "residualize": "mean",
+        "residualize_k_folds": 5,
+        "extra_residualizer_params": _RESIDUALIZER_C,
+    },
+    sampler=_FM_ODE5_SAMPLER,
+)
+
+
+ABLATE_FM_VP_NORESID_ODE5 = SearchSpace(
+    model="treeffuser",
+    tunable=_treeffuser_lgbm_tunable,
+    fixed={
+        **_TREEFFUSER_LGBM_FIXED,
+        "training_objective": "flow_matching",
+        "flow_path": "vp",
+        "noise_features": "raw_time",
+        "residualize": "off",
+    },
+    sampler=_FM_ODE5_SAMPLER,
+)
+
+
+ABLATE_FM_VP_RESID_ODE5 = SearchSpace(
+    model="treeffuser",
+    tunable=_treeffuser_lgbm_tunable,
+    fixed={
+        **_TREEFFUSER_LGBM_FIXED,
+        "training_objective": "flow_matching",
+        "flow_path": "vp",
+        "noise_features": "raw_time",
+        "residualize": "mean",
+        "residualize_k_folds": 5,
+        "extra_residualizer_params": _RESIDUALIZER_C,
+    },
+    sampler=_FM_ODE5_SAMPLER,
 )
 
 
@@ -288,6 +459,15 @@ SPACES: dict[str, SearchSpace] = {
     "treeffuser_published": TREEFFUSER_PUBLISHED,
     "treeffuser_score_plus": TREEFFUSER_SCORE_PLUS,
     "treeffuser_fm": TREEFFUSER_FM,
+    "ablate_score_noise_euler50": ABLATE_SCORE_NOISE_EULER50,
+    "ablate_score_noise_heun25": ABLATE_SCORE_NOISE_HEUN25,
+    "ablate_score_resid_noise_heun25": ABLATE_SCORE_RESID_NOISE_HEUN25,
+    "ablate_score_resid_edm_rawtime_heun25": ABLATE_SCORE_RESID_EDM_RAWTIME_HEUN25,
+    "ablate_score_resid_edm_logstd_uniform_heun25": ABLATE_SCORE_RESID_EDM_LOGSTD_UNIFORM_HEUN25,
+    "ablate_score_plus_heun25": ABLATE_SCORE_PLUS_HEUN25,
+    "ablate_fm_linear_resid_ode5": ABLATE_FM_LINEAR_RESID_ODE5,
+    "ablate_fm_vp_noresid_ode5": ABLATE_FM_VP_NORESID_ODE5,
+    "ablate_fm_vp_resid_ode5": ABLATE_FM_VP_RESID_ODE5,
     "ngboost": NGBOOST,
     "ibug": IBUG,
     "drf": DRF,

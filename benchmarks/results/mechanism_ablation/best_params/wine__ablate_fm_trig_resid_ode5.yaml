@@ -1,0 +1,55 @@
+protocol:
+  dataset: wine
+  space_name: ablate_fm_trig_resid_ode5
+  protocol_version: mechanism-ablation-v1
+  n_train: 5847
+  n_test: 650
+  x_dim: 3
+  master_seed: 0
+  n_folds: 6
+  n_samples: 100
+  space_fingerprint: 5c272539a2a21855
+protocol_fingerprint: 5033b9be6292008b
+model: treeffuser
+best_value_crps: 0.33846995872662833
+best_tunable:
+  n_estimators: 2181
+  learning_rate: 0.02589747317817401
+  num_leaves: 222
+  max_depth: -1
+  min_child_samples: 37
+  subsample: 0.927081086137754
+params:
+  early_stopping_rounds: 50
+  n_repeats: 30
+  subsample_freq: 1
+  verbose: -1
+  training_objective: flow_matching
+  flow_path: trig
+  noise_features: raw_time
+  residualize: mean
+  residualize_k_folds: 5
+  extra_residualizer_params:
+    n_estimators: 300
+    learning_rate: 0.05
+    max_depth: -1
+    num_leaves: 63
+    min_child_samples: 10
+  n_estimators: 2181
+  learning_rate: 0.02589747317817401
+  num_leaves: 222
+  max_depth: -1
+  min_child_samples: 37
+  subsample: 0.927081086137754
+sampler:
+  n_samples: 200
+  n_parallel: 20
+  n_steps: 5
+  method: heun
+  pf_ode: false
+  velocity_stochasticity: 0.0
+  velocity_stochasticity_schedule: linear
+n_trials_target: 25
+n_trials_finite: 25
+n_trials_failed: 0
+storage: /Users/silaskoemen/Documents/Projects/treeffuser/benchmarks/results/mechanism_ablation/studies/wine__ablate_fm_trig_resid_ode5__5033b9be6292008b.db

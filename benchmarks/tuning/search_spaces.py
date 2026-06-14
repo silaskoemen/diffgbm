@@ -314,6 +314,22 @@ ABLATE_FM_LINEAR_RESID_ODE5 = SearchSpace(
 )
 
 
+ABLATE_FM_TRIG_RESID_ODE5 = SearchSpace(
+    model="treeffuser",
+    tunable=_treeffuser_lgbm_tunable,
+    fixed={
+        **_TREEFFUSER_LGBM_FIXED,
+        "training_objective": "flow_matching",
+        "flow_path": "trig",
+        "noise_features": "raw_time",
+        "residualize": "mean",
+        "residualize_k_folds": 5,
+        "extra_residualizer_params": _RESIDUALIZER_C,
+    },
+    sampler=_FM_ODE5_SAMPLER,
+)
+
+
 ABLATE_FM_VP_NORESID_ODE5 = SearchSpace(
     model="treeffuser",
     tunable=_treeffuser_lgbm_tunable,
@@ -466,6 +482,7 @@ SPACES: dict[str, SearchSpace] = {
     "ablate_score_resid_edm_logstd_uniform_heun25": ABLATE_SCORE_RESID_EDM_LOGSTD_UNIFORM_HEUN25,
     "ablate_score_plus_heun25": ABLATE_SCORE_PLUS_HEUN25,
     "ablate_fm_linear_resid_ode5": ABLATE_FM_LINEAR_RESID_ODE5,
+    "ablate_fm_trig_resid_ode5": ABLATE_FM_TRIG_RESID_ODE5,
     "ablate_fm_vp_noresid_ode5": ABLATE_FM_VP_NORESID_ODE5,
     "ablate_fm_vp_resid_ode5": ABLATE_FM_VP_RESID_ODE5,
     "ngboost": NGBOOST,

@@ -27,6 +27,7 @@ VARIANTS = [
     "ablate_score_resid_edm_logstd_uniform_heun25",
     "ablate_score_plus_heun25",
     "ablate_fm_linear_resid_ode5",
+    "ablate_fm_trig_resid_ode5",
     "ablate_fm_vp_noresid_ode5",
     "ablate_fm_vp_resid_ode5",
 ]
@@ -39,6 +40,7 @@ DISPLAY = {
     "ablate_score_resid_edm_logstd_uniform_heun25": "+ log-sigma feature",
     "ablate_score_plus_heun25": "Score+ full",
     "ablate_fm_linear_resid_ode5": "FM linear + resid",
+    "ablate_fm_trig_resid_ode5": "FM trig + resid",
     "ablate_fm_vp_noresid_ode5": "FM VP no resid",
     "ablate_fm_vp_resid_ode5": "FM VP + resid",
 }
@@ -184,11 +186,11 @@ def render_markdown(datasets: list[str], means: dict[tuple[str, str], dict[str, 
         "neutral under uniform t in this tuned protocol."
     )
     lines.append(
-        "- Full score+ is the best calibrated score-side row, while tuned "
-        "FM-linear plus residualization has the best aggregate CRPSS/rel-CRPS in "
-        "this ablation. This revises the earlier fixed-diagnostic path story: VP "
-        "is fastest here, but linear FM should be included in the paper-facing "
-        "ablation."
+        "- Full score+ is the best calibrated score-side row. Among residualized "
+        "FM paths, linear has the best aggregate CRPSS, trig is close and wins "
+        "two datasets, and VP is fastest. This revises the earlier "
+        "fixed-diagnostic path story into a practical path/conditioning "
+        "frontier."
     )
     return "\n".join(lines)
 
@@ -197,7 +199,7 @@ def main() -> None:
     rows = load_rows(INPUT_DIR)
     datasets, means = grouped_means(rows)
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT_PATH.write_text(render_markdown(datasets, means))
+    OUTPUT_PATH.write_text(render_markdown(datasets, means) + "\n")
     print(f"Wrote {OUTPUT_PATH.relative_to(REPO_ROOT)}")
     print(f"Rows: {len(rows)}; datasets: {len(datasets)}; variants: {len(VARIANTS)}")
 

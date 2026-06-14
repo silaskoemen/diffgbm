@@ -59,5 +59,6 @@ spaces:
 
   # Flow-matching geometry and residualization checks.
   - name: ablate_fm_linear_resid_ode5
+  - name: ablate_fm_trig_resid_ode5
   - name: ablate_fm_vp_noresid_ode5
   - name: ablate_fm_vp_resid_ode5

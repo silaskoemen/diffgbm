@@ -167,7 +167,7 @@ def render_markdown(rows: list[dict[str, Any]], n_raw_rows: int) -> str:
 
 
 def plot(rows: list[dict[str, Any]]) -> None:
-    fig, axes = plt.subplots(1, 2, figsize=(9.0, 3.0), constrained_layout=True)
+    fig, axes = plt.subplots(1, 2, figsize=(11.0, 4.6), constrained_layout=True)
     panels = [
         ("rel_crps", "rel-CRPS (lower is better)"),
         ("interval_95_abs_coverage_error", "|cE|@95 (lower is better)"),
@@ -184,41 +184,48 @@ def plot(rows: list[dict[str, Any]]) -> None:
                 [row[metric] for row in ode_rows],
                 marker=MARKERS[family],
                 color=COLORS[family],
-                linewidth=1.8,
-                markersize=4.5,
+                linewidth=2.6,
+                markersize=8.0,
                 label=DISPLAY[family],
+                zorder=3,
             )
             for row in ode_rows:
                 ax.annotate(
                     str(row["n_steps"]),
                     (row["sample_time"], row[metric]),
                     textcoords="offset points",
-                    xytext=(3, 4),
-                    fontsize=6.5,
+                    xytext=(5, 6),
+                    fontsize=10.5,
+                    fontweight="bold",
                     color=COLORS[family],
+                    zorder=4,
+                    bbox=dict(boxstyle="round,pad=0.12", fc="white", ec="none", alpha=0.65),
                 )
             for row in sde_rows:
                 ax.scatter(
                     [row["sample_time"]],
                     [row[metric]],
                     marker="x",
-                    s=36,
-                    linewidths=1.6,
+                    s=90,
+                    linewidths=2.6,
                     color=COLORS[family],
+                    zorder=4,
                 )
                 ax.annotate(
                     "SDE25",
                     (row["sample_time"], row[metric]),
                     textcoords="offset points",
-                    xytext=(3, -9),
-                    fontsize=6.5,
+                    xytext=(6, -13),
+                    fontsize=9.5,
                     color=COLORS[family],
+                    zorder=4,
                 )
         ax.set_xscale("log")
-        ax.set_xlabel("Sample-generation time (s, log scale)")
-        ax.set_ylabel(ylabel)
+        ax.set_xlabel("Sample-generation time (s, log scale)", fontsize=12)
+        ax.set_ylabel(ylabel, fontsize=12)
+        ax.tick_params(axis="both", labelsize=10.5)
         ax.grid(True, which="both", linewidth=0.4, alpha=0.35)
-    axes[0].legend(frameon=False, fontsize=7.5)
+    axes[0].legend(frameon=False, fontsize=11, loc="best")
     FIGURE_PATH.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(FIGURE_PATH)
     fig.savefig(PNG_PATH, dpi=200)

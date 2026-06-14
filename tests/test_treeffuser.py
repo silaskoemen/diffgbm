@@ -212,7 +212,7 @@ def test_treeffuser_residualization_end_to_end(residualize):
     assert np.all(np.isfinite(samples))
 
 
-def test_treeffuser_residualization_inverse_uses_tiled_x_order():
+def test_treeffuser_residualization_inverse_uses_unique_x_rows():
     rng = np.random.default_rng(3)
     X = rng.normal(size=(100, 2))
     y = X[:, :1] + rng.normal(scale=0.2, size=(100, 1))
@@ -236,18 +236,23 @@ def test_treeffuser_residualization_inverse_uses_tiled_x_order():
     assert model._x_scaler is not None
 
     observed = {}
-    original_inverse_transform = model._residualizer.inverse_transform
+    original_inverse_transform_tiled = model._residualizer.inverse_transform_tiled
 
-    def recording_inverse_transform(X, residual):
-        observed["X"] = X.copy()
-        return original_inverse_transform(X, residual)
+    def recording_inverse_transform_tiled(X_unique, residual, n_tiles):
+        observed["X_unique"] = X_unique.copy()
+        observed["n_tiles"] = n_tiles
+        return original_inverse_transform_tiled(X_unique, residual, n_tiles)
 
-    model._residualizer.inverse_transform = recording_inverse_transform
+    model._residualizer.inverse_transform_tiled = recording_inverse_transform_tiled
     X_sample = X[:3]
     model.sample(X_sample, n_samples=4, n_parallel=2, n_steps=2, seed=1)
 
-    expected = np.tile(model._x_scaler.transform(X_sample), [4, 1])
-    assert np.allclose(observed["X"], expected)
+    # The optimized inverse transform receives the unique (untiled) rows plus the tile
+    # count, and broadcasts the conditional mean across samples internally instead of
+    # predicting it for every one of the n_samples * batch tiled rows.
+    expected_unique = model._x_scaler.transform(X_sample)
+    assert np.allclose(observed["X_unique"], expected_unique)
+    assert observed["n_tiles"] == 4
 
 
 def test_dataframe_input():

@@ -104,7 +104,7 @@ class ConformalQuantileCalibrator:
         y_cal: Float[np.ndarray, "batch y_dim"],
         n_samples: int = 200,
         n_steps: int = 50,
-        n_parallel: int = 10,
+        n_parallel: int = 50,
         seed: int | None = None,
     ) -> "ConformalQuantileCalibrator":
         """Sample from `model` at `X_cal` and calibrate against `y_cal`."""
@@ -137,7 +137,7 @@ class ConformalQuantileCalibrator:
         X: Float[np.ndarray, "batch x_dim"],
         n_samples: int = 200,
         n_steps: int = 50,
-        n_parallel: int = 10,
+        n_parallel: int = 50,
         seed: int | None = None,
     ) -> tuple[Float[np.ndarray, "batch y_dim"], Float[np.ndarray, "batch y_dim"]]:
         """Sample from `model` at `X` and return the conformalized interval."""

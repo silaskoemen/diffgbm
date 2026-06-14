@@ -327,7 +327,7 @@ class BaseTabularDiffusion(BaseEstimator, abc.ABC):
         self,
         X: Float[ndarray, "batch x_dim"] | pd.DataFrame,
         n_samples: int,
-        n_parallel: int = 10,
+        n_parallel: int = 50,
         n_steps: int = 50,
         seed=None,
         verbose: bool = False,
@@ -346,9 +346,12 @@ class BaseTabularDiffusion(BaseEstimator, abc.ABC):
         n_samples : int
             Number of samples to draw for each input.
         n_parallel : int, optional
-            Number of parallel samples to draw. Default is 10.
+            Number of samples processed per batched solver pass. Larger values issue
+            fewer, larger LightGBM prediction calls, which amortizes per-call overhead
+            (throughput plateaus around 50 here) at the cost of higher peak memory, since
+            the working batch holds ``n_parallel * batch`` rows. Default is 50.
         n_steps : int, optional
-            Number of steps to take by the SDE solver. Default is 100.
+            Number of steps to take by the SDE solver. Default is 50.
         seed : int, optional
             Seed for the random number generator of the sampling. Default is None.
         verbose : bool, optional
@@ -419,8 +422,8 @@ class BaseTabularDiffusion(BaseEstimator, abc.ABC):
         self,
         X: Float[ndarray, "batch x_dim"],
         n_samples: int,
-        n_parallel: int = 10,
-        n_steps: int = 100,
+        n_parallel: int = 50,
+        n_steps: int = 50,
         seed=None,
         verbose: bool = False,
         sampler_method: str = "euler",
@@ -526,10 +529,13 @@ class BaseTabularDiffusion(BaseEstimator, abc.ABC):
 
         y_transformed = np.concatenate(y_samples, axis=0)
         if self._residualizer is not None:
-            x_tiled = np.tile(x_transformed, [n_samples, 1])
-            y_transformed = self._residualizer.inverse_transform(
-                X=x_tiled,
+            # y_transformed stacks `n_samples` copies of the `batch` rows (sample-major),
+            # so predict the conditional mean/scale once per unique row and broadcast,
+            # rather than predicting for all `n_samples * batch` tiled rows.
+            y_transformed = self._residualizer.inverse_transform_tiled(
+                X_unique=x_transformed,
                 residual=y_transformed,
+                n_tiles=n_samples,
             )
         y_untransformed = self._y_scaler.inverse_transform(y_transformed)
 

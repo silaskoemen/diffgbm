@@ -171,18 +171,50 @@ class ConditionalResidualizer:
 
     def inverse_transform(
         self,
-        X: Float[ndarray, "batch x_dim"],
+        X: Float[ndarray, "batch x_dim"] | None,
         residual: Float[ndarray, "batch y_dim"],
+        *,
+        mean: Float[ndarray, "batch y_dim"] | None = None,
+        scale: Float[ndarray, "batch y_dim"] | None = None,
     ) -> Float[ndarray, "batch y_dim"]:
         self._check_is_fitted()
         assert self.residual_center is not None
         assert self.residual_global_scale is not None
 
-        mean = self.predict_mean(X)
+        if mean is None:
+            if X is None:
+                raise ValueError("inverse_transform requires either `X` or a precomputed `mean`.")
+            mean = self.predict_mean(X)
         scaled_residual = residual * self.residual_global_scale + self.residual_center
         if self.residualize == "mean_scale":
-            scaled_residual = scaled_residual * self.predict_scale(X)
+            if scale is None:
+                if X is None:
+                    raise ValueError(
+                        "inverse_transform requires either `X` or a precomputed `scale` for mean_scale mode."
+                    )
+                scale = self.predict_scale(X)
+            scaled_residual = scaled_residual * scale
         return mean + scaled_residual
+
+    def inverse_transform_tiled(
+        self,
+        X_unique: Float[ndarray, "batch x_dim"],
+        residual: Float[ndarray, "n_tiles_times_batch y_dim"],
+        n_tiles: int,
+    ) -> Float[ndarray, "n_tiles_times_batch y_dim"]:
+        """Inverse-transform residuals that are ``n_tiles`` stacked copies of ``X_unique``.
+
+        Equivalent to ``inverse_transform(np.tile(X_unique, [n_tiles, 1]), residual)``, but
+        the X-dependent conditional mean (and scale) are predicted once on ``X_unique`` and
+        broadcast across the tiles instead of being recomputed for every tiled row. Sampling
+        tiles ``X`` to ``n_samples * batch`` rows, so this removes an ``n_samples``-fold
+        redundant residualizer inference during sample inversion.
+        """
+        mean = np.tile(self.predict_mean(X_unique), [n_tiles, 1])
+        scale = None
+        if self.residualize == "mean_scale":
+            scale = np.tile(self.predict_scale(X_unique), [n_tiles, 1])
+        return self.inverse_transform(None, residual, mean=mean, scale=scale)
 
     def predict_mean(self, X: Float[ndarray, "batch x_dim"]) -> Float[ndarray, "batch y_dim"]:
         self._check_is_fitted()

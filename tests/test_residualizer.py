@@ -45,6 +45,28 @@ def test_conditional_residualizer_transform_inverse_identity(mode):
 
 
 @pytest.mark.parametrize("mode", ["mean", "mean_scale"])
+def test_inverse_transform_tiled_matches_tiled_inverse_transform(mode):
+    """The deduplicated tiled inverse transform must match tiling X then inverting."""
+    X, y = _make_heteroscedastic_data()
+    residualizer = ConditionalResidualizer(
+        residualize=mode,
+        k_folds=3,
+        seed=0,
+        extra_params=_fast_params(),
+    )
+    residualizer.fit(X, y)
+
+    n_tiles = 5
+    residual_tiled = np.tile(residualizer.transform(X, y), [n_tiles, 1])
+
+    tiled = residualizer.inverse_transform_tiled(X, residual_tiled, n_tiles)
+    reference = residualizer.inverse_transform(np.tile(X, [n_tiles, 1]), residual_tiled)
+
+    assert tiled.shape == residual_tiled.shape
+    assert np.allclose(tiled, reference)
+
+
+@pytest.mark.parametrize("mode", ["mean", "mean_scale"])
 def test_conditional_residualizer_oof_residuals_are_standardized(mode):
     X, y = _make_heteroscedastic_data()
     residualizer = ConditionalResidualizer(

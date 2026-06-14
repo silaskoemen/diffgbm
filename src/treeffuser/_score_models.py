@@ -1290,13 +1290,13 @@ class LightGBMScoreModel(ScoreModel):
             std=std,
         )
         for i in range(y.shape[-1]):
-            with warnings.catch_warnings():
-                warnings.filterwarnings(
-                    "ignore",
-                    message="X does not have valid feature names.*",
-                    category=UserWarning,
-                )
-                prediction_i = self.models[i].predict(predictors, num_threads=self.n_jobs)
+            # Call the underlying Booster directly. This skips the sklearn wrapper's
+            # per-call input validation and the "X does not have valid feature names"
+            # warning (the reason for the old warnings filter), while producing identical
+            # predictions: Booster.predict with num_iteration=None honors best_iteration
+            # exactly as the wrapper does. The wrapper overhead is paid 2 * n_steps * y_dim
+            # times per sampling chunk, so removing it matters for sampling latency.
+            prediction_i = self.models[i].booster_.predict(predictors, num_threads=self.n_jobs)
             predictions.append(prediction_i)
         predictions = np.array(predictions).T
         predicted_mean = None
@@ -1472,13 +1472,8 @@ class LightGBMVelocityModel(VelocityModel):
         )
         predictions = []
         for i in range(y.shape[-1]):
-            with warnings.catch_warnings():
-                warnings.filterwarnings(
-                    "ignore",
-                    message="X does not have valid feature names.*",
-                    category=UserWarning,
-                )
-                prediction_i = self.models[i].predict(predictors, num_threads=self.n_jobs)
+            # Direct Booster call; see the matching note in ``LightGBMScoreModel.score``.
+            prediction_i = self.models[i].booster_.predict(predictors, num_threads=self.n_jobs)
             predictions.append(prediction_i)
         return np.array(predictions).T
 

@@ -32,7 +32,7 @@
 \newtheorem{lemma}{Lemma}
 \newtheorem{proposition}{Proposition}
 
-\title{Fast Tree Diffusions for Probabilistic Tabular Regression via Flow Matching}
+\title{Fast Tree-Based Diffusions and Flows for Probabilistic Tabular Regression}
 
 \author{Anonymous Authors}
 
@@ -40,7 +40,7 @@
 \maketitle
 
 \begin{abstract}
-We extend Treeffuser, a score-based diffusion model for probabilistic tabular regression with gradient-boosted trees, in two directions. A score-side recipe---conditional-mean residualization, EDM-style preconditioning, log-sigma time sampling, and noise-level features---improves aggregate calibration after per-dataset tuning, reducing 95\% coverage error from 0.023 to 0.015 while cutting sampling time 6.5$\times$ over the published baseline. A flow-matching variant with Gaussian paths and algebraic score recovery gives the best normalized CRPS among Treeffuser rows with a VP path and deterministic five-step Heun ODE, and is another 2.4$\times$ faster than the improved score model, but gives back some coverage. The common mechanism is better conditioning of the supervised regression problem seen by the tree ensemble. Under this ten-dataset tuning protocol, the Treeffuser variants give the best aggregate normalized CRPS and coverage metrics among displayed rows, though gains over the published baseline are directional rather than conventionally significant ($p \approx 0.07$), and tuned non-diffusion baselines still win several datasets on raw CRPS. Stochastic ($\varepsilon > 0$) samplers do not Pareto-dominate the deterministic corner, so the empirical recommendation is $\varepsilon = 0$ when aggregate CRPS and latency are the target, while stochasticity remains a conditional-tail calibration knob.
+We extend Treeffuser, a score-based diffusion model for probabilistic tabular regression with gradient-boosted trees, by treating regression conditioning as the central design axis. On the score side, conditional-mean residualization, EDM-style preconditioning, log-sigma time sampling, and noise-level features make the denoising regression better matched to histogram-split tree learners. On the flow side, Gaussian-path flow matching gives a directly learned velocity field with algebraic score recovery, enabling both few-step deterministic ODE sampling and stochastic-interpolant diagnostics. Across ten UCI benchmarks with fold-0 tuning and folds-1--5 evaluation, the score-side recipe gives the best Treeffuser calibration, reducing 95\% coverage error from 0.023 to 0.015 and cutting sampling time 6.5$\times$ over the published baseline. The FM row gives the best normalized CRPS among Treeffuser rows and is another 2.4$\times$ faster than the improved score model, but gives back some coverage. These are Pareto improvements rather than decisive dominance: gains over the published baseline are directional rather than conventionally significant ($p \approx 0.07$), and tuned non-diffusion baselines still win several datasets on raw CRPS. Stochastic ($\varepsilon > 0$) samplers do not Pareto-dominate the deterministic corner, so the empirical recommendation is $\varepsilon = 0$ when aggregate CRPS and latency are the target, while stochasticity remains a conditional-tail calibration knob.
 \end{abstract}
 
 \section{Introduction}\label{sec:intro}
@@ -205,7 +205,7 @@ Table~\ref{tab:mechanism-ablation} isolates the main design choices under the sa
 \end{table*}
 
 \subsection{Sampler Cost Tradeoff}\label{sec:sampler-cost}
-Figure~\ref{fig:sampler-cost} re-evaluates the tuned Treeffuser configurations across sampler step counts without retuning hyperparameters. The practical pattern is sharp. FM-ODE is effectively converged by 3--5 Heun steps: VP-FM moves from rel-CRPS 1.046 at 3 steps to 1.037 at 5 steps, and residualized linear FM is already at 1.031 at 3 steps. Score$^+$ needs more integration: 5-step PF-ODE is not competitive (rel-CRPS 1.781), while 15--25 steps recover the calibrated score row. The published Euler SDE improves gradually with step count but remains much slower at comparable aggregate CRPS. Finally, the 25-step FM-SDE points confirm the calibration tradeoff: for VP-FM, stochasticity improves 95\% coverage error from 0.024 to 0.018, but worsens CRPS, $q$-MACE, and 90\% coverage error. Thus the default recommendation remains few-step FM-ODE for aggregate CRPS/latency, with stochasticity reserved for conditional-calibration targets.
+Figure~\ref{fig:sampler-cost} re-evaluates the tuned Treeffuser configurations across sampler step counts without retuning hyperparameters. The practical pattern is sharp. FM-ODE is effectively converged by 3--5 Heun steps: VP-FM moves from rel-CRPS 1.046 at 3 steps to 1.037 at 5 steps, and residualized linear FM is already at 1.031 at 3 steps. Score$^+$ needs more integration: 5-step PF-ODE is not competitive (rel-CRPS 1.781), while 15--25 steps recover the calibrated score row. The published Euler SDE improves gradually with step count but remains much slower at comparable aggregate CRPS. Finally, the 25-step FM-SDE points confirm the calibration tradeoff: for VP-FM, stochasticity improves 95\% coverage error from 0.024 to 0.018, but worsens $q$-MACE and 90\% coverage error while paying 25 SDE steps. The same tradeoff is clearest in the highest predicted-IQR bin: Appendix~\ref{app:tail-diagnostic} shows VP-FM 95\% coverage improving from 0.906 with the 5-step ODE to 0.944 with the 25-step SDE, and linear FM from 0.902 to 0.935. Thus the default recommendation remains few-step FM-ODE for aggregate CRPS/latency, with stochasticity reserved for conditional-calibration targets.
 
 \begin{figure*}[!t]
   \centering
@@ -218,7 +218,7 @@ Figure~\ref{fig:sampler-cost} re-evaluates the tuned Treeffuser configurations a
 \section{Discussion}\label{sec:disc}
 Two findings deserve emphasis. First, the headline rows compare tuned bundled recipes, while Appendix~\ref{app:score-side} scopes the fixed diagnostics. Because score$^+$ and FM share the same LightGBM tuning surface, the FM result is not implicitly absorbing tuning-budget improvements that belong to the score track. Second, per-dataset tuning turns the headline into a tradeoff: score$^+$ is the strongest calibrated Treeffuser row, whereas FM is strongest on normalized CRPS and latency. The common mechanism is regression conditioning for tree ensembles: EDM preconditioning stabilises the VE score path's inputs and denoising residual, while FM changes the target and sampler geometry of the supervised problem. The tuned path ablation is important here: variance preservation is one helpful conditioning axis, but not the whole story. Linear FM has a less uniform input scale, yet its simple displacement-like velocity target and direct few-step ODE can be easier to exploit once conditional location is residualized; trig shows that the variance-preserving family remains competitive, but does not uniquely determine the CRPS optimum. Log-$\sigma$ sampling controls where tree capacity is spent, the log-$\sigma$ feature exposes the noise regime to histogram splits, residualization removes predictable conditional location, and Heun ODE sampling is an inference-side efficiency gain. The large-dataset inversion argues against a blanket ``SDE is worse'' interpretation: per-IQR-bin diagnostics show that stochasticity can improve high-uncertainty tail coverage, while aggregate metrics penalise broader intervals, worse CRPS, and higher latency.
 
-\paragraph{Limitations.} All displayed families are tuned per dataset, but this is still finite-budget model selection with unequal search spaces and per-trial costs: the comparison is equal finite-trial budget rather than wall-clock-normalized model selection. We include six probabilistic baselines but not distributional random forests~\citep{cevid2022drf}; per-dataset gaps, especially on large datasets, should be read as descriptive rather than high-powered significance estimates. The residualizer is also selected from fixed diagnostics rather than automated jointly with the diffusion objective, which is the most likely reason the published SDE still wins the two largest datasets, where the inner model has enough data to fit the conditional mean directly and the fixed residualizer becomes a bottleneck.
+\paragraph{Limitations.} All displayed families are tuned per dataset, but this is still finite-budget model selection with unequal search spaces and per-trial costs: the comparison is equal finite-trial budget rather than wall-clock-normalized model selection. We include six probabilistic baselines but not distributional random forests~\citep{cevid2022drf}; per-dataset gaps, especially on large datasets, should be read as descriptive rather than high-powered significance estimates. The benchmark suite is also limited to scalar UCI-style regression; categorical-heavy tables, missingness, multi-output responses, and operational tail-risk settings remain outside the evidence in this paper. The residualizer is selected from fixed diagnostics rather than automated jointly with the diffusion objective, which is the most likely reason the published SDE still wins the two largest datasets, where the inner model has enough data to fit the conditional mean directly and the fixed residualizer becomes a bottleneck.
 
 \paragraph{Choosing a variant.} The per-dataset pattern supports benchmark-level operating points rather than a uniform-dominance claim or a simple \emph{calibration vs.\ speed} split. Use headline 5-step VP-FM when sample latency or aggregate normalized CRPS is the binding constraint; it is the fastest displayed headline corner, while the mechanism ablation shows residualized linear FM as the tuned CRPS corner and trig as a close path check. Prefer score$^+$ when interval coverage or PIT uniformity is the reported quantity, since it is the strongest calibrated row at the cost of $\sim$2.4$\times$ more sampling time. On the largest datasets, where residualizer capacity bottlenecks, the published SDE remains competitive and full SDE sampling is worth its cost. Stochasticity ($\varepsilon>0$) is a conditional knob, not a default: select it only when high-uncertainty tail coverage is the target (Appendix~\ref{app:tail-diagnostic}), against conditional-calibration metrics rather than aggregate CRPS.
 
@@ -700,35 +700,27 @@ The rank diagnostics in Table~\ref{tab:robustness-ranks} give the same guarded c
 
 \section{Conditional Tail Calibration Diagnostic}\label{app:tail-diagnostic}
 
-The large-dataset inversion in Table~\ref{tab:per-dataset} admits two plausible mechanisms: the fixed residualizer may be suboptimal at high $n$, and stochastic samplers may improve conditional tail calibration in high-uncertainty regions. Table~\ref{tab:tail-diagnostic} reports direct 95\% coverage on \texttt{california\_housing} and \texttt{protein}, including the highest predicted-IQR bin.
+Aggregate coverage can hide where a sampler is failing. As a lightweight conditional diagnostic, we bin held-out points by the model's predicted interquartile range (IQR) and report coverage in the highest-IQR quintile, together with IQR-MACE, the mean absolute coverage error across the five predicted-IQR bins. This is not a conditional-coverage guarantee, but it tests whether the predictive intervals behave differently on points the model itself considers uncertain. Table~\ref{tab:tail-diagnostic} uses the tuned evaluation artifacts and the sampler-cost sweep, averaging folds within each dataset and then averaging across the ten datasets.
 
 \begin{table}[!h]
   \centering
-  \caption{High-uncertainty tail diagnostic on the two largest datasets. Cov@95 is marginal empirical coverage; Top-IQR Cov@95 is empirical coverage in the highest predicted-IQR quintile; both target 0.95. IQR-MACE is mean $|\text{cE}|$@95 across predicted-IQR quintiles, so lower is better. SDE-linear uses a linear stochasticity schedule; SDE-$\sqrt{t}$ uses the square-root schedule. All rows use the full training and test splits in a separate three-seed diagnostic.}\label{tab:tail-diagnostic}
+  \caption{Conditional calibration proxy using predicted-IQR bins, averaged over the ten UCI datasets after fold averaging. Top-IQR Cov@$q$ is empirical coverage in the highest predicted-IQR quintile; IQR-MACE@$q$ is mean absolute coverage error across all five predicted-IQR bins. FM-SDE rows are eval-only sampler changes from the tuned FM configurations.}\label{tab:tail-diagnostic}
   \scriptsize
-  \begin{tabular}{llrrrr}
+  \begin{tabular}{lrrrrr}
     \toprule
-    Dataset & Variant & CRPS & Cov@95 & IQR-MACE & Top-IQR Cov@95 \\
+    Row & Top-IQR Cov@90 & IQR-MACE@90 & Top-IQR Cov@95 & IQR-MACE@95 & $|\text{cE}|$@95 \\
     \midrule
-    cali.\ housing & Published SDE            & \textbf{0.207} & 0.958 & \textbf{0.015} & 0.931 \\
-                   & FM ODE-C                 & 0.214 & \textbf{0.947} & 0.021 & 0.900 \\
-                   & FM ODE-E                 & 0.213 & 0.947 & 0.021 & 0.900 \\
-                   & FM SDE-C linear          & 0.215 & 0.969 & 0.023 & 0.939 \\
-                   & FM SDE-C $\sqrt{t}$      & 0.215 & 0.967 & 0.022 & 0.938 \\
-                   & FM SDE-E linear          & 0.213 & 0.971 & 0.023 & \textbf{0.944} \\
-                   & FM SDE-E $\sqrt{t}$      & 0.213 & 0.969 & 0.023 & \textbf{0.944} \\
-    protein        & Published SDE            & 1.787 & 0.944 & 0.018 & 0.925 \\
-                   & FM ODE-C                 & 1.860 & 0.933 & 0.025 & 0.923 \\
-                   & FM ODE-E                 & \textbf{1.771} & \textbf{0.949} & \textbf{0.008} & 0.943 \\
-                   & FM SDE-C linear          & 1.859 & 0.959 & 0.011 & 0.960 \\
-                   & FM SDE-C $\sqrt{t}$      & 1.856 & 0.956 & 0.012 & \textbf{0.954} \\
-                   & FM SDE-E linear          & 1.779 & 0.974 & 0.024 & 0.973 \\
-                   & FM SDE-E $\sqrt{t}$      & 1.776 & 0.971 & 0.021 & 0.971 \\
+    Published Euler-50 & 0.927 & 0.053 & 0.961 & 0.030 & 0.023 \\
+    Score$^+$ PF-ODE-25 & 0.880 & \textbf{0.042} & 0.932 & 0.031 & \textbf{0.015} \\
+    FM-VP ODE-5 & 0.854 & 0.051 & 0.906 & 0.040 & 0.024 \\
+    FM-VP SDE-25 & \textbf{0.902} & 0.050 & \textbf{0.944} & \textbf{0.030} & 0.018 \\
+    FM-linear ODE-5 & 0.848 & 0.048 & 0.902 & 0.035 & 0.020 \\
+    FM-linear SDE-25 & 0.891 & 0.053 & 0.935 & 0.034 & 0.021 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-The diagnostic supports a tradeoff rather than a one-sided conclusion. On \texttt{california\_housing}, the deterministic FM rows under-cover the high-IQR bin (0.900), while adding FM stochasticity lifts this coverage to 0.938--0.944; the price is marginal over-coverage (0.967--0.971) and no gain over the published SDE on CRPS or IQR-MACE. On \texttt{protein}, residualizer-E with the deterministic ODE is already close to the nominal target and remains best on CRPS and IQR-MACE, whereas the residualizer-E SDE rows over-cover both marginally and in the high-IQR bin. Residualizer-C stochasticity is directionally useful for coverage, especially with the square-root schedule, but gives up CRPS. Thus the safest interpretation is not that SDE samplers are dominated, but that their benefit is conditional and must be selected against conditional-calibration metrics rather than headline CRPS alone.
+The diagnostic supports a tradeoff rather than a one-sided conclusion. Deterministic FM under-covers the most uncertain quintile at 95\% nominal coverage: 0.906 for VP and 0.902 for linear. Adding stochasticity lifts those numbers to 0.944 and 0.935, respectively, and improves VP's IQR-MACE@95 from 0.040 to 0.030. However, the same SDE rows require 25 stochastic steps and, as Figure~\ref{fig:sampler-cost} shows, are not the aggregate CRPS/latency default. The published SDE and score$^+$ remain competitive on this diagnostic, so the safest interpretation is that stochastic FM is a useful conditional-calibration option, not a uniformly better sampler.
 
 \section{Reproducibility}\label{app:repro}
 
@@ -754,8 +746,7 @@ The submission includes an anonymized frozen repository via \texttt{anonymous.4o
     \ref{tab:competitors}, \ref{tab:per-dataset}, \ref{tab:perdata-ext}, \ref{tab:headline} & \texttt{tuning\_manifest.yaml} & \texttt{benchmarks/results/tuning/eval/*.jsonl} \\
     \ref{tab:robustness-ranks}, \ref{tab:robustness-size} & \texttt{benchmarks/scripts/summarize\_robustness.py} & \texttt{benchmarks/results/selected/robustness\_summary.md} \\
     \ref{tab:mechanism-ablation} & \texttt{mechanism\_ablation\_manifest.yaml} & \texttt{benchmarks/results/mechanism\_ablation/eval/*.jsonl} \\
-    \ref{fig:sampler-cost} & \texttt{benchmarks/scripts/run\_sampler\_cost\_sweep.py}, \texttt{benchmarks/scripts/summarize\_sampler\_cost\_sweep.py} & \texttt{benchmarks/results/sampler\_cost\_sweep/eval/sampler\_cost\_sweep.jsonl} \\
-    \ref{tab:tail-diagnostic} & \texttt{paper\_real\_data\_v2.yaml}, \texttt{tail\_calibration\_full.yaml} & \texttt{paper\_real\_data\_v2\_full.jsonl}, \texttt{tail\_calibration\_full.jsonl} \\
+    \ref{fig:sampler-cost}, \ref{tab:tail-diagnostic} & \texttt{benchmarks/scripts/run\_sampler\_cost\_sweep.py}, \texttt{benchmarks/scripts/summarize\_sampler\_cost\_sweep.py} & \texttt{benchmarks/results/sampler\_cost\_sweep/eval/sampler\_cost\_sweep.jsonl} \\
     \ref{tab:tuning-spaces} & \texttt{benchmarks/tuning/search\_spaces.py} & -- \\
     \bottomrule
   \end{tabular}}

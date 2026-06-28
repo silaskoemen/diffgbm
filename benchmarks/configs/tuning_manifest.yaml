@@ -44,6 +44,19 @@ datasets:
   - name: protein
     n_train: 41157
     n_test: 4573
+  # Large-data stress test (50k+). n_train+n_test is the total subset that
+  # build_splits partitions into the fixed disjoint 6-fold split (eval-fold train
+  # is 5/6 of it). No per-fold resampling and no tuning leakage: fold 0 is the
+  # only validation signal and is never an eval test fold. Year is capped here:
+  # its ~515k rows are deterministically subsampled once (by master_seed) to
+  # 120k before folding, giving ~100k eval-fold train and keeping sampling
+  # tractable. CT slices (~53.5k) is used in full.
+  - name: ct_slices
+    n_train: 48150
+    n_test: 5350
+  - name: year_prediction_msd
+    n_train: 108000
+    n_test: 12000
 
 spaces:
   - name: treeffuser_published

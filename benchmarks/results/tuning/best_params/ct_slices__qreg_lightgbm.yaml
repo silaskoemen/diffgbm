@@ -1,0 +1,32 @@
+protocol:
+  dataset: ct_slices
+  space_name: qreg_lightgbm
+  protocol_version: tune-fold0-eval-folds1-5-v1
+  n_train: 48150
+  n_test: 5350
+  x_dim: 3
+  master_seed: 0
+  n_folds: 6
+  n_samples: 100
+  space_fingerprint: 44905d54d09ef0dd
+protocol_fingerprint: 1809f4b610a20dff
+model: qreg_lightgbm
+best_value_crps: 0.6651423254563611
+best_tunable:
+  quantile_count: 24
+  n_estimators: 340
+  learning_rate: 0.12000151987223509
+  num_leaves: 113
+params:
+  min_child_samples: 20
+  n_jobs: -1
+  early_stopping_rounds: 30
+  quantile_count: 24
+  n_estimators: 340
+  learning_rate: 0.12000151987223509
+  num_leaves: 113
+sampler: null
+n_trials_target: 25
+n_trials_finite: 25
+n_trials_failed: 0
+storage: /Users/silaskoemen/Documents/Projects/treeffuser/benchmarks/results/tuning/studies/ct_slices__qreg_lightgbm__1809f4b610a20dff.db

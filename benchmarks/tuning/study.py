@@ -169,6 +169,11 @@ def run_study(
             f"incompatible trials. Delete the .db file to start over."
         )
 
+    if space.seed_trials and len(study.trials) == 0:
+        for seed_trial in space.seed_trials:
+            study.enqueue_trial(dict(seed_trial), skip_if_exists=True)
+        bound.info("Enqueued {} canonical seed trials.", len(space.seed_trials))
+
     objective = TuningObjective(
         space_name=space_name,
         space=space,
@@ -213,7 +218,12 @@ def run_study(
             f"despite {finite} finite trials reported — internal inconsistency."
         )
 
-    best_params = {**space.fixed, **study.best_params}
+    # Re-materialize through the space's tunable so define-by-run spaces persist
+    # their assembled params (e.g. score-flex packs resid_* suggestions into
+    # extra_residualizer_params); study.best_params holds only the raw
+    # Optuna-suggested keys, which are not necessarily valid model kwargs.
+    best_trial_params = space.tunable(optuna.trial.FixedTrial(study.best_params))
+    best_params = {**space.fixed, **best_trial_params}
     best_value = float(study.best_value)
 
     output = {

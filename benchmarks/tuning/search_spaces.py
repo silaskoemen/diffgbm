@@ -33,6 +33,10 @@ class SearchSpace:
     tunable: TunableFn
     fixed: dict[str, Any] = field(default_factory=dict)
     sampler: dict[str, Any] | None = None
+    # Raw suggested-key dicts enqueued as the study's first trials (canonical
+    # corner configurations for superset spaces, so tuned supersets recover the
+    # frozen-bundle optima by construction). Not part of the space fingerprint.
+    seed_trials: tuple[dict[str, Any], ...] = ()
 
     def __post_init__(self) -> None:
         sample = self.tunable(_DryRunTrial())
@@ -177,6 +181,248 @@ TREEFFUSER_FM = SearchSpace(
         "residualize": "mean",
         "residualize_k_folds": 5,
         "extra_residualizer_params": _RESIDUALIZER_C,
+    },
+    sampler=_FM_ODE5_SAMPLER,
+)
+
+
+# Residualizer-off twins of the two new headline mechanisms. Identical to the
+# headline spaces above except the residualizer is disabled, so a re-tuned
+# head-to-head isolates whether the residualizer (rather than the objective or
+# sampler) is what regresses on large datasets such as ct_slices, where the
+# residualized variants trailed the published space ~2.6-2.8x on CRPS.
+# TREEFFUSER_FM_NORESID matches ABLATE_FM_VP_NORESID_ODE5 by construction; it is
+# kept as a headline-named twin so the FM and score-plus arms stay symmetric.
+TREEFFUSER_SCORE_PLUS_NORESID = SearchSpace(
+    model="treeffuser",
+    tunable=_treeffuser_lgbm_tunable,
+    fixed={
+        **_TREEFFUSER_LGBM_FIXED,
+        "training_objective": "score",
+        "score_parameterization": "edm",
+        "noise_features": "raw_time_log_std",
+        "t_sampling": "log_sigma_normal",
+        "log_sigma_p_mean": -1.2,
+        "log_sigma_p_std": 1.2,
+        "residualize": "off",
+        "sde_name": "vesde",
+        "sde_hyperparam_min": 0.01,
+        "sde_hyperparam_max": 20.0,
+    },
+    sampler=_SCORE_HEUN25_SAMPLER,
+)
+
+
+def _treeffuser_score_flex_tunable(trial: optuna.Trial) -> TrialParams:
+    """Score-side recipe axes exposed as tunable dimensions on top of the LGBM surface.
+
+    The ct_slices transfer ablation showed the published and score+ bundles are
+    co-adapted optima that no single-factor move connects, so the recipe axes must
+    be tunable jointly. This space contains the published corner (noise / raw_time /
+    uniform / residualize off) and the score+ corner (edm / raw_time_log_std /
+    log_sigma_normal / residualize mean) as points, plus residualizer-capacity and
+    loss-weighting knobs. Categorical+conditional structure needs a larger trial
+    budget than the frozen bundles (use --n-trials 50 rather than the default 25).
+
+    The sampler (SDE vs PF-ODE) is NOT tunable here: it is a recipe-coupled axis
+    carried by the two twin spaces (TREEFFUSER_SCORE_FLEX / _SDE), each tuning this
+    same recipe co-adapted to its sampler; fold-0 selection picks the arm.
+    """
+    params = _treeffuser_lgbm_tunable(trial)
+    # Histogram resolution is regime-dependent: raw-input recipes on large
+    # high-SNR data gain from finer bins (ct_slices: published 0.154 -> 0.138
+    # at 4095), EDM-scaled inputs do not, and fit cost scales with it.
+    params["max_bin"] = trial.suggest_categorical("max_bin", [255, 1023, 4095])
+    params["score_parameterization"] = trial.suggest_categorical("score_parameterization", ["noise", "edm"])
+    params["noise_features"] = trial.suggest_categorical("noise_features", ["raw_time", "raw_time_log_std"])
+    t_sampling = trial.suggest_categorical("t_sampling", ["uniform", "log_sigma_normal"])
+    params["t_sampling"] = t_sampling
+    if t_sampling == "log_sigma_normal":
+        params["log_sigma_p_mean"] = trial.suggest_float("log_sigma_p_mean", -3.0, 0.0)
+        params["log_sigma_p_std"] = trial.suggest_float("log_sigma_p_std", 0.6, 2.0)
+    # Loss weighting: min-SNR caps the unbounded small-sigma score rows, the regime
+    # that decides CRPS on high-SNR data. The weighting is parameterization-aware
+    # (get_loss_weighting), so it composes with both the noise and EDM targets.
+    loss_weighting = trial.suggest_categorical("loss_weighting", ["uniform", "min_snr"])
+    params["loss_weighting"] = loss_weighting
+    if loss_weighting == "min_snr":
+        params["min_snr_gamma"] = trial.suggest_float("min_snr_gamma", 1.0, 5.0)
+    residualize = trial.suggest_categorical("residualize", ["off", "mean"])
+    params["residualize"] = residualize
+    if residualize == "mean":
+        params["residualize_k_folds"] = 5
+        # Residualizer capacity is tunable (spans the C and E presets); the
+        # size gate in treeffuser._residualizer falls back to the validated C
+        # config when the inner early-stopping split would be too small.
+        params["extra_residualizer_params"] = {
+            "n_estimators": trial.suggest_int("resid_n_estimators", 100, 2000, log=True),
+            "learning_rate": trial.suggest_float("resid_learning_rate", 0.02, 0.2, log=True),
+            "max_depth": -1,
+            "num_leaves": 63,
+            "min_child_samples": 10,
+            "early_stopping_rounds": 30,
+        }
+    return params
+
+
+# Canonical corner initializations for the flex spaces: the published corner
+# (with and without fine binning) and the score+ corners, each with a strong
+# generic LightGBM setting and uniform loss weighting, plus one min-SNR foothold on
+# the large-data score+ corner so TPE explores the loss-weighting axis. Static (not
+# derived from any tuned artifact), so the stated trial budget covers them.
+_SCORE_FLEX_SEED_TRIALS = (
+    # Published corner, default and fine binning.
+    {
+        "n_estimators": 2000,
+        "learning_rate": 0.1,
+        "num_leaves": 200,
+        "max_depth": -1,
+        "min_child_samples": 20,
+        "subsample": 0.9,
+        "max_bin": 255,
+        "score_parameterization": "noise",
+        "noise_features": "raw_time",
+        "t_sampling": "uniform",
+        "loss_weighting": "uniform",
+        "residualize": "off",
+    },
+    {
+        "n_estimators": 2000,
+        "learning_rate": 0.1,
+        "num_leaves": 200,
+        "max_depth": -1,
+        "min_child_samples": 20,
+        "subsample": 0.9,
+        "max_bin": 4095,
+        "score_parameterization": "noise",
+        "noise_features": "raw_time",
+        "t_sampling": "uniform",
+        "loss_weighting": "uniform",
+        "residualize": "off",
+    },
+    # Score+ corner (residualizer-C-like capacity).
+    {
+        "n_estimators": 1000,
+        "learning_rate": 0.05,
+        "num_leaves": 63,
+        "max_depth": -1,
+        "min_child_samples": 20,
+        "subsample": 0.9,
+        "max_bin": 255,
+        "score_parameterization": "edm",
+        "noise_features": "raw_time_log_std",
+        "t_sampling": "log_sigma_normal",
+        "log_sigma_p_mean": -1.2,
+        "log_sigma_p_std": 1.2,
+        "loss_weighting": "uniform",
+        "residualize": "mean",
+        "resid_n_estimators": 300,
+        "resid_learning_rate": 0.05,
+    },
+    # Score+ no-residualizer corner (the large-data score+ optimum).
+    {
+        "n_estimators": 1700,
+        "learning_rate": 0.02,
+        "num_leaves": 151,
+        "max_depth": -1,
+        "min_child_samples": 79,
+        "subsample": 0.93,
+        "max_bin": 255,
+        "score_parameterization": "edm",
+        "noise_features": "raw_time_log_std",
+        "t_sampling": "log_sigma_normal",
+        "log_sigma_p_mean": -1.2,
+        "log_sigma_p_std": 1.2,
+        "loss_weighting": "uniform",
+        "residualize": "off",
+    },
+    # Score+ no-residualizer corner with min-SNR weighting: foothold on the new
+    # loss-weighting axis in the large-data regime where small-sigma rows dominate.
+    {
+        "n_estimators": 1700,
+        "learning_rate": 0.02,
+        "num_leaves": 151,
+        "max_depth": -1,
+        "min_child_samples": 79,
+        "subsample": 0.93,
+        "max_bin": 255,
+        "score_parameterization": "edm",
+        "noise_features": "raw_time_log_std",
+        "t_sampling": "log_sigma_normal",
+        "log_sigma_p_mean": -1.2,
+        "log_sigma_p_std": 1.2,
+        "loss_weighting": "min_snr",
+        "min_snr_gamma": 5.0,
+        "residualize": "off",
+    },
+)
+
+
+# Superset score space: keeps score+'s deterministic Heun-25 PF-ODE sampler (CRPS is
+# sampler-invariant on the ablation; PF-ODE carries the coverage edge) while letting
+# the tuner choose the training recipe per dataset.
+TREEFFUSER_SCORE_FLEX = SearchSpace(
+    model="treeffuser",
+    tunable=_treeffuser_score_flex_tunable,
+    fixed={
+        **_TREEFFUSER_LGBM_FIXED,
+        "training_objective": "score",
+        "sde_name": "vesde",
+        "sde_hyperparam_min": 0.01,
+        "sde_hyperparam_max": 20.0,
+    },
+    sampler=_SCORE_HEUN25_SAMPLER,
+    seed_trials=_SCORE_FLEX_SEED_TRIALS,
+)
+
+
+# SDE-sampler twin of the flex space. The published-corner recipe is incompatible
+# with the PF-ODE sampler (ct_slices: published x PF-ODE-25 collapses to ~0.8 CRPS
+# vs 0.154 with its Euler SDE), so the sampler is a recipe-coupled axis: this twin
+# lets fold-0 selection choose the sampler alongside the training recipe.
+TREEFFUSER_SCORE_FLEX_SDE = SearchSpace(
+    model="treeffuser",
+    tunable=_treeffuser_score_flex_tunable,
+    fixed=TREEFFUSER_SCORE_FLEX.fixed,
+    sampler=_SCORE_EULER50_SAMPLER,
+    seed_trials=_SCORE_FLEX_SEED_TRIALS,
+)
+
+
+# Uniform-t twin of TREEFFUSER_SCORE_PLUS_NORESID: identical except the training-time
+# t distribution, which reverts to the published uniform-t (log-uniform in sigma on the
+# geometric VE schedule over the same [0.01, 20] range, so ~3x more training mass below
+# sigma 0.05 than the EDM-style log-sigma-normal). Isolates the noise-level allocation
+# hypothesis for the large-dataset gap after the ct_slices solver ablation showed the
+# sampler swap moves CRPS by <0.01. An alternative (lower log_sigma_p_mean) would test
+# the same hypothesis less sharply.
+TREEFFUSER_SCORE_PLUS_NORESID_UNIFORM_T = SearchSpace(
+    model="treeffuser",
+    tunable=_treeffuser_lgbm_tunable,
+    fixed={
+        **_TREEFFUSER_LGBM_FIXED,
+        "training_objective": "score",
+        "score_parameterization": "edm",
+        "noise_features": "raw_time_log_std",
+        "t_sampling": "uniform",
+        "residualize": "off",
+        "sde_name": "vesde",
+        "sde_hyperparam_min": 0.01,
+        "sde_hyperparam_max": 20.0,
+    },
+    sampler=_SCORE_HEUN25_SAMPLER,
+)
+
+
+TREEFFUSER_FM_NORESID = SearchSpace(
+    model="treeffuser",
+    tunable=_treeffuser_lgbm_tunable,
+    fixed={
+        **_TREEFFUSER_LGBM_FIXED,
+        "training_objective": "flow_matching",
+        "flow_path": "vp",
+        "noise_features": "raw_time",
+        "residualize": "off",
     },
     sampler=_FM_ODE5_SAMPLER,
 )
@@ -475,6 +721,11 @@ SPACES: dict[str, SearchSpace] = {
     "treeffuser_published": TREEFFUSER_PUBLISHED,
     "treeffuser_score_plus": TREEFFUSER_SCORE_PLUS,
     "treeffuser_fm": TREEFFUSER_FM,
+    "treeffuser_score_plus_noresid": TREEFFUSER_SCORE_PLUS_NORESID,
+    "treeffuser_score_flex": TREEFFUSER_SCORE_FLEX,
+    "treeffuser_score_flex_sde": TREEFFUSER_SCORE_FLEX_SDE,
+    "treeffuser_score_plus_noresid_uniform_t": TREEFFUSER_SCORE_PLUS_NORESID_UNIFORM_T,
+    "treeffuser_fm_noresid": TREEFFUSER_FM_NORESID,
     "ablate_score_noise_euler50": ABLATE_SCORE_NOISE_EULER50,
     "ablate_score_noise_heun25": ABLATE_SCORE_NOISE_HEUN25,
     "ablate_score_resid_noise_heun25": ABLATE_SCORE_RESID_NOISE_HEUN25,

@@ -1,0 +1,26 @@
+protocol:
+  dataset: ct_slices
+  space_name: ngboost
+  protocol_version: tune-fold0-eval-folds1-5-v1
+  n_train: 48150
+  n_test: 5350
+  x_dim: 3
+  master_seed: 0
+  n_folds: 6
+  n_samples: 100
+  space_fingerprint: e0b66aee97485f0b
+protocol_fingerprint: b6e523e7a323bfa6
+model: ngboost
+best_value_crps: 1.4201708536532245
+best_tunable:
+  n_estimators: 2396
+  learning_rate: 0.10877660868613553
+params:
+  early_stopping_rounds: 50
+  n_estimators: 2396
+  learning_rate: 0.10877660868613553
+sampler: null
+n_trials_target: 25
+n_trials_finite: 25
+n_trials_failed: 0
+storage: /Users/silaskoemen/Documents/Projects/treeffuser/benchmarks/results/tuning/studies/ct_slices__ngboost__b6e523e7a323bfa6.db

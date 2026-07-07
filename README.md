@@ -1,12 +1,15 @@
+<p align="center">
+  <img src="assets/diffgbm_logo.png" width="80%" alt="diffgbm logo">
+</p>
 
-# Treeffuser
+# DiffGBM
 
-[![PyPI version](https://badge.fury.io/py/treeffuser.svg)](https://badge.fury.io/py/treeffuser)
+[![PyPI version](https://badge.fury.io/py/diffgbm.svg)](https://badge.fury.io/py/diffgbm)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
-[![GitHub Stars](https://img.shields.io/github/stars/blei-lab/treeffuser?style=flat&logo=GitHub)](https://github.com/blei-lab/treeffuser/stargazers)
-[![Downloads](https://static.pepy.tech/badge/treeffuser)](https://pepy.tech/project/treeffuser/)
-[![Website](https://img.shields.io/badge/website-visit-blue?label=website)](https://blei-lab.github.io/treeffuser/)
-[![Documentation](https://img.shields.io/badge/docs-passing-green)](https://blei-lab.github.io/treeffuser/docs/getting-started.html)
+[![GitHub Stars](https://img.shields.io/github/stars/blei-lab/diffgbm?style=flat&logo=GitHub)](https://github.com/blei-lab/diffgbm/stargazers)
+[![Downloads](https://static.pepy.tech/badge/diffgbm)](https://pepy.tech/project/diffgbm/)
+[![Website](https://img.shields.io/badge/website-visit-blue?label=website)](https://blei-lab.github.io/diffgbm/)
+[![Documentation](https://img.shields.io/badge/docs-passing-green)](https://blei-lab.github.io/diffgbm/docs/getting-started.html)
 [![arXiv](https://img.shields.io/badge/arXiv-2406.07658-red)](https://arxiv.org/abs/2406.07658)
 
 Treeffuser is an easy-to-use package for **probabilistic prediction on tabular data with tree-based diffusion models**.

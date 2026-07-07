@@ -172,7 +172,22 @@ SOURCES: tuple[SourceSpec, ...] = (
             "score_plus_heun_15",
             "score_plus_heun_25",
             "score_plus_heun_50",
+            "published_euler_50",
         ),
+    ),
+    SourceSpec(
+        family="score_plus_noresid",
+        display="Score+ (no residualizer) Heun PF-ODE",
+        space_name="treeffuser_score_plus_noresid",
+        yaml_dir=REPO_ROOT / "benchmarks/results/tuning/best_params",
+        sampler_labels=("published_euler_50", "score_plus_heun_50"),
+    ),
+    SourceSpec(
+        family="fm_noresid",
+        display="FM-VP (no residualizer)",
+        space_name="treeffuser_fm_noresid",
+        yaml_dir=REPO_ROOT / "benchmarks/results/tuning/best_params",
+        sampler_labels=("fm_ode_5", "fm_ode_10", "fm_ode_25"),
     ),
     SourceSpec(
         family="fm_vp",
@@ -196,22 +211,27 @@ def run_sweep(
     output_path: Path,
     dataset_names: set[str] | None,
     family_names: set[str] | None,
+    sampler_names: set[str] | None,
+    fold_ids: set[int] | None,
     strict_space_match: bool,
     append: bool,
     dry_run: bool,
 ) -> None:
     jobs = list(_iter_jobs(dataset_names=dataset_names, family_names=family_names))
+    jobs = [
+        (source, yaml_path, labels) for source, yaml_path in jobs if (labels := _select_labels(source, sampler_names))
+    ]
     if dry_run:
-        for source, yaml_path in jobs:
-            sampler_labels = ", ".join(source.sampler_labels)
+        n_folds = len(fold_ids) if fold_ids is not None else 5
+        for source, yaml_path, labels in jobs:
             logger.info(
                 "Would evaluate dataset={} family={} source_space={} samplers=[{}]",
                 yaml_path.name.split("__", maxsplit=1)[0],
                 source.family,
                 source.space_name,
-                sampler_labels,
+                ", ".join(labels),
             )
-        row_count = sum(5 * len(source.sampler_labels) for source, _ in jobs)
+        row_count = sum(n_folds * len(labels) for _, _, labels in jobs)
         logger.info("Dry run: {} tuned YAMLs, {} output rows", len(jobs), row_count)
         return
 
@@ -222,15 +242,23 @@ def run_sweep(
     provenance = get_provenance()
     total_rows = 0
     with output_path.open("a") as file:
-        for source, yaml_path in jobs:
+        for source, yaml_path, labels in jobs:
             total_rows += _evaluate_source_yaml(
                 source=source,
                 tuned_yaml=yaml_path,
+                sampler_labels=labels,
+                fold_ids=fold_ids,
                 strict_space_match=strict_space_match,
                 provenance=provenance,
                 file=file,
             )
     logger.success("Wrote {} rows to {}", total_rows, output_path)
+
+
+def _select_labels(source: SourceSpec, sampler_names: set[str] | None) -> tuple[str, ...]:
+    if sampler_names is None:
+        return source.sampler_labels
+    return tuple(label for label in source.sampler_labels if label in sampler_names)
 
 
 def _iter_jobs(
@@ -251,6 +279,8 @@ def _evaluate_source_yaml(
     *,
     source: SourceSpec,
     tuned_yaml: Path,
+    sampler_labels: tuple[str, ...],
+    fold_ids: set[int] | None,
     strict_space_match: bool,
     provenance: dict[str, Any],
     file,
@@ -289,6 +319,8 @@ def _evaluate_source_yaml(
     eval_fold_ids = [fold_id for fold_id in range(protocol["n_folds"]) if fold_id != 0]
     rows_written = 0
     for eval_fold, fold in zip(eval_fold_ids, splits.eval_folds, strict=True):
+        if fold_ids is not None and eval_fold not in fold_ids:
+            continue
         X_train, y_train = splits.slice(fold.train_idx)
         X_test, y_test = splits.slice(fold.test_idx)
 
@@ -298,7 +330,7 @@ def _evaluate_source_yaml(
         fit_time = time.perf_counter() - t0
         clim = crps_climatology(y_train=y_train, y_true=y_test)
 
-        for sampler_label in source.sampler_labels:
+        for sampler_label in sampler_labels:
             sampler_spec = SAMPLERS[sampler_label]
             sampler = sampler_spec.sampler
             t0 = time.perf_counter()
@@ -384,6 +416,20 @@ def main(argv: list[str] | None = None) -> None:
         default=None,
         help="Optional family filter.",
     )
+    parser.add_argument(
+        "--samplers",
+        nargs="+",
+        choices=sorted(SAMPLERS),
+        default=None,
+        help="Optional sampler-label filter (intersected with each source's labels).",
+    )
+    parser.add_argument(
+        "--folds",
+        nargs="+",
+        type=int,
+        default=None,
+        help="Optional eval-fold filter (subset of 1..K-1); default runs all eval folds.",
+    )
     parser.add_argument("--append", action="store_true", help="Append to output instead of replacing it.")
     parser.add_argument("--dry-run", action="store_true", help="Print planned jobs without fitting models.")
     parser.add_argument(
@@ -398,6 +444,8 @@ def main(argv: list[str] | None = None) -> None:
         output_path=args.output,
         dataset_names=set(args.datasets) if args.datasets else None,
         family_names=set(args.families) if args.families else None,
+        sampler_names=set(args.samplers) if args.samplers else None,
+        fold_ids=set(args.folds) if args.folds else None,
         strict_space_match=args.strict_space_match,
         append=args.append,
         dry_run=args.dry_run,

@@ -260,6 +260,31 @@ class EDMParameterization(ScoreParameterization):
         return c_skip, c_out, c_in
 
 
+class EDMRawInputParameterization(EDMParameterization):
+    """
+    EDM preconditioned target with the raw (unscaled) noisy response as input.
+
+    Diagnostic parameterization: keeps the variance-stabilized EDM residual
+    target and skip-blended reconstruction, but skips the `c_in` input scaling,
+    so the regressor sees `y_t` on its natural scale. On VE-style perturbations
+    the input magnitude then encodes the noise level (scale separation), at the
+    cost of the pooled-histogram range compression that `c_in` provides. Used to
+    factorize input-scaling from target-parameterization effects; not part of
+    any headline recipe.
+    """
+
+    @property
+    def name(self) -> str:
+        return "edm_raw_in"
+
+    def make_feature_perturbed_y(
+        self,
+        perturbed_y: Float[np.ndarray, "batch y_dim"],
+        std: Float[np.ndarray, "batch y_dim"],
+    ) -> Float[np.ndarray, "batch y_dim"]:
+        return perturbed_y
+
+
 def get_score_parameterization(
     parameterization: str | ScoreParameterization,
     edm_sigma_data: float = 1.0,
@@ -272,6 +297,8 @@ def get_score_parameterization(
         return X0Parameterization()
     if parameterization == "edm":
         return EDMParameterization(sigma_data=edm_sigma_data)
+    if parameterization == "edm_raw_in":
+        return EDMRawInputParameterization(sigma_data=edm_sigma_data)
     raise ValueError(f"Unknown score parameterization: {parameterization}")
 
 

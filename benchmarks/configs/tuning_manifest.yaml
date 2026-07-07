@@ -62,6 +62,19 @@ spaces:
   - name: treeffuser_published
   - name: treeffuser_score_plus
   - name: treeffuser_fm
+  # Residualizer-off twins, used to isolate the residualizer's effect on the
+  # large ct_slices dataset (run with --spaces filter, not part of the full grid).
+  - name: treeffuser_score_plus_noresid
+  # Superset score space with tunable recipe axes (contains the published and
+  # score+ corners); run with --n-trials 50 and a --spaces filter.
+  - name: treeffuser_score_flex
+  # Euler-SDE-50 twin: the sampler is recipe-coupled (published corner is
+  # PF-ODE-incompatible), so both samplers get a tuned arm.
+  - name: treeffuser_score_flex_sde
+  # Uniform-t twin of the noresid space: isolates the training-time noise-level
+  # distribution (stage-2 of the ct_slices large-dataset diagnosis).
+  - name: treeffuser_score_plus_noresid_uniform_t
+  - name: treeffuser_fm_noresid
   - name: ngboost
   - name: ibug
   - name: drf

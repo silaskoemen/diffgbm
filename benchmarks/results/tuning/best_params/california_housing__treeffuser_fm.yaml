@@ -8,17 +8,18 @@ protocol:
   master_seed: 0
   n_folds: 6
   n_samples: 100
-  space_fingerprint: 73b1d7a34cdbf2a2
-protocol_fingerprint: 0d636b9e54b92bef
+  space_fingerprint: 94a69eef29fd0fb2
+protocol_fingerprint: 4b66239634ae818d
 model: treeffuser
-best_value_crps: 0.21383261155076122
+best_value_crps: 0.21329173232103066
 best_tunable:
-  n_estimators: 425
-  learning_rate: 0.03658512709473698
-  num_leaves: 196
+  n_estimators: 1935
+  learning_rate: 0.025233224745759363
+  num_leaves: 203
   max_depth: -1
-  min_child_samples: 43
-  subsample: 0.5005858058069729
+  min_child_samples: 70
+  subsample: 0.5040802421983958
+  max_bin: 255
 params:
   early_stopping_rounds: 50
   n_repeats: 30
@@ -35,12 +36,13 @@ params:
     max_depth: -1
     num_leaves: 63
     min_child_samples: 10
-  n_estimators: 425
-  learning_rate: 0.03658512709473698
-  num_leaves: 196
+  n_estimators: 1935
+  learning_rate: 0.025233224745759363
+  num_leaves: 203
   max_depth: -1
-  min_child_samples: 43
-  subsample: 0.5005858058069729
+  min_child_samples: 70
+  subsample: 0.5040802421983958
+  max_bin: 255
 sampler:
   n_samples: 200
   n_parallel: 20
@@ -49,7 +51,7 @@ sampler:
   pf_ode: false
   velocity_stochasticity: 0.0
   velocity_stochasticity_schedule: linear
-n_trials_target: 25
-n_trials_finite: 25
+n_trials_target: 40
+n_trials_finite: 40
 n_trials_failed: 0
-storage: /Users/silaskoemen/Documents/Projects/treeffuser/benchmarks/results/tuning/studies/california_housing__treeffuser_fm__0d636b9e54b92bef.db
+storage: /Users/silaskoemen/Documents/Projects/treeffuser/benchmarks/results/tuning/studies/california_housing__treeffuser_fm__4b66239634ae818d.db

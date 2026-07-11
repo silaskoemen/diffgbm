@@ -1,0 +1,62 @@
+protocol:
+  dataset: wine
+  space_name: treeffuser_score_flex_sde
+  protocol_version: tune-fold0-eval-folds1-5-v1
+  n_train: 5847
+  n_test: 650
+  x_dim: 3
+  master_seed: 0
+  n_folds: 6
+  n_samples: 100
+  space_fingerprint: 924d2d23c5f63d49
+protocol_fingerprint: 62e35fe20eb1e268
+model: treeffuser
+best_value_crps: 0.3043775352584794
+best_tunable:
+  n_estimators: 1130
+  learning_rate: 0.02258740526963693
+  num_leaves: 154
+  max_depth: -1
+  min_child_samples: 20
+  subsample: 0.8834239385265181
+  max_bin: 4095
+  score_parameterization: edm
+  noise_features: raw_time_log_std
+  t_sampling: log_sigma_normal
+  log_sigma_p_mean: -0.10554377156020056
+  log_sigma_p_std: 1.8938718261245286
+  loss_weighting: uniform
+  residualize: 'off'
+params:
+  early_stopping_rounds: 50
+  n_repeats: 30
+  subsample_freq: 1
+  verbose: -1
+  training_objective: score
+  sde_name: vesde
+  sde_hyperparam_min: 0.01
+  sde_hyperparam_max: 20.0
+  n_estimators: 1130
+  learning_rate: 0.02258740526963693
+  num_leaves: 154
+  max_depth: -1
+  min_child_samples: 20
+  subsample: 0.8834239385265181
+  max_bin: 4095
+  score_parameterization: edm
+  noise_features: raw_time_log_std
+  t_sampling: log_sigma_normal
+  log_sigma_p_mean: -0.10554377156020056
+  log_sigma_p_std: 1.8938718261245286
+  loss_weighting: uniform
+  residualize: 'off'
+sampler:
+  n_samples: 200
+  n_parallel: 20
+  n_steps: 50
+  method: euler
+  pf_ode: false
+n_trials_target: 40
+n_trials_finite: 40
+n_trials_failed: 0
+storage: /Users/silaskoemen/Documents/Projects/treeffuser/benchmarks/results/tuning/studies/wine__treeffuser_score_flex_sde__62e35fe20eb1e268.db

@@ -5,6 +5,7 @@ import json
 import sys
 import time
 from dataclasses import dataclass
+from dataclasses import replace
 from datetime import datetime
 from datetime import timezone
 from pathlib import Path
@@ -253,10 +254,19 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--spaces", nargs="+", default=None, help="Optional search-space filter.")
     parser.add_argument("--dry-run", action="store_true", help="Print jobs without running studies.")
     parser.add_argument("--eval-after-tune", action="store_true", help="Run folds 1..K-1 after each tune.")
+    parser.add_argument(
+        "--status-path",
+        type=Path,
+        default=None,
+        help="Override the manifest status JSONL. Give each concurrent worker its own "
+        "path so parallel runs don't interleave appends into one file.",
+    )
     args = parser.parse_args(argv)
 
     _setup_logging()
     manifest = load_manifest(args.manifest)
+    if args.status_path is not None:
+        manifest = replace(manifest, status_path=args.status_path)
     rows = run_manifest(
         manifest,
         dataset_names=set(args.datasets) if args.datasets else None,

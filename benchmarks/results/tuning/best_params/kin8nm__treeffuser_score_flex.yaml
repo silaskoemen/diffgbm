@@ -1,0 +1,70 @@
+protocol:
+  dataset: kin8nm
+  space_name: treeffuser_score_flex
+  protocol_version: tune-fold0-eval-folds1-5-v1
+  n_train: 7372
+  n_test: 820
+  x_dim: 3
+  master_seed: 0
+  n_folds: 6
+  n_samples: 100
+  space_fingerprint: 94c5abc0c90e18f1
+protocol_fingerprint: e287d950ab5fb647
+model: treeffuser
+best_value_crps: 0.055832402590108424
+best_tunable:
+  n_estimators: 316
+  learning_rate: 0.04047487864737017
+  num_leaves: 212
+  max_depth: -1
+  min_child_samples: 13
+  subsample: 0.5020817764661087
+  max_bin: 255
+  score_parameterization: edm
+  noise_features: raw_time_log_std
+  t_sampling: uniform
+  loss_weighting: min_snr
+  min_snr_gamma: 3.208889189704408
+  residualize: mean
+  resid_n_estimators: 1317
+  resid_learning_rate: 0.18510683166653505
+params:
+  early_stopping_rounds: 50
+  n_repeats: 30
+  subsample_freq: 1
+  verbose: -1
+  training_objective: score
+  sde_name: vesde
+  sde_hyperparam_min: 0.01
+  sde_hyperparam_max: 20.0
+  n_estimators: 316
+  learning_rate: 0.04047487864737017
+  num_leaves: 212
+  max_depth: -1
+  min_child_samples: 13
+  subsample: 0.5020817764661087
+  max_bin: 255
+  score_parameterization: edm
+  noise_features: raw_time_log_std
+  t_sampling: uniform
+  loss_weighting: min_snr
+  min_snr_gamma: 3.208889189704408
+  residualize: mean
+  residualize_k_folds: 5
+  extra_residualizer_params:
+    n_estimators: 1317
+    learning_rate: 0.18510683166653505
+    max_depth: -1
+    num_leaves: 63
+    min_child_samples: 10
+    early_stopping_rounds: 30
+sampler:
+  n_samples: 200
+  n_parallel: 20
+  n_steps: 25
+  method: heun
+  pf_ode: true
+n_trials_target: 40
+n_trials_finite: 40
+n_trials_failed: 0
+storage: /Users/silaskoemen/Documents/Projects/treeffuser/benchmarks/results/tuning/studies/kin8nm__treeffuser_score_flex__e287d950ab5fb647.db

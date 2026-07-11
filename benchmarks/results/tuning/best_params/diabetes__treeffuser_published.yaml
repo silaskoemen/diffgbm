@@ -8,17 +8,18 @@ protocol:
   master_seed: 0
   n_folds: 6
   n_samples: 100
-  space_fingerprint: 7b45b0431e9635d4
-protocol_fingerprint: 61e93928b6f8ed49
+  space_fingerprint: 9e55a56c3a9b63c8
+protocol_fingerprint: 7e77a19561354573
 model: treeffuser
-best_value_crps: 31.71951957744403
+best_value_crps: 30.801125776909306
 best_tunable:
-  n_estimators: 2195
-  learning_rate: 0.008246415138539123
-  num_leaves: 228
-  max_depth: 6
+  n_estimators: 1997
+  learning_rate: 0.05040779098316027
+  num_leaves: 224
+  max_depth: 8
   min_child_samples: 22
-  subsample: 0.7754630113515397
+  subsample: 0.9376642977567075
+  max_bin: 4095
 params:
   early_stopping_rounds: 50
   n_repeats: 30
@@ -30,19 +31,20 @@ params:
   t_sampling: uniform
   residualize: 'off'
   sde_name: vesde
-  n_estimators: 2195
-  learning_rate: 0.008246415138539123
-  num_leaves: 228
-  max_depth: 6
+  n_estimators: 1997
+  learning_rate: 0.05040779098316027
+  num_leaves: 224
+  max_depth: 8
   min_child_samples: 22
-  subsample: 0.7754630113515397
+  subsample: 0.9376642977567075
+  max_bin: 4095
 sampler:
   n_samples: 200
   n_parallel: 20
   n_steps: 50
   method: euler
   pf_ode: false
-n_trials_target: 25
-n_trials_finite: 25
+n_trials_target: 40
+n_trials_finite: 40
 n_trials_failed: 0
-storage: /Users/silaskoemen/Documents/Projects/treeffuser/benchmarks/results/tuning/studies/diabetes__treeffuser_published__61e93928b6f8ed49.db
+storage: /Users/silaskoemen/Documents/Projects/treeffuser/benchmarks/results/tuning/studies/diabetes__treeffuser_published__7e77a19561354573.db

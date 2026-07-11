@@ -18,6 +18,7 @@ from benchmarks.harness import get_provenance
 from benchmarks.metrics import crps_climatology
 from benchmarks.metrics import crps_skill_score
 from benchmarks.metrics import evaluate_samples
+from benchmarks.tuning.objective import resolve_n_parallel
 from benchmarks.tuning.search_spaces import SPACES
 from benchmarks.tuning.splits import build_splits
 from benchmarks.tuning.study import _space_fingerprint
@@ -162,7 +163,7 @@ def _sample_kwargs(sampler: dict[str, Any] | None) -> dict[str, Any]:
         return {"n_samples": 200}
     return {
         "n_samples": sampler.get("n_samples", 200),
-        "n_parallel": sampler.get("n_parallel", 10),
+        "n_parallel": resolve_n_parallel(sampler.get("n_parallel", 10)),
         "n_steps": sampler.get("n_steps", 25),
         "verbose": False,
         "sampler_method": sampler.get("method", "euler"),

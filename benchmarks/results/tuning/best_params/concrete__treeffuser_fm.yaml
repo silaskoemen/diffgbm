@@ -8,17 +8,18 @@ protocol:
   master_seed: 0
   n_folds: 6
   n_samples: 100
-  space_fingerprint: 73b1d7a34cdbf2a2
-protocol_fingerprint: 84a7251b55056bcf
+  space_fingerprint: 94a69eef29fd0fb2
+protocol_fingerprint: d2a790585e3a48b0
 model: treeffuser
-best_value_crps: 1.9305504442569854
+best_value_crps: 1.9528040377525135
 best_tunable:
-  n_estimators: 2884
-  learning_rate: 0.14174638791577995
-  num_leaves: 64
-  max_depth: 10
-  min_child_samples: 28
-  subsample: 0.7096200248561196
+  n_estimators: 433
+  learning_rate: 0.17451061068577886
+  num_leaves: 80
+  max_depth: 6
+  min_child_samples: 36
+  subsample: 0.7884008326667314
+  max_bin: 1023
 params:
   early_stopping_rounds: 50
   n_repeats: 30
@@ -35,12 +36,13 @@ params:
     max_depth: -1
     num_leaves: 63
     min_child_samples: 10
-  n_estimators: 2884
-  learning_rate: 0.14174638791577995
-  num_leaves: 64
-  max_depth: 10
-  min_child_samples: 28
-  subsample: 0.7096200248561196
+  n_estimators: 433
+  learning_rate: 0.17451061068577886
+  num_leaves: 80
+  max_depth: 6
+  min_child_samples: 36
+  subsample: 0.7884008326667314
+  max_bin: 1023
 sampler:
   n_samples: 200
   n_parallel: 20
@@ -49,7 +51,7 @@ sampler:
   pf_ode: false
   velocity_stochasticity: 0.0
   velocity_stochasticity_schedule: linear
-n_trials_target: 25
-n_trials_finite: 25
+n_trials_target: 40
+n_trials_finite: 40
 n_trials_failed: 0
-storage: /Users/silaskoemen/Documents/Projects/treeffuser/benchmarks/results/tuning/studies/concrete__treeffuser_fm__84a7251b55056bcf.db
+storage: /Users/silaskoemen/Documents/Projects/treeffuser/benchmarks/results/tuning/studies/concrete__treeffuser_fm__d2a790585e3a48b0.db

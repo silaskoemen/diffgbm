@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import time
 from dataclasses import dataclass
 from typing import Any
@@ -82,6 +83,25 @@ class TuningObjective:
         return crps
 
 
+def resolve_n_parallel(default: int) -> int:
+    """Runtime override for the sampler's ``n_parallel`` batch size.
+
+    ``n_parallel`` is a pure throughput knob — how many i.i.d. sample paths are
+    integrated per ``predict`` call — not a modeling choice, so it is deliberately
+    kept out of the study fingerprint (see ``study._space_fingerprint``). Setting
+    ``TREEFFUSER_N_PARALLEL`` grows the batch to better saturate cores and collapse
+    the sequential sampling loop, without invalidating existing studies or tuned
+    YAMLs. Larger values raise peak memory linearly.
+    """
+    raw = os.environ.get("TREEFFUSER_N_PARALLEL")
+    if raw is None or not raw.strip():
+        return default
+    value = int(raw)
+    if value <= 0:
+        raise ValueError(f"TREEFFUSER_N_PARALLEL must be a positive int, got {value!r}.")
+    return value
+
+
 def _sample_kwargs(sampler: dict[str, Any] | None, n_samples: int, seed: int) -> dict[str, Any]:
     """Sample-call kwargs. For Treeffuser variants, pull the bound sampler config
     from the search space; for baselines (sampler=None), pass minimal args.
@@ -93,7 +113,7 @@ def _sample_kwargs(sampler: dict[str, Any] | None, n_samples: int, seed: int) ->
         return {"n_samples": n_samples, "seed": seed}
     return {
         "n_samples": n_samples,
-        "n_parallel": sampler.get("n_parallel", 10),
+        "n_parallel": resolve_n_parallel(sampler.get("n_parallel", 10)),
         "n_steps": sampler.get("n_steps", 25),
         "seed": seed,
         "verbose": False,

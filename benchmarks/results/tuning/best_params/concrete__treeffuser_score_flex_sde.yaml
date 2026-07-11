@@ -1,0 +1,68 @@
+protocol:
+  dataset: concrete
+  space_name: treeffuser_score_flex_sde
+  protocol_version: tune-fold0-eval-folds1-5-v1
+  n_train: 927
+  n_test: 103
+  x_dim: 3
+  master_seed: 0
+  n_folds: 6
+  n_samples: 100
+  space_fingerprint: 924d2d23c5f63d49
+protocol_fingerprint: 91feb78f6aded178
+model: treeffuser
+best_value_crps: 2.108551362826493
+best_tunable:
+  n_estimators: 1088
+  learning_rate: 0.0023379319683523646
+  num_leaves: 73
+  max_depth: -1
+  min_child_samples: 16
+  subsample: 0.6432495750808208
+  max_bin: 4095
+  score_parameterization: edm
+  noise_features: raw_time_log_std
+  t_sampling: uniform
+  loss_weighting: uniform
+  residualize: mean
+  resid_n_estimators: 1866
+  resid_learning_rate: 0.12437188748338798
+params:
+  early_stopping_rounds: 50
+  n_repeats: 30
+  subsample_freq: 1
+  verbose: -1
+  training_objective: score
+  sde_name: vesde
+  sde_hyperparam_min: 0.01
+  sde_hyperparam_max: 20.0
+  n_estimators: 1088
+  learning_rate: 0.0023379319683523646
+  num_leaves: 73
+  max_depth: -1
+  min_child_samples: 16
+  subsample: 0.6432495750808208
+  max_bin: 4095
+  score_parameterization: edm
+  noise_features: raw_time_log_std
+  t_sampling: uniform
+  loss_weighting: uniform
+  residualize: mean
+  residualize_k_folds: 5
+  extra_residualizer_params:
+    n_estimators: 1866
+    learning_rate: 0.12437188748338798
+    max_depth: -1
+    num_leaves: 63
+    min_child_samples: 10
+    early_stopping_rounds: 30
+sampler:
+  n_samples: 200
+  n_parallel: 20
+  n_steps: 50
+  method: euler
+  pf_ode: false
+n_trials_target: 40
+n_trials_finite: 40
+n_trials_failed: 0
+storage: /Users/silaskoemen/Documents/Projects/treeffuser/benchmarks/results/tuning/studies/concrete__treeffuser_score_flex_sde__91feb78f6aded178.db

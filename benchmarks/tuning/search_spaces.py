@@ -76,6 +76,13 @@ def _treeffuser_lgbm_tunable(trial: optuna.Trial) -> TrialParams:
         "max_depth": trial.suggest_categorical("max_depth", [-1, 4, 6, 8, 10]),
         "min_child_samples": trial.suggest_int("min_child_samples", 5, 100),
         "subsample": trial.suggest_float("subsample", 0.5, 1.0),
+        # Histogram resolution is a first-class conditioning axis (not a generic
+        # capacity knob): it is shared by every Treeffuser variant so the surface
+        # stays identical across recipes, and the recipe x max_bin interaction is
+        # itself evidence for the preconditioning thesis (raw-input recipes need
+        # finer bins to resolve their expanded feature scale; preconditioned EDM/FM
+        # inputs do not). See the max_bin sensitivity table in the appendix.
+        "max_bin": trial.suggest_categorical("max_bin", [255, 1023, 4095]),
     }
 
 
@@ -229,10 +236,8 @@ def _treeffuser_score_flex_tunable(trial: optuna.Trial) -> TrialParams:
     same recipe co-adapted to its sampler; fold-0 selection picks the arm.
     """
     params = _treeffuser_lgbm_tunable(trial)
-    # Histogram resolution is regime-dependent: raw-input recipes on large
-    # high-SNR data gain from finer bins (ct_slices: published 0.154 -> 0.138
-    # at 4095), EDM-scaled inputs do not, and fit cost scales with it.
-    params["max_bin"] = trial.suggest_categorical("max_bin", [255, 1023, 4095])
+    # max_bin comes from the shared LightGBM surface (tuned identically for every
+    # Treeffuser variant), so the flex space adds only the score-side recipe axes.
     params["score_parameterization"] = trial.suggest_categorical("score_parameterization", ["noise", "edm"])
     params["noise_features"] = trial.suggest_categorical("noise_features", ["raw_time", "raw_time_log_std"])
     t_sampling = trial.suggest_categorical("t_sampling", ["uniform", "log_sigma_normal"])
@@ -265,13 +270,13 @@ def _treeffuser_score_flex_tunable(trial: optuna.Trial) -> TrialParams:
     return params
 
 
-# Canonical corner initializations for the flex spaces: the published corner
-# (with and without fine binning) and the score+ corners, each with a strong
-# generic LightGBM setting and uniform loss weighting, plus one min-SNR foothold on
-# the large-data score+ corner so TPE explores the loss-weighting axis. Static (not
-# derived from any tuned artifact), so the stated trial budget covers them.
+# Canonical corner initializations for the flex spaces: the published corner and
+# the score+ corners, each with a strong generic LightGBM setting and uniform loss
+# weighting, plus one min-SNR foothold on the large-data score+ corner so TPE
+# explores the loss-weighting axis. Static (not derived from any tuned artifact),
+# so the stated trial budget covers them.
 _SCORE_FLEX_SEED_TRIALS = (
-    # Published corner, default and fine binning.
+    # Published corner.
     {
         "n_estimators": 2000,
         "learning_rate": 0.1,
@@ -279,21 +284,6 @@ _SCORE_FLEX_SEED_TRIALS = (
         "max_depth": -1,
         "min_child_samples": 20,
         "subsample": 0.9,
-        "max_bin": 255,
-        "score_parameterization": "noise",
-        "noise_features": "raw_time",
-        "t_sampling": "uniform",
-        "loss_weighting": "uniform",
-        "residualize": "off",
-    },
-    {
-        "n_estimators": 2000,
-        "learning_rate": 0.1,
-        "num_leaves": 200,
-        "max_depth": -1,
-        "min_child_samples": 20,
-        "subsample": 0.9,
-        "max_bin": 4095,
         "score_parameterization": "noise",
         "noise_features": "raw_time",
         "t_sampling": "uniform",
@@ -308,7 +298,6 @@ _SCORE_FLEX_SEED_TRIALS = (
         "max_depth": -1,
         "min_child_samples": 20,
         "subsample": 0.9,
-        "max_bin": 255,
         "score_parameterization": "edm",
         "noise_features": "raw_time_log_std",
         "t_sampling": "log_sigma_normal",
@@ -327,7 +316,6 @@ _SCORE_FLEX_SEED_TRIALS = (
         "max_depth": -1,
         "min_child_samples": 79,
         "subsample": 0.93,
-        "max_bin": 255,
         "score_parameterization": "edm",
         "noise_features": "raw_time_log_std",
         "t_sampling": "log_sigma_normal",
@@ -345,7 +333,6 @@ _SCORE_FLEX_SEED_TRIALS = (
         "max_depth": -1,
         "min_child_samples": 79,
         "subsample": 0.93,
-        "max_bin": 255,
         "score_parameterization": "edm",
         "noise_features": "raw_time_log_std",
         "t_sampling": "log_sigma_normal",

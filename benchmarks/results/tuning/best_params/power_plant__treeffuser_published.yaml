@@ -8,17 +8,18 @@ protocol:
   master_seed: 0
   n_folds: 6
   n_samples: 100
-  space_fingerprint: 7b45b0431e9635d4
-protocol_fingerprint: 7bf4209316681bb4
+  space_fingerprint: 9e55a56c3a9b63c8
+protocol_fingerprint: 0b8df7e0c72c5c02
 model: treeffuser
-best_value_crps: 1.6705382019835087
+best_value_crps: 1.6793576434496933
 best_tunable:
-  n_estimators: 2046
-  learning_rate: 0.17224312563767047
-  num_leaves: 144
+  n_estimators: 805
+  learning_rate: 0.03082979079842074
+  num_leaves: 201
   max_depth: -1
-  min_child_samples: 49
-  subsample: 0.9385612427169974
+  min_child_samples: 45
+  subsample: 0.6174527101702656
+  max_bin: 1023
 params:
   early_stopping_rounds: 50
   n_repeats: 30
@@ -30,19 +31,20 @@ params:
   t_sampling: uniform
   residualize: 'off'
   sde_name: vesde
-  n_estimators: 2046
-  learning_rate: 0.17224312563767047
-  num_leaves: 144
+  n_estimators: 805
+  learning_rate: 0.03082979079842074
+  num_leaves: 201
   max_depth: -1
-  min_child_samples: 49
-  subsample: 0.9385612427169974
+  min_child_samples: 45
+  subsample: 0.6174527101702656
+  max_bin: 1023
 sampler:
   n_samples: 200
   n_parallel: 20
   n_steps: 50
   method: euler
   pf_ode: false
-n_trials_target: 25
-n_trials_finite: 25
+n_trials_target: 40
+n_trials_finite: 40
 n_trials_failed: 0
-storage: /Users/silaskoemen/Documents/Projects/treeffuser/benchmarks/results/tuning/studies/power_plant__treeffuser_published__7bf4209316681bb4.db
+storage: /Users/silaskoemen/Documents/Projects/treeffuser/benchmarks/results/tuning/studies/power_plant__treeffuser_published__0b8df7e0c72c5c02.db

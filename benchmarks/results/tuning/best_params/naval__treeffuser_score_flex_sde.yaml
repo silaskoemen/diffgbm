@@ -1,0 +1,62 @@
+protocol:
+  dataset: naval
+  space_name: treeffuser_score_flex_sde
+  protocol_version: tune-fold0-eval-folds1-5-v1
+  n_train: 10741
+  n_test: 1193
+  x_dim: 3
+  master_seed: 0
+  n_folds: 6
+  n_samples: 100
+  space_fingerprint: 924d2d23c5f63d49
+protocol_fingerprint: 66279e5aa3c9dc8e
+model: treeffuser
+best_value_crps: 0.000126140867962734
+best_tunable:
+  n_estimators: 2519
+  learning_rate: 0.2156793550805564
+  num_leaves: 127
+  max_depth: 8
+  min_child_samples: 74
+  subsample: 0.7954712289884318
+  max_bin: 4095
+  score_parameterization: edm
+  noise_features: raw_time_log_std
+  t_sampling: log_sigma_normal
+  log_sigma_p_mean: -1.8016080708336708
+  log_sigma_p_std: 1.054675161245748
+  loss_weighting: uniform
+  residualize: 'off'
+params:
+  early_stopping_rounds: 50
+  n_repeats: 30
+  subsample_freq: 1
+  verbose: -1
+  training_objective: score
+  sde_name: vesde
+  sde_hyperparam_min: 0.01
+  sde_hyperparam_max: 20.0
+  n_estimators: 2519
+  learning_rate: 0.2156793550805564
+  num_leaves: 127
+  max_depth: 8
+  min_child_samples: 74
+  subsample: 0.7954712289884318
+  max_bin: 4095
+  score_parameterization: edm
+  noise_features: raw_time_log_std
+  t_sampling: log_sigma_normal
+  log_sigma_p_mean: -1.8016080708336708
+  log_sigma_p_std: 1.054675161245748
+  loss_weighting: uniform
+  residualize: 'off'
+sampler:
+  n_samples: 200
+  n_parallel: 20
+  n_steps: 50
+  method: euler
+  pf_ode: false
+n_trials_target: 40
+n_trials_finite: 40
+n_trials_failed: 0
+storage: /Users/silaskoemen/Documents/Projects/treeffuser/benchmarks/results/tuning/studies/naval__treeffuser_score_flex_sde__66279e5aa3c9dc8e.db

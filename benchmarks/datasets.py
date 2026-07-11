@@ -264,7 +264,8 @@ def _protein(n_train: int, n_test: int, seed: int) -> DatasetBundle:
     return _load_testbed_dataset("protein", n_train, n_test, seed)
 
 
-def _year_prediction_msd(n_train: int, n_test: int, seed: int) -> DatasetBundle:
+# NOTE: deliberately excluded as it's too expensive
+"""def _year_prediction_msd(n_train: int, n_test: int, seed: int) -> DatasetBundle:
     # ~515k rows, 90 numeric audio features, target = release year. Large-data
     # stress test for the residualizer-bottleneck claim. The manifest caps the
     # subset via n_train+n_test; the tuning protocol draws this subset once (by
@@ -273,7 +274,7 @@ def _year_prediction_msd(n_train: int, n_test: int, seed: int) -> DatasetBundle:
     data = fetch_openml(data_id=44027, as_frame=True, parser="auto")
     X = data.data.to_numpy(dtype=np.float64)
     y = data.target.to_numpy(dtype=np.float64).reshape(-1, 1)
-    return _split_real_dataset(name="year_prediction_msd", X=X, y=y, n_train=n_train, n_test=n_test, seed=seed)
+    return _split_real_dataset(name="year_prediction_msd", X=X, y=y, n_train=n_train, n_test=n_test, seed=seed)"""
 
 
 def _ct_slices(n_train: int, n_test: int, seed: int) -> DatasetBundle:
@@ -303,7 +304,6 @@ REAL_DATASETS = {
     "power_plant": _power_plant,
     "naval": _naval,
     "protein": _protein,
-    # Large-data stress test (50k+ observations)
-    "year_prediction_msd": _year_prediction_msd,
+    # Large-data stress test (50k+ observations); year_prediction_msd excluded.
     "ct_slices": _ct_slices,
 }

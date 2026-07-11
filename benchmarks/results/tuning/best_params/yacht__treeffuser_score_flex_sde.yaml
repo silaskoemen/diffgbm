@@ -1,0 +1,70 @@
+protocol:
+  dataset: yacht
+  space_name: treeffuser_score_flex_sde
+  protocol_version: tune-fold0-eval-folds1-5-v1
+  n_train: 277
+  n_test: 31
+  x_dim: 3
+  master_seed: 0
+  n_folds: 6
+  n_samples: 100
+  space_fingerprint: 924d2d23c5f63d49
+protocol_fingerprint: aea6980b4ce0ca2f
+model: treeffuser
+best_value_crps: 0.13329119917300344
+best_tunable:
+  n_estimators: 1351
+  learning_rate: 0.023583189469634003
+  num_leaves: 224
+  max_depth: 10
+  min_child_samples: 26
+  subsample: 0.9973988882213164
+  max_bin: 255
+  score_parameterization: noise
+  noise_features: raw_time
+  t_sampling: uniform
+  loss_weighting: min_snr
+  min_snr_gamma: 3.642291934409217
+  residualize: mean
+  resid_n_estimators: 827
+  resid_learning_rate: 0.08621818055515776
+params:
+  early_stopping_rounds: 50
+  n_repeats: 30
+  subsample_freq: 1
+  verbose: -1
+  training_objective: score
+  sde_name: vesde
+  sde_hyperparam_min: 0.01
+  sde_hyperparam_max: 20.0
+  n_estimators: 1351
+  learning_rate: 0.023583189469634003
+  num_leaves: 224
+  max_depth: 10
+  min_child_samples: 26
+  subsample: 0.9973988882213164
+  max_bin: 255
+  score_parameterization: noise
+  noise_features: raw_time
+  t_sampling: uniform
+  loss_weighting: min_snr
+  min_snr_gamma: 3.642291934409217
+  residualize: mean
+  residualize_k_folds: 5
+  extra_residualizer_params:
+    n_estimators: 827
+    learning_rate: 0.08621818055515776
+    max_depth: -1
+    num_leaves: 63
+    min_child_samples: 10
+    early_stopping_rounds: 30
+sampler:
+  n_samples: 200
+  n_parallel: 20
+  n_steps: 50
+  method: euler
+  pf_ode: false
+n_trials_target: 40
+n_trials_finite: 40
+n_trials_failed: 0
+storage: /Users/silaskoemen/Documents/Projects/treeffuser/benchmarks/results/tuning/studies/yacht__treeffuser_score_flex_sde__aea6980b4ce0ca2f.db

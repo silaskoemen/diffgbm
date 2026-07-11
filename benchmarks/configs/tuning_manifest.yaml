@@ -5,7 +5,7 @@ protocol:
   version: tune-fold0-eval-folds1-5-v1
   master_seed: 0
   n_folds: 6
-  n_trials: 25
+  n_trials: 40
   n_samples: 100
   max_attempts_multiplier: 2
   results_dir: benchmarks/results/tuning/studies
@@ -47,16 +47,11 @@ datasets:
   # Large-data stress test (50k+). n_train+n_test is the total subset that
   # build_splits partitions into the fixed disjoint 6-fold split (eval-fold train
   # is 5/6 of it). No per-fold resampling and no tuning leakage: fold 0 is the
-  # only validation signal and is never an eval test fold. Year is capped here:
-  # its ~515k rows are deterministically subsampled once (by master_seed) to
-  # 120k before folding, giving ~100k eval-fold train and keeping sampling
-  # tractable. CT slices (~53.5k) is used in full.
+  # only validation signal and is never an eval test fold. CT slices (~53.5k) is
+  # used in full. (year_prediction_msd excluded from the paper.)
   - name: ct_slices
     n_train: 48150
     n_test: 5350
-  - name: year_prediction_msd
-    n_train: 108000
-    n_test: 12000
 
 spaces:
   - name: treeffuser_published
@@ -66,7 +61,7 @@ spaces:
   # large ct_slices dataset (run with --spaces filter, not part of the full grid).
   - name: treeffuser_score_plus_noresid
   # Superset score space with tunable recipe axes (contains the published and
-  # score+ corners); run with --n-trials 50 and a --spaces filter.
+  # score+ corners); shares the common 40-trial budget with every other variant.
   - name: treeffuser_score_flex
   # Euler-SDE-50 twin: the sampler is recipe-coupled (published corner is
   # PF-ODE-incompatible), so both samplers get a tuned arm.

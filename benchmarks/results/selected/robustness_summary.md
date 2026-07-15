@@ -1,112 +1,111 @@
 # Robustness summary
 
-Source: `benchmarks/results/tuning/eval/*.jsonl` (450 fold-level rows). Each displayed value first averages folds 1--5 within each dataset/model family, then averages over datasets unless stated otherwise. rel-CRPS is normalized by the best displayed family on each dataset.
+Source: `benchmarks/results/tuning/eval/*.jsonl` (615 fold-level rows). Each displayed value first averages folds 1--5 within each dataset/model family, then averages over datasets unless stated otherwise. rel-CRPS is normalized by the best displayed family on each dataset.
 
 ## Aggregate metrics with dataset standard errors
 
 | Model | CRPSS | SE | rel-CRPS | SE | q-MACE | \|cE\|@90 | \|cE\|@95 | PIT pass |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| Treeffuser-FM | 0.680 | 0.086 | 1.117 | 0.056 | 0.034 | 0.028 | 0.024 | 0.46 |
-| Treeffuser-score+ | 0.681 | 0.085 | 1.131 | 0.062 | 0.028 | 0.020 | 0.015 | 0.62 |
-| Treeffuser-published | 0.670 | 0.084 | 1.242 | 0.086 | 0.044 | 0.044 | 0.023 | 0.40 |
-| CatBoost-unc. | 0.638 | 0.088 | 1.409 | 0.113 | 0.045 | 0.078 | 0.066 | 0.28 |
-| QReg-LightGBM | 0.668 | 0.079 | 1.459 | 0.278 | 0.033 | 0.041 | 0.044 | 0.34 |
-| iBUG | 0.649 | 0.081 | 1.471 | 0.154 | 0.069 | 0.051 | 0.065 | 0.36 |
-| Deep ensemble | 0.654 | 0.082 | 1.519 | 0.201 | 0.050 | 0.032 | 0.018 | 0.26 |
-| NGBoost | 0.601 | 0.094 | 1.550 | 0.190 | 0.052 | 0.114 | 0.101 | 0.16 |
-| CARD-style diffusion | 0.631 | 0.091 | 1.632 | 0.349 | 0.051 | 0.057 | 0.043 | 0.24 |
+| DiffGBM (score-flex) | 0.725 | 0.076 | 1.106 | 0.061 | 0.045 | 0.049 | 0.037 | 0.33 |
+| Treeffuser (published) | 0.699 | 0.081 | 1.248 | 0.074 | 0.053 | 0.047 | 0.026 | 0.27 |
+| DiffGBM-FM | 0.707 | 0.082 | 1.334 | 0.180 | 0.036 | 0.029 | 0.021 | 0.45 |
+| Deep ensemble | 0.685 | 0.080 | 1.556 | 0.199 | 0.054 | 0.036 | 0.019 | 0.24 |
+| iBUG | 0.679 | 0.080 | 1.564 | 0.171 | 0.069 | 0.052 | 0.060 | 0.33 |
+| CARD-style diffusion | 0.662 | 0.088 | 1.746 | 0.334 | 0.050 | 0.059 | 0.044 | 0.22 |
+| CatBoost-unc. | 0.666 | 0.085 | 1.815 | 0.350 | 0.045 | 0.080 | 0.066 | 0.25 |
+| QReg-LightGBM | 0.694 | 0.076 | 1.826 | 0.394 | 0.038 | 0.045 | 0.043 | 0.31 |
+| NGBoost | 0.626 | 0.089 | 2.471 | 0.852 | 0.051 | 0.111 | 0.098 | 0.15 |
 
 ## Mean ranks across datasets
 
 | Model | CRPS rank | CRPSS rank | \|cE\|@95 rank |
 |---|---:|---:|---:|
-| Treeffuser-FM | 2.80 | 2.80 | 4.00 |
-| Treeffuser-score+ | 3.00 | 3.00 | 2.10 |
-| QReg-LightGBM | 4.00 | 4.00 | 5.60 |
-| Treeffuser-published | 4.10 | 4.10 | 3.30 |
-| Deep ensemble | 5.80 | 5.80 | 2.90 |
-| iBUG | 5.80 | 5.80 | 6.50 |
-| CatBoost-unc. | 6.00 | 6.00 | 7.10 |
-| CARD-style diffusion | 6.60 | 6.60 | 5.70 |
-| NGBoost | 6.90 | 6.90 | 7.80 |
+| DiffGBM (score-flex) | 1.91 | 2.00 | 4.73 |
+| DiffGBM-FM | 3.45 | 3.45 | 3.18 |
+| Treeffuser (published) | 4.18 | 4.27 | 3.55 |
+| QReg-LightGBM | 4.36 | 4.27 | 5.36 |
+| Deep ensemble | 5.45 | 5.45 | 2.73 |
+| iBUG | 5.91 | 5.82 | 5.82 |
+| CatBoost-unc. | 6.09 | 6.09 | 6.73 |
+| CARD-style diffusion | 6.73 | 6.73 | 5.55 |
+| NGBoost | 6.91 | 6.91 | 7.36 |
 
 ## Friedman and Nemenyi rank diagnostic
 
-Friedman test on per-dataset CRPS ranks over 9 families and 10 datasets: chi^2=25.47, p=0.001. Nemenyi critical difference at alpha=0.05: 3.80 mean-rank points.
+Friedman test on per-dataset CRPS ranks over 9 families and 11 datasets: chi^2=32.07, p=0.000. Nemenyi critical difference at alpha=0.05: 3.62 mean-rank points.
 
 | Pair | mean-rank gap |
 |---|---:|
-| Treeffuser-score+ vs NGBoost | 3.90 |
-| Treeffuser-FM vs NGBoost | 4.10 |
-| Treeffuser-FM vs CARD-style diffusion | 3.80 |
+| DiffGBM (score-flex) vs CatBoost-unc. | 4.18 |
+| DiffGBM (score-flex) vs NGBoost | 5.00 |
+| DiffGBM (score-flex) vs iBUG | 4.00 |
+| DiffGBM (score-flex) vs CARD-style diffusion | 4.82 |
 
 ## Paired Wilcoxon tests for Treeffuser headline rows
 
 | Pair | Alt. | left wins | right wins | median delta CRPS | W | p |
 |---|---|---:|---:|---:|---:|---:|
-| score+ vs published | less | 6 | 4 | -0.0233 | 13.0 | 0.080 |
-| FM vs published | less | 7 | 3 | -0.0297 | 12.0 | 0.065 |
-| FM vs score+ | two-sided | 6 | 4 | -0.0004 | 26.0 | 0.922 |
+| score-flex vs published | less | 11 | 0 | -0.0376 | 0.0 | 0.000 |
+| FM vs published | less | 6 | 5 | -0.0098 | 22.0 | 0.183 |
+| score-flex vs FM | two-sided | 8 | 3 | -0.0140 | 17.0 | 0.175 |
 
 ## Per-dataset winners
 
 | Dataset | Raw-CRPS winner | CRPS | Treeffuser CRPSS winner | CRPSS |
 |---|---|---:|---|---:|
-| california_housing | Treeffuser-published | 0.197089 | Treeffuser-published | 0.687 |
-| concrete | Treeffuser-score+ | 2.12616 | Treeffuser-score+ | 0.774 |
-| diabetes | Deep ensemble | 31.2506 | Treeffuser-score+ | 0.241 |
-| energy | Treeffuser-FM | 0.203919 | Treeffuser-FM | 0.964 |
-| kin8nm | Deep ensemble | 0.0366765 | Treeffuser-FM | 0.631 |
-| naval | CARD-style diffusion | 0.000154683 | Treeffuser-FM | 0.951 |
-| power_plant | Treeffuser-FM | 1.5349 | Treeffuser-FM | 0.843 |
-| protein | QReg-LightGBM | 1.6824 | Treeffuser-published | 0.494 |
-| wine | Treeffuser-published | 0.300395 | Treeffuser-published | 0.346 |
-| yacht | Treeffuser-FM | 0.283098 | Treeffuser-FM | 0.962 |
+| california_housing | DiffGBM (score-flex) | 0.190435 | DiffGBM (score-flex) | 0.698 |
+| concrete | DiffGBM-FM | 2.15139 | DiffGBM-FM | 0.772 |
+| ct_slices | DiffGBM (score-flex) | 0.143207 | DiffGBM (score-flex) | 0.989 |
+| diabetes | Deep ensemble | 31.2506 | DiffGBM (score-flex) | 0.241 |
+| energy | DiffGBM (score-flex) | 0.198761 | DiffGBM (score-flex) | 0.965 |
+| kin8nm | Deep ensemble | 0.0366765 | DiffGBM-FM | 0.631 |
+| naval | DiffGBM (score-flex) | 0.000128857 | DiffGBM (score-flex) | 0.970 |
+| power_plant | DiffGBM (score-flex) | 1.47479 | DiffGBM (score-flex) | 0.849 |
+| protein | DiffGBM (score-flex) | 1.56829 | DiffGBM (score-flex) | 0.539 |
+| wine | DiffGBM (score-flex) | 0.277772 | DiffGBM (score-flex) | 0.395 |
+| yacht | DiffGBM-FM | 0.269165 | DiffGBM-FM | 0.964 |
 
 Raw-CRPS winner counts:
-- Treeffuser-FM: 3
+- DiffGBM (score-flex): 7
 - Deep ensemble: 2
-- Treeffuser-published: 2
-- CARD-style diffusion: 1
-- QReg-LightGBM: 1
-- Treeffuser-score+: 1
+- DiffGBM-FM: 2
 
 ## Dataset-size groups
 
 | Group | n datasets | Model | CRPSS | rel-CRPS |
 |---|---:|---|---:|---:|
-| small | 4 | Treeffuser-published | 0.709 | 1.269 |
-| small | 4 | Treeffuser-score+ | 0.735 | 1.036 |
-| small | 4 | Treeffuser-FM | 0.731 | 1.031 |
-| small | 4 | QReg-LightGBM | 0.711 | 1.775 |
-| small | 4 | CatBoost-unc. | 0.724 | 1.278 |
-| small | 4 | NGBoost | 0.718 | 1.167 |
-| small | 4 | Deep ensemble | 0.699 | 1.865 |
-| small | 4 | iBUG | 0.700 | 1.470 |
-| small | 4 | CARD-style diffusion | 0.632 | 2.342 |
-| medium | 4 | Treeffuser-published | 0.670 | 1.330 |
-| medium | 4 | Treeffuser-score+ | 0.678 | 1.269 |
-| medium | 4 | Treeffuser-FM | 0.683 | 1.233 |
-| medium | 4 | QReg-LightGBM | 0.666 | 1.358 |
-| medium | 4 | CatBoost-unc. | 0.612 | 1.645 |
-| medium | 4 | NGBoost | 0.550 | 2.058 |
-| medium | 4 | Deep ensemble | 0.672 | 1.346 |
-| medium | 4 | iBUG | 0.637 | 1.669 |
-| medium | 4 | CARD-style diffusion | 0.667 | 1.173 |
-| large | 2 | Treeffuser-published | 0.591 | 1.012 |
-| large | 2 | Treeffuser-score+ | 0.578 | 1.044 |
-| large | 2 | Treeffuser-FM | 0.573 | 1.055 |
-| large | 2 | QReg-LightGBM | 0.587 | 1.030 |
-| large | 2 | CatBoost-unc. | 0.517 | 1.200 |
-| large | 2 | NGBoost | 0.468 | 1.301 |
-| large | 2 | Deep ensemble | 0.529 | 1.172 |
-| large | 2 | iBUG | 0.571 | 1.076 |
-| large | 2 | CARD-style diffusion | 0.555 | 1.129 |
+| small | 4 | Treeffuser (published) | 0.701 | 1.316 |
+| small | 4 | DiffGBM (score-flex) | 0.728 | 1.161 |
+| small | 4 | DiffGBM-FM | 0.729 | 1.035 |
+| small | 4 | QReg-LightGBM | 0.711 | 1.830 |
+| small | 4 | CatBoost-unc. | 0.724 | 1.303 |
+| small | 4 | NGBoost | 0.718 | 1.187 |
+| small | 4 | Deep ensemble | 0.699 | 1.907 |
+| small | 4 | iBUG | 0.700 | 1.499 |
+| small | 4 | CARD-style diffusion | 0.632 | 2.410 |
+| medium | 4 | Treeffuser (published) | 0.680 | 1.302 |
+| medium | 4 | DiffGBM (score-flex) | 0.710 | 1.132 |
+| medium | 4 | DiffGBM-FM | 0.684 | 1.326 |
+| medium | 4 | QReg-LightGBM | 0.666 | 1.471 |
+| medium | 4 | CatBoost-unc. | 0.612 | 1.792 |
+| medium | 4 | NGBoost | 0.550 | 2.237 |
+| medium | 4 | Deep ensemble | 0.672 | 1.476 |
+| medium | 4 | iBUG | 0.637 | 1.828 |
+| medium | 4 | CARD-style diffusion | 0.667 | 1.262 |
+| large | 3 | Treeffuser (published) | 0.723 | 1.084 |
+| large | 3 | DiffGBM (score-flex) | 0.742 | 1.000 |
+| large | 3 | DiffGBM-FM | 0.707 | 1.743 |
+| large | 3 | QReg-LightGBM | 0.707 | 2.294 |
+| large | 3 | CatBoost-unc. | 0.659 | 2.529 |
+| large | 3 | NGBoost | 0.605 | 4.494 |
+| large | 3 | Deep ensemble | 0.682 | 1.193 |
+| large | 3 | iBUG | 0.708 | 1.300 |
+| large | 3 | CARD-style diffusion | 0.695 | 1.504 |
 
 ## Interpretation notes
 
-- Mean ranks and raw-CRPS wins show mixed per-dataset winners rather than a one-family sweep.
-- The Treeffuser rows lead the cross-dataset CRPSS/rel-CRPS aggregate, but the dataset standard errors are large relative to the small aggregate gaps.
-- Score+ is the most robust calibration row by PIT pass rate and interval coverage error; FM is strongest on mean CRPS rank and rel-CRPS.
-- The size split shows the large-dataset inversion: published SDE and QReg are strongest on the two largest datasets, while score+ and FM lead on small/medium groups.
-- Friedman/Nemenyi is useful as a rank robustness check, but with ten datasets it should be treated as supporting context rather than a headline significance claim.
+- DiffGBM (score-flex) leads mean CRPS rank and takes the plurality of raw-CRPS wins; the remaining per-dataset winners are DiffGBM-FM and the deep ensemble.
+- The DiffGBM rows lead the cross-dataset CRPSS/rel-CRPS aggregate, but the dataset standard errors are large relative to the small aggregate gaps.
+- DiffGBM-FM is the most robust calibration row by PIT pass rate and interval coverage error; DiffGBM (score-flex) is strongest on mean CRPS rank and rel-CRPS.
+- The size split shows DiffGBM (score-flex) leading every size group on CRPSS/rel-CRPS, most decisively on the large group; DiffGBM-FM is competitive on small/medium but weak on large.
+- Friedman/Nemenyi is useful as a rank robustness check, but with eleven datasets it should be treated as supporting context rather than a headline significance claim.

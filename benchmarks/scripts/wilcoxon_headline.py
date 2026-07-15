@@ -29,13 +29,13 @@ INPUT_DIR = REPO_ROOT / "benchmarks/results/tuning/eval"
 OUTPUT_PATH = REPO_ROOT / "benchmarks/results/selected/wilcoxon_headline.md"
 
 PUBLISHED = "treeffuser_published"
-SCORE_PLUS = "treeffuser_score_plus"
+SCORE_FLEX_SDE = "treeffuser_score_flex_sde"
 FM = "treeffuser_fm"
 
-VARIANTS = [PUBLISHED, SCORE_PLUS, FM]
+VARIANTS = [PUBLISHED, SCORE_FLEX_SDE, FM]
 DISPLAY = {
     PUBLISHED: "published",
-    SCORE_PLUS: "score+",
+    SCORE_FLEX_SDE: "score-flex",
     FM: "FM",
 }
 
@@ -99,7 +99,7 @@ def render_markdown(results: Iterable[dict], per_dataset: dict[str, dict[str, fl
     lines.append(
         "Source: `benchmarks/results/tuning/eval/*.jsonl`. "
         "Each variant's CRPS is averaged over 5 evaluation folds per dataset; the paired "
-        "test is run across the ten UCI datasets (n=10). Lower CRPS is better, "
+        "test is run across the eleven benchmark datasets (n=11). Lower CRPS is better, "
         "so a negative signed difference favours the left-hand variant.\n"
     )
 
@@ -139,14 +139,14 @@ def main() -> None:
     per_dataset = load_per_dataset_crps(INPUT_DIR)
     for v in VARIANTS:
         n_ds = len(per_dataset[v])
-        if n_ds != 10:
-            raise RuntimeError(f"Expected 10 datasets for variant {v}, got {n_ds}: " f"{sorted(per_dataset[v])}")
+        if n_ds != 11:
+            raise RuntimeError(f"Expected 11 datasets for variant {v}, got {n_ds}: " f"{sorted(per_dataset[v])}")
 
     results = [
         run_pair(
-            DISPLAY[SCORE_PLUS],
+            DISPLAY[SCORE_FLEX_SDE],
             DISPLAY[PUBLISHED],
-            per_dataset[SCORE_PLUS],
+            per_dataset[SCORE_FLEX_SDE],
             per_dataset[PUBLISHED],
             alternative="less",
         ),
@@ -158,10 +158,10 @@ def main() -> None:
             alternative="less",
         ),
         run_pair(
+            DISPLAY[SCORE_FLEX_SDE],
             DISPLAY[FM],
-            DISPLAY[SCORE_PLUS],
+            per_dataset[SCORE_FLEX_SDE],
             per_dataset[FM],
-            per_dataset[SCORE_PLUS],
             alternative="two-sided",
         ),
     ]

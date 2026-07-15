@@ -25,7 +25,7 @@ OUTPUT_PATH = REPO_ROOT / "benchmarks/results/selected/robustness_summary.md"
 
 SPACES = [
     "treeffuser_published",
-    "treeffuser_score_plus",
+    "treeffuser_score_flex_sde",
     "treeffuser_fm",
     "qreg_lightgbm",
     "catboost_uncertainty",
@@ -37,14 +37,16 @@ SPACES = [
 
 TREEFFUSER_SPACES = [
     "treeffuser_published",
-    "treeffuser_score_plus",
+    "treeffuser_score_flex_sde",
     "treeffuser_fm",
 ]
 
 DISPLAY = {
-    "treeffuser_published": "Treeffuser-published",
-    "treeffuser_score_plus": "Treeffuser-score+",
-    "treeffuser_fm": "Treeffuser-FM",
+    "treeffuser_published": "Treeffuser (published)",
+    "treeffuser_score_flex_sde": "DiffGBM (score-flex)",
+    "treeffuser_score_plus": "DiffGBM-score+",
+    "treeffuser_score_flex": "DiffGBM-score-flex-ODE",
+    "treeffuser_fm": "DiffGBM-FM",
     "qreg_lightgbm": "QReg-LightGBM",
     "catboost_uncertainty": "CatBoost-unc.",
     "ngboost": "NGBoost",
@@ -250,9 +252,9 @@ def wilcoxon_rows(
     datasets: list[str], means: dict[tuple[str, str], dict[str, float]]
 ) -> list[dict[str, float | str | int]]:
     pairs = [
-        ("score+ vs published", "treeffuser_score_plus", "treeffuser_published", "less"),
+        ("score-flex vs published", "treeffuser_score_flex_sde", "treeffuser_published", "less"),
         ("FM vs published", "treeffuser_fm", "treeffuser_published", "less"),
-        ("FM vs score+", "treeffuser_fm", "treeffuser_score_plus", "two-sided"),
+        ("score-flex vs FM", "treeffuser_score_flex_sde", "treeffuser_fm", "two-sided"),
     ]
     rows = []
     for label, left, right, alternative in pairs:
@@ -405,11 +407,11 @@ def render_markdown(
             "",
             "## Interpretation notes",
             "",
-            "- Mean ranks and raw-CRPS wins show mixed per-dataset winners rather than a one-family sweep.",
-            "- The Treeffuser rows lead the cross-dataset CRPSS/rel-CRPS aggregate, but the dataset standard errors are large relative to the small aggregate gaps.",
-            "- Score+ is the most robust calibration row by PIT pass rate and interval coverage error; FM is strongest on mean CRPS rank and rel-CRPS.",
-            "- The size split shows the large-dataset inversion: published SDE and QReg are strongest on the two largest datasets, while score+ and FM lead on small/medium groups.",
-            "- Friedman/Nemenyi is useful as a rank robustness check, but with ten datasets it should be treated as supporting context rather than a headline significance claim.",
+            "- DiffGBM (score-flex) leads mean CRPS rank and takes the plurality of raw-CRPS wins; the remaining per-dataset winners are DiffGBM-FM and the deep ensemble.",
+            "- The DiffGBM rows lead the cross-dataset CRPSS/rel-CRPS aggregate, but the dataset standard errors are large relative to the small aggregate gaps.",
+            "- DiffGBM-FM is the most robust calibration row by PIT pass rate and interval coverage error; DiffGBM (score-flex) is strongest on mean CRPS rank and rel-CRPS.",
+            "- The size split shows DiffGBM (score-flex) leading every size group on CRPSS/rel-CRPS, most decisively on the large group; DiffGBM-FM is competitive on small/medium but weak on large.",
+            "- Friedman/Nemenyi is useful as a rank robustness check, but with eleven datasets it should be treated as supporting context rather than a headline significance claim.",
         ]
     )
     return "\n".join(lines) + "\n"

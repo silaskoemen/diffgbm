@@ -1,26 +1,26 @@
 protocol:
-  dataset: ct_slices
+  dataset: protein
   space_name: treeffuser_score_flex_sde
   protocol_version: tune-fold0-eval-folds1-5-v1
-  n_train: 48150
-  n_test: 5350
+  n_train: 41157
+  n_test: 4573
   x_dim: 3
   master_seed: 0
   n_folds: 6
   n_samples: 100
   space_fingerprint: 924d2d23c5f63d49
-protocol_fingerprint: 1687c2fe5c906ec6
+protocol_fingerprint: cf279e890e38316a
 model: treeffuser
-best_value_crps: 0.14357866018537058
+best_value_crps: 1.606575678925587
 best_tunable:
-  n_estimators: 2000
-  learning_rate: 0.1
-  num_leaves: 200
+  n_estimators: 2071
+  learning_rate: 0.0690422353428579
+  num_leaves: 255
   max_depth: -1
-  min_child_samples: 20
-  subsample: 0.9
-  max_bin: 1023
-  score_parameterization: noise
+  min_child_samples: 12
+  subsample: 0.529400658298144
+  max_bin: 4095
+  score_parameterization: edm
   noise_features: raw_time
   t_sampling: uniform
   loss_weighting: uniform
@@ -34,14 +34,14 @@ params:
   sde_name: vesde
   sde_hyperparam_min: 0.01
   sde_hyperparam_max: 20.0
-  n_estimators: 2000
-  learning_rate: 0.1
-  num_leaves: 200
+  n_estimators: 2071
+  learning_rate: 0.0690422353428579
+  num_leaves: 255
   max_depth: -1
-  min_child_samples: 20
-  subsample: 0.9
-  max_bin: 1023
-  score_parameterization: noise
+  min_child_samples: 12
+  subsample: 0.529400658298144
+  max_bin: 4095
+  score_parameterization: edm
   noise_features: raw_time
   t_sampling: uniform
   loss_weighting: uniform
@@ -55,4 +55,4 @@ sampler:
 n_trials_target: 40
 n_trials_finite: 40
 n_trials_failed: 0
-storage: /Users/silaskoemen/Documents/Projects/treeffuser/benchmarks/results/tuning/studies/ct_slices__treeffuser_score_flex_sde__1687c2fe5c906ec6.db
+storage: /Users/silaskoemen/Documents/Projects/treeffuser/benchmarks/results/tuning/studies/protein__treeffuser_score_flex_sde__cf279e890e38316a.db

@@ -81,7 +81,9 @@ def _treeffuser_lgbm_tunable(trial: optuna.Trial) -> TrialParams:
         # stays identical across recipes, and the recipe x max_bin interaction is
         # itself evidence for the preconditioning thesis (raw-input recipes need
         # finer bins to resolve their expanded feature scale; preconditioned EDM/FM
-        # inputs do not). See the max_bin sensitivity table in the appendix.
+        # inputs do not). The per-dataset fold-0 recipe selection evidencing this
+        # is discussed in the large-data analysis (app:large-data); a dedicated
+        # max_bin sensitivity appendix is still a TODO.
         "max_bin": trial.suggest_categorical("max_bin", [255, 1023, 4095]),
     }
 

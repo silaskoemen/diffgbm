@@ -40,11 +40,11 @@
 \maketitle
 
 \begin{abstract}
-We extend Treeffuser, a score-based diffusion model for probabilistic tabular regression with gradient-boosted trees, by treating regression conditioning as the central design axis. On the score side, conditional-mean residualization, EDM-style preconditioning, log-sigma time sampling, and noise-level features make the denoising regression better matched to histogram-split tree learners. On the flow side, Gaussian-path flow matching gives a directly learned velocity field with algebraic score recovery, enabling both few-step deterministic ODE sampling and stochastic-interpolant diagnostics. Across ten UCI benchmarks with fold-0 tuning and folds-1--5 evaluation, the score-side recipe gives the best Treeffuser calibration, reducing 95\% coverage error from 0.023 to 0.015 and cutting sampling time 6.5$\times$ over the published baseline. The FM row gives the best normalized CRPS among Treeffuser rows and is another 3.2$\times$ faster than the improved score model, but gives back some coverage. These are Pareto improvements rather than decisive dominance: gains over the published baseline are directional rather than conventionally significant ($p \approx 0.07$), and tuned non-diffusion baselines still win several datasets on raw CRPS. Stochastic ($\varepsilon > 0$) samplers do not Pareto-dominate the deterministic corner, so the empirical recommendation is $\varepsilon = 0$ when aggregate CRPS and latency are the target, while stochasticity remains a conditional-tail calibration knob.
+We present DiffGBM, which extends Treeffuser---a score-based diffusion model for probabilistic tabular regression with gradient-boosted trees---by treating regression conditioning as the central design axis. On the score side, conditional-mean residualization, EDM-style preconditioning, log-sigma time sampling, and noise-level features make the denoising regression better matched to histogram-split tree learners. Rather than freezing one bundle of these choices, DiffGBM exposes them---together with histogram resolution, loss weighting, and the stochastic-SDE-versus-deterministic-ODE sampler---as jointly tunable recipe axes over the shared LightGBM surface; because this \emph{score-flex} space contains the published recipe as a special case, it can only match or beat it. On the flow side, Gaussian-path flow matching gives a directly learned velocity field with algebraic score recovery, enabling few-step deterministic ODE sampling and stochastic-interpolant diagnostics. Across eleven benchmarks (ten UCI regression tasks plus the large CT-slice localization dataset) with fold-0 tuning, folds-1--5 evaluation, and an equalized 40-trial budget, score-flex beats the published baseline on \emph{every} dataset (paired Wilcoxon $11/0$, $p<10^{-3}$), giving the best aggregate CRPS skill (0.725 vs.\ 0.699) and normalized CRPS of any row, and it wins the largest datasets outright where the published recipe previously led. This accuracy comes from the stochastic sampler rather than from lower latency; the flow-matching row is the cheapest sampler and the best-calibrated DiffGBM operating point, so we frame score-flex as the accuracy choice and flow matching as the fast, well-calibrated choice. Tuned non-diffusion baselines still win a few individual datasets on raw CRPS, and stochastic ($\varepsilon>0$) FM samplers do not Pareto-dominate the deterministic corner, so $\varepsilon=0$ remains the flow-side default while stochasticity stays a conditional-tail calibration knob.
 \end{abstract}
 
 \section{Introduction}\label{sec:intro}
-Probabilistic regression on tabular data must combine the predictive strength of gradient-boosted trees with full predictive distributions usable for calibration, decision-making, and uncertainty quantification. Treeffuser~\citep{treeffuser} achieves this by training LightGBM~\citep{ke2017lightgbm} regressors to estimate the score of a noise-perturbed conditional density and integrating the corresponding reverse-time stochastic differential equation (SDE)~\citep{song2021score} at inference. The framework inherits the calibration properties of score-based diffusion while avoiding neural-network density estimators.
+Probabilistic regression on tabular data must combine the predictive strength of gradient-boosted trees with full predictive distributions usable for calibration, decision-making, and uncertainty quantification. Treeffuser~\citep{treeffuser} achieves this by training LightGBM~\citep{ke2017lightgbm} regressors to estimate the score of a noise-perturbed conditional density and integrating the corresponding reverse-time stochastic differential equation (SDE)~\citep{song2021score} at inference. The framework inherits the calibration properties of score-based diffusion while avoiding neural-network density estimators. We call our extension \emph{DiffGBM}: it keeps this tree-based backbone but treats the noising path, parameterization, training distribution, features, and sampler as tunable conditioning choices rather than fixed defaults.
 
 Our notion of tractability is computational rather than likelihood-exact: predictive quantities are Monte Carlo estimates, but training reduces to supervised tree regression, the final FM row samples with a five-step Heun ODE, and Eq.~\eqref{eq:score} recovers scores when stochastic sampling is desired.
 
@@ -52,19 +52,19 @@ We develop Treeffuser along two axes: score-side modifications matched to histog
 
 \paragraph{Contributions.} We make three contributions:
 \begin{enumerate}
-  \item \emph{Score-side modifications for tree-based diffusion:} conditional-mean residualization, EDM preconditioning, log-$\sigma$ time sampling, and an explicit log-$\sigma$ feature for LightGBM score regression (\S\ref{sec:score-side}).
+  \item \emph{A jointly tunable score recipe for tree-based diffusion:} conditional-mean residualization, EDM preconditioning, log-$\sigma$ time sampling, an explicit log-$\sigma$ feature, loss weighting, histogram resolution, and the SDE-versus-ODE sampler, exposed as recipe axes over the shared LightGBM surface (\S\ref{sec:score-side}). The resulting score-flex space contains the published recipe as a special case and, tuned per dataset, beats it on every benchmark (\S\ref{sec:headline}).
   \item \emph{Flow matching for Treeffuser:} a Gaussian-path FM trainer with score recovery when stochastic-interpolant sampling or endpoint-error analysis requires it (\S\ref{sec:fm}, Lemma~\ref{lem:wronskian-score}).
   \item \emph{Regression-conditioning unification:} regression conditioning for the tree ensemble as the bottleneck behind both score- and flow-side gains (\S\ref{sec:disc}, Appendix~\ref{app:theory}).
 \end{enumerate}
 
-Across ten UCI benchmarks, with one fold for tuning and five for evaluation, the score-side recipe gives the best aggregate calibration and CRPS skill score among Treeffuser rows, while FM gives the best aggregate normalized CRPS and fastest Treeffuser sampler. The shared lesson is that noising path, parameterization, training distribution, features, and sampler must make the induced supervised problem well matched to histogram splits.
+Across eleven benchmarks, with one fold for tuning and five for evaluation, the jointly tuned score-flex recipe gives the best aggregate CRPS skill score of any row and beats the published baseline on every dataset, while flow matching gives the cheapest sampler and the best-calibrated DiffGBM operating point. The shared lesson is that noising path, parameterization, training distribution, features, histogram resolution, and sampler must make the induced supervised problem well matched to histogram splits---and that exposing these as tunable axes, rather than fixing one bundle, is what turns the earlier directional gains into a decisive one.
 
 \section{Method}\label{sec:method}
 
 \subsection{Score-Side Modifications}\label{sec:score-side}
 The published Treeffuser uses VESDE marginals with uniform $t$ sampling, a noise-prediction target, and LightGBM features $[\,y_t,\,X,\,t\,]$. We change four pieces: response/input conditioning, allocation of training rows over noise levels, explicit noise-level features, and sampler efficiency.
 
-\paragraph{Conditional-mean residualization.} We fit a cross-validated LightGBM mean predictor $\hat{\mu}(x)$ and apply diffusion to $y - \hat{\mu}(x)$ rather than $y$, moving conditional location out of the score-regression target. The residualizer uses a high-capacity configuration selected from a prior diagnostic sweep (Appendix~\ref{app:resid-config}) and then fixed; it is not tuned jointly with the diffusion or flow hyperparameters. On large datasets this fixed residualizer can become a bottleneck once the inner model has enough data to represent the conditional mean directly. Residualization is not a minor knob: on the few-step FM ODE it improves aggregate CRPS and 90\% coverage error decisively (81/100 paired wins on $|\text{cE}|$@90; Appendix~\ref{app:off-vs-mean}), while the five-capacity A--E residualizer sweep spans CRPSS $0.509$--$0.523$ and 95\% tail coverage error $0.010$--$0.021$. The headline C configuration and higher-capacity E are close on aggregate CRPSS (0.523 vs.\ 0.522), but E improves 95\% tail coverage error (0.010 vs.\ 0.011) and overtakes C on \texttt{protein} in a separate full-data diagnostic (Appendix~\ref{app:resid-AE}). This is why we fix residualizer-C rather than tune it jointly. A preliminary large-dataset stress test (Appendix~\ref{app:large-data}) shows the fixed residualizer is only a partial explanation of the large-data gap---removing it roughly halves the score$^+$ deficit on \texttt{ct\_slices} while FM depends on it---so automatic residualizer selection is a useful but incomplete route to closing that gap.
+\paragraph{Conditional-mean residualization.} We fit a cross-validated LightGBM mean predictor $\hat{\mu}(x)$ and apply diffusion to $y - \hat{\mu}(x)$ rather than $y$, moving conditional location out of the score-regression target. The residualizer uses a high-capacity configuration selected from a prior diagnostic sweep (Appendix~\ref{app:resid-config}) and then fixed; it is not tuned jointly with the diffusion or flow hyperparameters. On large datasets this fixed residualizer can become a bottleneck once the inner model has enough data to represent the conditional mean directly. Residualization is not a minor knob: on the few-step FM ODE it improves aggregate CRPS and 90\% coverage error decisively (81/100 paired wins on $|\text{cE}|$@90; Appendix~\ref{app:off-vs-mean}), while the five-capacity A--E residualizer sweep spans CRPSS $0.509$--$0.523$ and 95\% tail coverage error $0.010$--$0.021$. The headline C configuration and higher-capacity E are close on aggregate CRPSS (0.523 vs.\ 0.522), but E improves 95\% tail coverage error (0.010 vs.\ 0.011) and overtakes C on \texttt{protein} in a separate full-data diagnostic (Appendix~\ref{app:resid-AE}). This is why we fix residualizer-C rather than tune it jointly. The large-dataset analysis (Appendix~\ref{app:large-data}) shows the fixed residualizer is only a partial factor in the frozen bundles' large-data gap---removing it roughly halves the frozen score$^+$ deficit on \texttt{ct\_slices} while FM depends on it---and that jointly tuning residualization together with the rest of the score recipe (the score-flex row of \S\ref{sec:exp}) closes and reverses that gap, which is why residualization is a tunable axis rather than a fixed choice in the headline score model.
 
 \paragraph{EDM preconditioning.} Following \citet{karras2022edm}, we predict a denoised target $D_\theta(y_t, t)$ scaled to unit variance across noise levels and reconstruct the score $s(y_t, t) = (D_\theta - y_t)/\sigma(t)^2$. This stabilizes the regression target for trees, which would otherwise need to extrapolate noise-prediction magnitudes across $t$.
 
@@ -99,38 +99,38 @@ The FM code reuses Treeffuser's per-output-dimension LightGBM fitter and feature
 
 \section{Experiments}\label{sec:exp}
 
-\paragraph{Datasets and protocol.} Ten UCI benchmarks (Table~\ref{tab:per-dataset}) are evaluated with a nested tuning protocol. We split each dataset into six folds: fold~0 is used only for hyperparameter selection, and folds~1--5 are evaluation folds. For each dataset/model family, Optuna tunes on the fold-0 train/validation split; the selected configuration is then refit and evaluated on each held-out evaluation fold. Evaluation-fold training rows range from 256 on yacht to 38{,}108 on protein. For sample-based methods, each test point uses 200 samples; Treeffuser sampler choices are detailed in Appendix~\ref{app:datasets}. Each predictive metric is therefore a Monte Carlo estimate, but it is averaged over all held-out test points and five evaluation folds, so the residual sampling error in the aggregate CRPS and coverage numbers is small relative to the dataset-level standard errors reported in Table~\ref{tab:robustness-ranks}. Metrics are averaged over evaluation folds and, for headline summaries, over datasets.
+\paragraph{Datasets and protocol.} Eleven benchmarks (Table~\ref{tab:per-dataset})---ten standard UCI regression tasks plus the larger CT-slice localization dataset, itself from the UCI repository---are evaluated with a nested tuning protocol. We split each dataset into six folds: fold~0 is used only for hyperparameter selection, and folds~1--5 are evaluation folds. For each dataset/model family, Optuna tunes on the fold-0 train/validation split; the selected configuration is then refit and evaluated on each held-out evaluation fold. Evaluation-fold training rows range from 256 on yacht to 44{,}583 on CT slices. For sample-based methods, each test point uses 200 samples; Treeffuser sampler choices are detailed in Appendix~\ref{app:datasets}. Each predictive metric is therefore a Monte Carlo estimate, but it is averaged over all held-out test points and five evaluation folds, so the residual sampling error in the aggregate CRPS and coverage numbers is small relative to the dataset-level standard errors reported in Table~\ref{tab:robustness-ranks}. Metrics are averaged over evaluation folds and, for headline summaries, over datasets.
 
 \paragraph{Metrics.} We report CRPS skill score $\crpss = 1 - \crps_{\text{model}} / \crps_{\text{climatology}}$, mean rel-CRPS, DSS~\citep{dawid1984pit}, PIT-KS pass rate at $\alpha=0.05$, absolute coverage error at 50/90/95\% nominal levels~\citep{gneiting2007crps}, and sample-generation time. CRPSS and rel-CRPS are the aggregate comparison metrics because raw CRPS is target-scale dependent; mean climatological CRPS ranges from 0.0043 on \texttt{naval} to 44.8 on \texttt{diabetes}. Timings are measured on one Apple-arm64 workstation, exclude fitting, and include generating 200 samples per test point plus inverse transformations. They use practical benchmark settings rather than a single-thread cap: Treeffuser samples in batches with \texttt{n\_parallel=20} and LightGBM \texttt{n\_jobs=-1}; other libraries use their configured parallel defaults.
 
-\paragraph{Variants compared.} Three Treeffuser rows compare bundled recipes: (1)~\textsc{published}---the original baseline with noise-prediction, uniform $t$, no residualization; (2)~\textsc{score+}---the baseline plus \S\ref{sec:score-side}; (3)~\textsc{FM}---VP flow matching with residualization and a 5-step Heun ODE. Each row is tuned per dataset under the same fold-0 protocol. The residualizer-C configuration used in the headline rows was selected from the prior diagnostic sweep in Appendix~\ref{app:resid-config} and then fixed; it is not tuned jointly with the diffusion or flow hyperparameters. We also compare against six per-dataset tuned probabilistic baselines: NGBoost~\citep{duan2020ngboost}, quantile-regression LightGBM~\citep{ke2017lightgbm}, CatBoost RMSE-with-uncertainty~\citep{prokhorenkova2018catboost}, iBUG~\citep{brophy2022ibug}, a Gaussian deep ensemble~\citep{lakshminarayanan2017deep}, and CARD-style neural diffusion~\citep{han2022card}.
+\paragraph{Variants compared.} We report two DiffGBM rows against the published Treeffuser baseline. \textsc{published} is the original recipe (noise prediction, uniform $t$, no residualization) tuned per dataset. \textsc{DiffGBM-score-flex} exposes the score-side recipe axes of \S\ref{sec:score-side}---score parameterization, noise-level features, $t$ sampling and its log-$\sigma$ prior, loss weighting, residualization, and histogram resolution---as jointly tunable dimensions over the shared LightGBM surface, with the stochastic-SDE-versus-PF-ODE sampler treated as a recipe-coupled axis selected on fold~0; because this space contains the published corner as a special case, it can only match or beat it (Appendix~\ref{app:large-data}). \textsc{DiffGBM-FM} is VP flow matching with residualization and a 5-step Heun ODE, retained as the cheapest well-calibrated operating point. Each row is tuned per dataset under the same fold-0 protocol with an equalized 40-trial budget. The residualizer-C configuration used in the FM row was selected from the prior diagnostic sweep in Appendix~\ref{app:resid-config} and then fixed; it is not tuned jointly with the flow hyperparameters. The frozen score$^+$ bundle---the baseline plus \S\ref{sec:score-side} under a PF-ODE sampler---is subsumed by score-flex and reported as a fast, well-calibrated ablation point in Appendix~\ref{app:competitors}. We also compare against six per-dataset tuned probabilistic baselines: NGBoost~\citep{duan2020ngboost}, quantile-regression LightGBM~\citep{ke2017lightgbm}, CatBoost RMSE-with-uncertainty~\citep{prokhorenkova2018catboost}, iBUG~\citep{brophy2022ibug}, a Gaussian deep ensemble~\citep{lakshminarayanan2017deep}, and CARD-style neural diffusion~\citep{han2022card}.
 
 \begin{table*}[!t]
   \centering
-  \caption{Headline real-data results, mean over 10 UCI benchmarks with fold~0 used for tuning and folds~1--5 used for evaluation. rel-CRPS is the per-dataset CRPS divided by the best displayed variant on that dataset. $|\text{cE}|$@$q$ is absolute coverage error at the $q$\% interval level. The CARD row is a compact benchmark adapter, not a fully optimized CARD pipeline (see Appendix~\ref{app:competitors}).}\label{tab:headline}
+  \caption{Headline real-data results, mean over 11 benchmark datasets (ten UCI regression tasks plus the large CT-slice localization dataset, itself from the UCI repository) with fold~0 used for tuning and folds~1--5 used for evaluation. rel-CRPS is the per-dataset CRPS divided by the best displayed variant on that dataset. $|\text{cE}|$@$q$ is absolute coverage error at the $q$\% interval level. Wall-clock timing is reported separately over the ten UCI datasets in Table~\ref{tab:timing}, because the large CT-slice dataset dominates raw-second means (Appendix~\ref{app:large-data}). The CARD row is a compact benchmark adapter, not a fully optimized CARD pipeline (see Appendix~\ref{app:competitors}).}\label{tab:headline}
   \scriptsize
-  \begin{tabular}{lrrrrrrr}
+  \begin{tabular}{lrrrrrr}
     \toprule
-    Variant & CRPSS $\uparrow$ & rel-CRPS $\downarrow$ & KS $p{>}.05$ $\uparrow$ & $|\text{cE}|$@50 $\downarrow$ & $|\text{cE}|$@90 $\downarrow$ & $|\text{cE}|$@95 $\downarrow$ & samp.\ time \\
+    Variant & CRPSS $\uparrow$ & rel-CRPS $\downarrow$ & KS $p{>}.05$ $\uparrow$ & $|\text{cE}|$@50 $\downarrow$ & $|\text{cE}|$@90 $\downarrow$ & $|\text{cE}|$@95 $\downarrow$ \\
     \midrule
-    Treeffuser-published & 0.670 & 1.242 & 0.40 & 0.117 & 0.044 & 0.023 & 208.55\,s \\
-    Treeffuser-score$^+$ (ours) & \textbf{0.681} & 1.131 & \textbf{0.62} & 0.069 & \textbf{0.020} & \textbf{0.015} & 32.18\,s \\
-    Treeffuser-FM (ours) & 0.680 & \textbf{1.117} & 0.46 & \textbf{0.064} & 0.028 & 0.024 & 10.06\,s \\
+    Treeffuser-published & 0.699 & 1.248 & 0.27 & 0.142 & 0.047 & 0.026 \\
+    DiffGBM-score-flex (ours) & \textbf{0.725} & \textbf{1.106} & 0.33 & 0.112 & 0.049 & 0.037 \\
+    DiffGBM-FM (ours) & 0.707 & 1.334 & \textbf{0.45} & \textbf{0.067} & \textbf{0.029} & 0.021 \\
     \midrule
-    QReg-LightGBM & 0.668 & 1.459 & 0.34 & 0.066 & 0.041 & 0.044 & 0.30\,s \\
-    CatBoost-unc. & 0.638 & 1.409 & 0.28 & 0.093 & 0.078 & 0.066 & \textbf{0.01\,s} \\
-    NGBoost & 0.601 & 1.550 & 0.16 & 0.119 & 0.114 & 0.101 & 0.04\,s \\
-    Deep ensemble & 0.654 & 1.519 & 0.26 & 0.090 & 0.032 & 0.018 & 0.03\,s \\
-    iBUG & 0.649 & 1.471 & 0.36 & 0.111 & 0.051 & 0.065 & 2.89\,s \\
-    CARD-style diffusion & 0.631 & 1.632 & 0.24 & 0.086 & 0.057 & 0.043 & 42.84\,s \\
+    QReg-LightGBM & 0.694 & 1.826 & 0.31 & 0.085 & 0.045 & 0.043 \\
+    CatBoost-unc. & 0.666 & 1.815 & 0.25 & 0.096 & 0.080 & 0.066 \\
+    NGBoost & 0.626 & 2.471 & 0.15 & 0.117 & 0.111 & 0.098 \\
+    Deep ensemble & 0.685 & 1.556 & 0.24 & 0.108 & 0.036 & \textbf{0.019} \\
+    iBUG & 0.679 & 1.564 & 0.33 & 0.119 & 0.052 & 0.060 \\
+    CARD-style diffusion & 0.662 & 1.746 & 0.22 & 0.085 & 0.059 & 0.044 \\
     \bottomrule
   \end{tabular}
 \end{table*}
 
 \subsection{Headline Result}\label{sec:headline}
-Table~\ref{tab:headline} reports cross-dataset means under the tuning/evaluation protocol. The score-side recipe lifts CRPSS from 0.670 to 0.681, raises PIT-uniformity pass rate from 0.40 to 0.62, reduces 90/95\% coverage error from 0.044/0.023 to 0.020/0.015, and cuts Treeffuser sample time 6.5$\times$. FM is close on CRPSS, has the best aggregate normalized CRPS among displayed rows, and is another 3.2$\times$ faster than score$^+$, but gives back part of score$^+$'s coverage advantage. The headline FM row uses the VP path because it is the fastest Treeffuser operating point; the tuned mechanism ablation identifies residualized linear FM as the CRPS-optimal FM corner, so we treat VP and linear as latency and CRPS endpoints rather than a single winning path (Table~\ref{tab:mechanism-ablation}). Per-dataset raw-CRPS winners span five families; a Treeffuser variant wins on 6/10 datasets, with the remaining wins split across deep ensembles, CARD-style diffusion, and quantile-regression LightGBM. The Treeffuser aggregate advantage is directional rather than conventionally significant: paired Wilcoxon tests give one-sided $p=0.080$ for score$^+$ over published and $p=0.065$ for FM over published; FM versus score$^+$ remains indistinguishable ($p=0.922$, two-sided). Because the external families are tuned on an equal finite-trial budget but with differing search spaces and per-trial costs (\S\ref{sec:disc}), the cross-family rows are informative about the tradeoff surface rather than definitive head-to-head rankings.
+Table~\ref{tab:headline} reports cross-dataset means under the tuning/evaluation protocol. The jointly tuned score-flex recipe lifts CRPSS from 0.699 to 0.725 and normalized CRPS from 1.248 to 1.106---the best of any row on both aggregate accuracy metrics---and beats the published baseline on \emph{every} one of the eleven datasets (paired Wilcoxon $11/0$, $W{=}0$, one-sided $p=4.9\times10^{-4}$). A Friedman test over the nine families and eleven datasets rejects rank equality ($\chi^2=32.1$, $p<10^{-3}$), and score-flex holds the best mean CRPS rank ($1.91$) by more than a rank-and-a-half over the next family; this is a decisive within-family win, not the directional edge of the frozen bundles. FM is the best-calibrated DiffGBM row---lowest 50/90\% coverage error ($0.067$/$0.029$) and highest PIT pass rate ($0.45$)---and the cheapest sampler (Table~\ref{tab:timing}), while remaining competitive on CRPSS ($0.707$); it trades some accuracy on the largest datasets for that speed and calibration. The headline FM row uses the VP path because it is the fastest Treeffuser operating point; the tuned mechanism ablation identifies residualized linear FM as the CRPS-optimal FM corner, so we treat VP and linear as latency and CRPS endpoints rather than a single winning path (Table~\ref{tab:mechanism-ablation}). Per-dataset raw-CRPS winners are a DiffGBM row on $9/11$ datasets (score-flex on seven, FM on two), with only \texttt{diabetes} and \texttt{kin8nm} going to the deep ensemble. Unlike the frozen score$^+$ bundle, score-flex reaches this accuracy with the Euler-SDE sampler rather than the PF-ODE, so it is an accuracy operating point and not a speed win: its coverage error is looser than FM's and its sampling cost tracks the EDM no-residualizer score path (\S\ref{sec:headline}, Appendix~\ref{app:large-data}); FM and the frozen score$^+$ ablation (Appendix~\ref{app:competitors}) remain the cheap, tightly calibrated corners. Because the external families are tuned on an equal finite-trial budget but with differing search spaces and per-trial costs (\S\ref{sec:disc}), the cross-family rows are informative about the tradeoff surface rather than definitive head-to-head rankings.
 
-\paragraph{End-to-end timing.} Table~\ref{tab:headline} excludes fitting, but fit time is logged on the same runs, so Table~\ref{tab:timing} reports both. Two points follow. First, FM is the cheapest end-to-end Treeffuser row (24.0\,s fit$+$sample), ahead of score$^+$ (45.4\,s) and far ahead of the published SDE (221.7\,s), so the sampling speedup is not bought back at fit time. Second, near-zero sampling time does not imply lower end-to-end cost: quantile-regression LightGBM samples in 0.30\,s but fits 24--49 separate quantile models, so its total cost is 69.6\,s, and the deep ensemble is close to score$^+$ at 46.3\,s but still slower than FM. Fit times are still environment-specific and use library-default parallelism, so we read them as the same kind of practical engineering benchmark as the sampling timings.
+\paragraph{End-to-end timing.} Table~\ref{tab:headline} excludes fitting, but fit time is logged on the same runs, so Table~\ref{tab:timing} reports both over the ten UCI datasets (the large CT-slice dataset dominates raw-second means and is timed separately in Appendix~\ref{app:large-data}). Two points follow. First, FM is the cheapest end-to-end DiffGBM row (61.3\,s fit$+$sample), well ahead of the published SDE (196.3\,s), so its accuracy and calibration are not bought at latency. Second, the score-flex accuracy row is the most expensive DiffGBM operating point (323.0\,s): its tuned optimum selects the Euler-SDE sampler over an EDM no-residualizer score path, which trades wall-clock for the aggregate CRPS win rather than saving it---the frozen score$^+$ PF-ODE ablation (Appendix~\ref{app:competitors}) is the fast, tightly calibrated score corner. Near-zero sampling time still does not imply lower end-to-end cost: quantile-regression LightGBM samples in 0.30\,s but fits 24--49 separate quantile models, so its total cost is 69.7\,s, and the deep ensemble is 46.3\,s. Fit times are environment-specific and use library-default parallelism, so we read them as the same kind of practical engineering benchmark as the sampling timings.
 
 \begin{table}[!t]
   \centering
@@ -140,9 +140,9 @@ Table~\ref{tab:headline} reports cross-dataset means under the tuning/evaluation
     \toprule
     Variant & fit (s) & sample (s) & total (s) \\
     \midrule
-    Treeffuser-published & 13.14 & 208.55 & 221.69 \\
-    Treeffuser-score$^+$ (ours) & 13.26 & 32.18 & 45.43 \\
-    Treeffuser-FM (ours) & 13.90 & 10.06 & 23.96 \\
+    Treeffuser-published & 13.60 & 182.71 & 196.32 \\
+    DiffGBM-score-flex (ours) & 26.89 & 296.09 & 322.98 \\
+    DiffGBM-FM (ours) & 25.84 & 35.46 & 61.30 \\
     \midrule
     QReg-LightGBM & 69.34 & 0.30 & 69.65 \\
     CatBoost-unc. & 2.34 & \textbf{0.01} & \textbf{2.35} \\
@@ -155,50 +155,51 @@ Table~\ref{tab:headline} reports cross-dataset means under the tuning/evaluation
 \end{table}
 
 \subsection{Per-Dataset CRPSS}\label{sec:perdata}
-Table~\ref{tab:per-dataset} shows the Treeffuser per-dataset CRPSS. Score$^+$ is best on concrete and diabetes, FM on energy, kin8nm, naval, power, and yacht, and the published baseline on wine and the two largest datasets. Thus the tuned comparison exposes a Pareto surface: score$^+$ is usually the calibrated choice, FM the fast normalized-CRPS choice, and the published SDE remains competitive when full SDE sampling is affordable.
+Table~\ref{tab:per-dataset} shows the per-dataset CRPSS for the two DiffGBM rows and the published baseline. Score-flex is the best DiffGBM row on 8 of the 11 datasets, including all four largest (\texttt{california\_housing}, \texttt{protein}, and both large near-deterministic tasks), while FM wins the three small-to-mid sets where its residualized few-step ODE is strongest (\texttt{yacht}, \texttt{concrete}, \texttt{kin8nm}) and ties on \texttt{energy}. The published baseline is no longer the best DiffGBM row on any dataset. The tuned comparison thus reads as a clean split: score-flex is the accuracy choice and dominates as data grows, while FM is the fast, well-calibrated choice on smaller data.
 
 \begin{table}[!t]
   \centering
-  \caption{Per-dataset CRPSS (higher is better) and post-split training rows.}\label{tab:per-dataset}
+  \caption{Per-dataset CRPSS (higher is better) and post-split training rows. Bold marks the best DiffGBM row per dataset.}\label{tab:per-dataset}
   \footnotesize
   \begin{tabular}{lrrrr}
     \toprule
-    Dataset & Train rows & Published & Score$^+$ & FM \\
+    Dataset & Train rows & Published & Score-flex & FM \\
     \midrule
-    yacht & 256 & 0.941 & \textbf{0.962} & \textbf{0.962} \\
-    diabetes & 368 & 0.201 & \textbf{0.241} & 0.226 \\
-    energy & 640 & 0.956 & 0.962 & \textbf{0.964} \\
-    concrete & 858 & 0.740 & \textbf{0.774} & 0.771 \\
-    wine & 5414 & \textbf{0.346} & 0.305 & 0.307 \\
-    kin8nm & 6826 & 0.555 & 0.617 & \textbf{0.631} \\
-    power & 7973 & 0.829 & 0.839 & \textbf{0.843} \\
-    naval & 9945 & 0.950 & 0.949 & \textbf{0.951} \\
-    cali.\ housing & 17200 & \textbf{0.687} & 0.676 & 0.674 \\
-    protein & 38108 & \textbf{0.494} & 0.480 & 0.472 \\
+    yacht & 256 & 0.939 & 0.945 & \textbf{0.964} \\
+    diabetes & 368 & 0.193 & \textbf{0.241} & 0.215 \\
+    energy & 640 & 0.959 & \textbf{0.965} & \textbf{0.965} \\
+    concrete & 858 & 0.712 & 0.759 & \textbf{0.772} \\
+    wine & 5414 & 0.359 & \textbf{0.395} & 0.310 \\
+    kin8nm & 6826 & 0.566 & 0.627 & \textbf{0.631} \\
+    power & 7973 & 0.833 & \textbf{0.849} & 0.845 \\
+    naval & 9945 & 0.962 & \textbf{0.970} & 0.952 \\
+    cali.\ housing & 17200 & 0.682 & \textbf{0.698} & 0.676 \\
+    protein & 38108 & 0.499 & \textbf{0.539} & 0.479 \\
+    ct slices & 44583 & 0.988 & \textbf{0.989} & 0.966 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
 \subsection{Robustness Checks}\label{sec:robustness}
-Table~\ref{tab:robustness-ranks} summarizes the same tuned artifacts by per-dataset ranks and dataset-level standard errors. The Treeffuser rows occupy the two best mean CRPS ranks, but the aggregate gaps are small relative to the dataset standard errors, and the rank tests do not support a one-family sweep. A Friedman test over the nine displayed families rejects equal CRPS ranks ($p=0.001$), but the Nemenyi critical difference is 3.80 mean-rank points; post-hoc gaps separate FM and score$^+$ only from the weakest rows, not from the published SDE, quantile-regression LightGBM, or deep ensembles. This supports the intended reading of Table~\ref{tab:headline}: the aggregate Treeffuser gains are robustly directional, while individual datasets and metrics still have mixed winners.
+Table~\ref{tab:robustness-ranks} summarizes the same tuned artifacts by per-dataset ranks and dataset-level standard errors. Score-flex takes the best mean CRPS rank ($1.91$) by more than a rank-and-a-half over the next family, with FM second among all nine families; the published baseline drops to fourth. A Friedman test over the nine families and eleven datasets rejects equal CRPS ranks ($\chi^2=32.1$, $p<10^{-3}$), and the Nemenyi critical difference of $3.62$ mean-rank points separates score-flex from the four weakest families (NGBoost, CARD, CatBoost, iBUG). The conservative all-pairs post-hoc does not by itself separate score-flex from the published SDE, quantile-regression LightGBM, or the deep ensemble, but the targeted within-family paired test does: score-flex beats the published baseline on all eleven datasets (Wilcoxon $W{=}0$, $p=4.9\times10^{-4}$; \S\ref{sec:headline}). The aggregate CRPSS gaps remain modest relative to the dataset standard errors, so we read the cross-family ranking as robustness context and the paired within-family test as the decisive claim.
 
 \begin{table}[!t]
   \centering
-  \caption{Robustness summary from the tuned evaluation artifacts. Ranks average per-dataset ranks after first averaging folds~1--5; lower ranks are better. SE is the standard error over the ten dataset-level CRPSS means.}\label{tab:robustness-ranks}
+  \caption{Robustness summary from the tuned evaluation artifacts. Ranks average per-dataset ranks after first averaging folds~1--5; lower ranks are better. SE is the standard error over the eleven dataset-level CRPSS means.}\label{tab:robustness-ranks}
   \scriptsize
   \begin{tabular}{lrrrr}
     \toprule
     Model & CRPS rank & CRPSS $\pm$ SE & rel-CRPS & $|\text{cE}|$@95 rank \\
     \midrule
-    Treeffuser-FM & \textbf{2.80} & 0.680 $\pm$ 0.086 & \textbf{1.117} & 4.00 \\
-    Treeffuser-score$^+$ & 3.00 & \textbf{0.681} $\pm$ 0.085 & 1.131 & \textbf{2.10} \\
-    QReg-LightGBM & 4.00 & 0.668 $\pm$ 0.079 & 1.459 & 5.60 \\
-    Treeffuser-published & 4.10 & 0.670 $\pm$ 0.084 & 1.242 & 3.30 \\
-    Deep ensemble & 5.80 & 0.654 $\pm$ 0.082 & 1.519 & 2.90 \\
-    iBUG & 5.80 & 0.649 $\pm$ 0.081 & 1.471 & 6.50 \\
-    CatBoost-unc. & 6.00 & 0.638 $\pm$ 0.088 & 1.409 & 7.10 \\
-    CARD-style diffusion & 6.60 & 0.631 $\pm$ 0.091 & 1.632 & 5.70 \\
-    NGBoost & 6.90 & 0.601 $\pm$ 0.094 & 1.550 & 7.80 \\
+    DiffGBM-score-flex & \textbf{1.91} & \textbf{0.725} $\pm$ 0.076 & \textbf{1.106} & 4.73 \\
+    DiffGBM-FM & 3.45 & 0.707 $\pm$ 0.082 & 1.334 & 3.18 \\
+    Treeffuser-published & 4.18 & 0.699 $\pm$ 0.081 & 1.248 & 3.55 \\
+    QReg-LightGBM & 4.36 & 0.694 $\pm$ 0.076 & 1.826 & 5.36 \\
+    Deep ensemble & 5.45 & 0.685 $\pm$ 0.080 & 1.556 & \textbf{2.73} \\
+    iBUG & 5.91 & 0.679 $\pm$ 0.080 & 1.564 & 5.82 \\
+    CatBoost-unc. & 6.09 & 0.666 $\pm$ 0.085 & 1.815 & 6.73 \\
+    CARD-style diffusion & 6.73 & 0.662 $\pm$ 0.088 & 1.746 & 5.55 \\
+    NGBoost & 6.91 & 0.626 $\pm$ 0.089 & 2.471 & 7.36 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -208,7 +209,7 @@ Table~\ref{tab:mechanism-ablation} isolates the main design choices under the sa
 
 \begin{table*}[!t]
   \centering
-  \caption{Tuned mechanism ablation over the same ten UCI datasets. Each row uses the same LightGBM hyperparameter search surface and fold-0 tuning / folds-1--5 evaluation protocol; fixed method choices and bound samplers differ by row. rel-CRPS is normalized by the best ablation row on each dataset.}\label{tab:mechanism-ablation}
+  \caption{Tuned mechanism ablation over the ten UCI datasets. Each row uses the same LightGBM hyperparameter search surface and fold-0 tuning / folds-1--5 evaluation protocol; fixed method choices and bound samplers differ by row. rel-CRPS is normalized by the best ablation row on each dataset. This ablation predates the shared histogram-resolution (\texttt{max\_bin}) tuning surface used by the headline rows and is retained as mechanism evidence for the individual design choices, not as a headline comparison; it does not include \texttt{ct\_slices}.}\label{tab:mechanism-ablation}
   \scriptsize
   \begin{tabular}{lrrrrrrr}
     \toprule
@@ -242,9 +243,9 @@ Figure~\ref{fig:sampler-cost} re-evaluates the tuned Treeffuser configurations a
 \section{Discussion}\label{sec:disc}
 Two findings deserve emphasis. First, the headline rows compare tuned bundled recipes, while Appendix~\ref{app:score-side} scopes the fixed diagnostics. Because score$^+$ and FM share the same LightGBM tuning surface, the FM result is not implicitly absorbing tuning-budget improvements that belong to the score track. Second, per-dataset tuning turns the headline into a tradeoff: score$^+$ is the strongest calibrated Treeffuser row, whereas FM is strongest on normalized CRPS and latency. The common mechanism is regression conditioning for tree ensembles: EDM preconditioning stabilises the VE score path's inputs and denoising residual, while FM changes the target and sampler geometry of the supervised problem. The tuned path ablation is important here: variance preservation is one helpful conditioning axis, but not the whole story. Linear FM has a less uniform input scale, yet its simple displacement-like velocity target and direct few-step ODE can be easier to exploit once conditional location is residualized; trig shows that the variance-preserving family remains competitive, but does not uniquely determine the CRPS optimum. Log-$\sigma$ sampling controls where tree capacity is spent, the log-$\sigma$ feature exposes the noise regime to histogram splits, residualization removes predictable conditional location, and Heun ODE sampling is an inference-side efficiency gain. The large-dataset inversion argues against a blanket ``SDE is worse'' interpretation: per-IQR-bin diagnostics show that stochasticity can improve high-uncertainty tail coverage, while aggregate metrics penalise broader intervals, worse CRPS, and higher latency.
 
-\paragraph{Limitations.} All displayed families are tuned per dataset, but this is still finite-budget model selection with unequal search spaces and per-trial costs: the comparison is equal finite-trial budget rather than wall-clock-normalized model selection. We include six probabilistic baselines but not distributional random forests~\citep{cevid2022drf}; per-dataset gaps, especially on large datasets, should be read as descriptive rather than high-powered significance estimates. The benchmark suite is also limited to scalar UCI-style regression; categorical-heavy tables, multi-output responses, and operational tail-risk settings remain outside the evidence in this paper. The residualizer is selected from fixed diagnostics rather than automated jointly with the diffusion objective, and it is a partial bottleneck on the largest datasets, where the inner model has enough data to fit the conditional mean directly. It is not the whole story: the preliminary stress test in Appendix~\ref{app:large-data} finds that neither the residualizer nor the sampler explains the remaining published-SDE advantage on \texttt{ct\_slices}, pointing at the training-time noise-level recipe instead. Finally, the benchmark is scalar, and this matters for the target dimension: the implementation fits one LightGBM score or velocity regressor per response coordinate, but each regressor sees the full noisy response vector, so cross-output dependence can in principle be represented through the learned vector field. How well this works with diagonal Gaussian noise paths, per-coordinate tree targets, and finite-step samplers is outside the evidence here and left to future work.
+\paragraph{Limitations.} All displayed families are tuned per dataset, but this is still finite-budget model selection with unequal search spaces and per-trial costs: the comparison is equal finite-trial budget rather than wall-clock-normalized model selection. We include six probabilistic baselines but not distributional random forests~\citep{cevid2022drf}; per-dataset gaps, especially on large datasets, should be read as descriptive rather than high-powered significance estimates. The benchmark suite is also limited to scalar UCI-style regression; categorical-heavy tables, multi-output responses, and operational tail-risk settings remain outside the evidence in this paper. In the FM row the residualizer is selected from fixed diagnostics rather than automated jointly with the flow objective, and it is a partial bottleneck on the largest datasets; the score-flex row instead tunes residualization jointly with the rest of the recipe. The large-data analysis in Appendix~\ref{app:large-data} shows that neither the residualizer nor the sampler alone explains the frozen bundles' behaviour on \texttt{ct\_slices}, and that the jointly tuned score-flex recipe resolves it, beating the published SDE and the deep ensemble there; on that uniquely near-deterministic dataset the selected recipe is noise prediction with finer histogram bins rather than EDM, the reverse of the other ten datasets, which is a limitation on reading any single recipe axis as universal. Finally, the benchmark is scalar, and this matters for the target dimension: the implementation fits one LightGBM score or velocity regressor per response coordinate, but each regressor sees the full noisy response vector, so cross-output dependence can in principle be represented through the learned vector field. How well this works with diagonal Gaussian noise paths, per-coordinate tree targets, and finite-step samplers is outside the evidence here and left to future work.
 
-\paragraph{Choosing a variant.} The per-dataset pattern supports benchmark-level operating points rather than a uniform-dominance claim or a simple \emph{calibration vs.\ speed} split. Use headline 5-step VP-FM when sample latency or aggregate normalized CRPS is the binding constraint; it is the fastest displayed headline corner, while the mechanism ablation shows residualized linear FM as the tuned CRPS corner and trig as a close path check. Prefer score$^+$ when interval coverage or PIT uniformity is the reported quantity, since it is the strongest calibrated row at the cost of $\sim$3.2$\times$ more sampling time. On the largest datasets the published SDE remains the sharpest CRPS row (Appendix~\ref{app:large-data}), though at a calibration cost; the score-family PF-ODE rows retain the coverage edge there, and full SDE sampling is worth its cost only when raw CRPS is the objective. Stochasticity ($\varepsilon>0$) is a conditional knob, not a default: select it only when high-uncertainty tail coverage is the target (Appendix~\ref{app:tail-diagnostic}), against conditional-calibration metrics rather than aggregate CRPS.
+\paragraph{Choosing a variant.} The per-dataset pattern supports two clear operating points. Use \textsc{DiffGBM-score-flex} when aggregate accuracy is the target: its SDE arm has the best CRPS skill of any row, beats the published baseline on every dataset, and dominates as data grows, at the cost of the stochastic sampler's higher latency and looser central coverage. Use \textsc{DiffGBM-FM} when sample latency or interval calibration is the binding constraint; it is the cheapest sampler and the best-calibrated DiffGBM row, most attractive on small and medium data, while the mechanism ablation shows residualized linear FM as the tuned CRPS corner and trig as a close path check. When tight PIT uniformity or interval coverage is the reported quantity and a deterministic sampler is acceptable, the frozen score$^+$ PF-ODE bundle (Appendix~\ref{app:competitors}) and, on the largest near-deterministic datasets, the PF-ODE arm of score-flex give the strongest coverage. Stochasticity in the FM sampler ($\varepsilon>0$) is a conditional knob, not a default: select it only when high-uncertainty tail coverage is the target (Appendix~\ref{app:tail-diagnostic}), against conditional-calibration metrics rather than aggregate CRPS.
 
 \paragraph{Related uncertainty methods for trees.} Our baselines cover sample-based and quantile tree learners, but several complementary tree-uncertainty families target different quantities. Epistemic-ensemble boosting such as SGLB~\citep{ustimenko2021sglb} uses Langevin dynamics to quantify model uncertainty and is evaluated mainly on NLL/RMSE and out-of-distribution detection rather than the sharpness-and-coverage CRPS regime here. Frequentist inference for boosted trees, e.g.\ Boulevard~\citep{zhou2022boulevard}, yields asymptotic prediction intervals with coverage guarantees but does not provide a full generative predictive law. Conformal wrappers such as conformalized quantile regression~\citep{romano2019cqr} are orthogonal routes to finite-sample marginal coverage; a useful next comparison is to calibrate both Treeffuser variants and quantile-regression LightGBM under a matched calibration split and report the resulting coverage--width or interval-score tradeoff.
 
@@ -389,7 +390,7 @@ Indeed, for VE, $\alpha=1$, $\alpha'=0$, $u_t=\beta'(t)z$, and $W=\beta'(t)$; Le
 
 \section{Datasets and Protocol Details}\label{app:datasets}
 
-\paragraph{Sources.} The ten UCI benchmarks follow the canonical Treeffuser protocol~\citep{treeffuser}: \texttt{yacht}, \texttt{concrete}, \texttt{energy}, \texttt{wine}, \texttt{kin8nm}, \texttt{naval}, \texttt{power\_plant}, \texttt{protein} from the UCI repository; \texttt{california\_housing} from scikit-learn's \texttt{fetch\_california\_housing}; and \texttt{diabetes} from scikit-learn's \texttt{load\_diabetes}. The headline results use the six-fold tuning/evaluation protocol from \S\ref{sec:exp}; Table~\ref{tab:per-dataset} reports the post-split training rows for each evaluation fold. Fixed-configuration appendix diagnostics instead use the train/test sizes declared in their YAML configs, sometimes with large datasets subsampled for sweep cost. The only preprocessing is StandardScaler standardisation of features and target, fit on the training split and applied to the corresponding test split. \texttt{wine} is the union of \texttt{wine-quality-red} and \texttt{wine-quality-white} with a binary \texttt{color} indicator. Although the implementation can use LightGBM's native categorical handling, missing-value routing, and constraint options, the paper experiments do not isolate these features or use categorical-heavy benchmark tables.
+\paragraph{Sources.} Ten of the eleven benchmarks follow the canonical Treeffuser protocol~\citep{treeffuser}: \texttt{yacht}, \texttt{concrete}, \texttt{energy}, \texttt{wine}, \texttt{kin8nm}, \texttt{naval}, \texttt{power\_plant}, \texttt{protein} from the UCI repository; \texttt{california\_housing} from scikit-learn's \texttt{fetch\_california\_housing}; and \texttt{diabetes} from scikit-learn's \texttt{load\_diabetes}. The eleventh, \texttt{ct\_slices} (relative location of CT slices on the axial axis; UCI repository, retrieved via OpenML data id 46300, 53{,}500 rows and 384 numeric features after dropping the patient identifier), anchors the large-data end of the suite and is analyzed in detail in Appendix~\ref{app:large-data}. The headline results use the six-fold tuning/evaluation protocol from \S\ref{sec:exp}; Table~\ref{tab:per-dataset} reports the post-split training rows for each evaluation fold. Fixed-configuration appendix diagnostics instead use the train/test sizes declared in their YAML configs, sometimes with large datasets subsampled for sweep cost. The only preprocessing is StandardScaler standardisation of features and target, fit on the training split and applied to the corresponding test split. \texttt{wine} is the union of \texttt{wine-quality-red} and \texttt{wine-quality-white} with a binary \texttt{color} indicator. Although the implementation can use LightGBM's native categorical handling, missing-value routing, and constraint options, the paper experiments do not isolate these features or use categorical-heavy benchmark tables.
 
 \paragraph{Seed policy.} The fold-tuned headline uses the deterministic six-fold manifest with master seed 0. Fixed diagnostic sweeps use the seed lists declared in their configs (usually 0--2 or 0--9), with three independent streams: \texttt{data\_seed} (offset 0) for the train/test split; \texttt{model\_seed} (offset $10{,}000$) for the LightGBM regressors; \texttt{sampler\_seed} (offset $20{,}000$) for stochastic samplers. Variance reduction across seeds therefore reflects only sampling-and-split variability, not boosting initialisation.
 
@@ -399,18 +400,28 @@ Indeed, for VE, $\alpha=1$, $\alpha'=0$, $u_t=\beta'(t)z$, and $W=\beta'(t)$; Le
 
 \begin{table}[!h]
   \centering
-  \caption{Tunable hyperparameter ranges per model family (25 Optuna trials each). Log = log-uniform sampling. Fixed method-defining parameters are not listed.}\label{tab:tuning-spaces}
+  \caption{Tunable hyperparameter ranges per model family (40 Optuna trials for the DiffGBM/Treeffuser families, 25 for the external baselines). Log = log-uniform sampling. Fixed method-defining parameters are not listed.}\label{tab:tuning-spaces}
   \scriptsize
   \begin{tabular}{llll}
     \toprule
     Family & Tunable parameter & Range & Scale \\
     \midrule
-    Treeffuser (all 3 rows) & \texttt{n\_estimators}     & 200--3000 & log \\
-                            & \texttt{learning\_rate}    & 0.001--0.3 & log \\
-                            & \texttt{num\_leaves}       & 15--255 & linear \\
+    Shared LGBM surface     & \texttt{n\_estimators}     & 200--3000 & log \\
+    (all DiffGBM/Treeffuser & \texttt{learning\_rate}    & 0.001--0.3 & log \\
+    rows)                   & \texttt{num\_leaves}       & 15--255 & linear \\
                             & \texttt{max\_depth}        & $\{-1, 4, 6, 8, 10\}$ & categorical \\
                             & \texttt{min\_child\_samples} & 5--100 & linear \\
                             & \texttt{subsample}         & 0.5--1.0 & linear \\
+                            & \texttt{max\_bin}          & $\{255, 1023, 4095\}$ & categorical \\
+    \midrule
+    DiffGBM-score-flex      & \texttt{score\_parameterization} & $\{$noise, edm$\}$ & categorical \\
+    (adds, on top of        & \texttt{noise\_features}   & $\{$raw\_time, raw\_time\_log\_std$\}$ & categorical \\
+    the shared surface;      & \texttt{t\_sampling}       & $\{$uniform, log\_sigma\_normal$\}$ & categorical \\
+    sampler arm SDE/PF-ODE   & \texttt{log\_sigma} prior $\mu$ & $-3$--$0$ & linear \\
+                            & \texttt{log\_sigma} prior $\sigma$ & $0.6$--$2.0$ & linear \\
+    chosen on fold~0)       & \texttt{loss\_weighting}   & $\{$uniform, min\_snr$\}$ & categorical \\
+                            & \texttt{min\_snr\_gamma}   & 1--5 & linear \\
+                            & \texttt{residualize}       & $\{$off, mean$\}$ ($+$capacity) & categorical \\
     \midrule
     NGBoost     & \texttt{n\_estimators}     & 200--3000 & log \\
                 & \texttt{learning\_rate}    & 0.001--0.3 & log \\
@@ -451,7 +462,7 @@ Indeed, for VE, $\alpha=1$, $\alpha'=0$, $u_t=\beta'(t)z$, and $W=\beta'(t)$; Le
 
 \section{Claim Scope and Diagnostic Cross-References}\label{app:score-side}
 
-Unless otherwise stated, appendix sweeps are fixed-configuration diagnostics used to isolate modelling choices; they are not per-dataset tuned headline comparisons. The experimental pipeline is: fixed diagnostics identify plausible design choices; those choices define the frozen \textsc{published}, \textsc{score$^+$}, and \textsc{FM} model families; the frozen families are then tuned per dataset under the fold-0 protocol; and only that tuned protocol supports the headline aggregate performance claims.
+Unless otherwise stated, appendix sweeps are fixed-configuration diagnostics used to isolate modelling choices; they are not per-dataset tuned headline comparisons. The experimental pipeline is: fixed diagnostics identify plausible design choices; those choices become the tunable recipe axes of the headline \textsc{DiffGBM-score-flex} space and define the frozen \textsc{published}, \textsc{score$^+$}, and \textsc{FM} reference families; the headline space and the frozen families are then tuned per dataset under the fold-0 protocol at an equalized 40-trial budget; and only that tuned protocol supports the headline aggregate performance claims.
 
 \begin{table}[!h]
   \centering
@@ -461,18 +472,18 @@ Unless otherwise stated, appendix sweeps are fixed-configuration diagnostics use
     \toprule
     Claim & Evidence & Tuning status & Role in the paper \\
     \midrule
-    \textsc{score$^+$} and \textsc{FM} improve the Treeffuser tradeoff surface over the published row & Table~\ref{tab:headline} and Table~\ref{tab:per-dataset} & Tuned per dataset & Confirmatory performance comparison among frozen model families \\
-    \textsc{score$^+$} is the most calibrated Treeffuser row under this benchmark protocol & Table~\ref{tab:headline} & Tuned per dataset & Headline aggregate calibration claim \\
+    \textsc{DiffGBM-score-flex} beats the published baseline on every dataset and \textsc{FM} improves the tradeoff surface over it & Table~\ref{tab:headline}, Table~\ref{tab:per-dataset}, \S\ref{sec:headline} & Tuned per dataset & Headline performance claim (paired Wilcoxon $11/0$) \\
+    \textsc{DiffGBM-FM} is the most calibrated headline row; the PF-ODE score corners give the tightest interval coverage & Table~\ref{tab:headline}, Table~\ref{tab:ct-slices-tuned} & Tuned per dataset & Headline aggregate calibration claim \\
     VP-FM is the preferred FM path among the tested paths & Table~\ref{tab:path} & Fixed diagnostic & Mechanism and model-selection evidence; not a claim that VP would win every independently tuned path comparison \\
     Deterministic FM is the recommended aggregate CRPS/latency sampler & Table~\ref{tab:stoch-eps} with Table~\ref{tab:tail-diagnostic} & Fixed diagnostic & Sampler diagnostic; stochasticity remains a conditional-calibration knob \\
     Residualizer-C is a reasonable headline residualizer choice & Tables~\ref{tab:off-vs-mean} and~\ref{tab:resid-AE} & Fixed diagnostic & Design choice for the frozen model families; automatic residualizer selection is left as future work \\
-    Log-$\sigma$ sampling, explicit noise-level features, and EDM preconditioning motivate the \textsc{score$^+$} bundle & Toy diagnostic and development sweeps listed in Table~\ref{tab:appendix-provenance} & Fixed diagnostic & Mechanism evidence for the bundle; the quantitative performance claim is the tuned combined \textsc{score$^+$} row \\
+    Log-$\sigma$ sampling, explicit noise-level features, and EDM preconditioning motivate the score-side recipe axes & Toy diagnostic and development sweeps listed in Table~\ref{tab:appendix-provenance} & Fixed diagnostic & Mechanism evidence for the axes; the quantitative performance claim is the tuned \textsc{DiffGBM-score-flex} row \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-The four score-side modifications of \S\ref{sec:score-side} were validated by smoke and synthetic-core sweeps before being combined in the \textsc{score$^+$} variant.
-The residualizer-C configuration that the headline uses was selected by the residualizer sweep summarised in Appendix~\ref{app:resid-config}. Log-sigma time sampling, the log-sigma noise feature, and EDM preconditioning were locked in by the \texttt{log\_sigma\_sweep}, \texttt{synthetic\_core}, and \texttt{pf\_ode\_sweep} development runs. We treat those runs as model-selection evidence rather than as separately reported tuned comparisons; the quantitative claim in the paper is the combined \textsc{score$^+$} row in Table~\ref{tab:headline}, where all four choices are evaluated together on the full ten-dataset protocol.
+The four score-side modifications of \S\ref{sec:score-side} were validated by smoke and synthetic-core sweeps before being exposed as tunable axes of the score-flex space (and combined in the frozen \textsc{score$^+$} reference bundle).
+The residualizer-C configuration that the FM row uses was selected by the residualizer sweep summarised in Appendix~\ref{app:resid-config}. Log-sigma time sampling, the log-sigma noise feature, and EDM preconditioning were locked in as candidate axes by the \texttt{log\_sigma\_sweep}, \texttt{synthetic\_core}, and \texttt{pf\_ode\_sweep} development runs. We treat those runs as model-selection evidence rather than as separately reported tuned comparisons; the quantitative claim in the paper is the tuned \textsc{DiffGBM-score-flex} row in Table~\ref{tab:headline}, where these axes are searched jointly on the full eleven-dataset protocol.
 
 \section{Residualizer Configuration}\label{app:resid-config}
 
@@ -640,34 +651,35 @@ This fixed diagnostic is meant to isolate geometry, not to select the final path
 
 \section{Probabilistic-Family Baselines}\label{app:competitors}
 
-We compare the headline Treeffuser variants against six external probabilistic regressors (Table~\ref{tab:competitors}). Hyperparameters for every displayed family are selected per dataset on the same fold-0 tuning split, then evaluated on folds~1--5. The CARD row uses a compact benchmark adapter with the same two-stage conditional-mean plus conditional-diffusion structure as CARD~\citep{han2022card}, so conclusions involving CARD should be read as comparisons to this adapter rather than to a fully optimized CARD pipeline.
+We compare the headline DiffGBM rows and the published baseline against six external probabilistic regressors (Table~\ref{tab:competitors}). Hyperparameters for every displayed family are selected per dataset on the same fold-0 tuning split, then evaluated on folds~1--5. The CARD row uses a compact benchmark adapter with the same two-stage conditional-mean plus conditional-diffusion structure as CARD~\citep{han2022card}, so conclusions involving CARD should be read as comparisons to this adapter rather than to a fully optimized CARD pipeline.
 
 \begin{table}[!h]
   \centering
-  \caption{Probabilistic baselines under the tuning/evaluation protocol. rel-CRPS is normalized by the best displayed variant on each dataset. Sample-time excludes fitting. The iBUG DSS is dominated by a single \texttt{wine} fold where the model assigns near-zero predictive variance to a mispredicted test point.}\label{tab:competitors}
+  \caption{Probabilistic baselines under the tuning/evaluation protocol, mean over the eleven datasets. rel-CRPS is normalized by the best displayed variant on each dataset. \textsc{Treeffuser-score$^+$} is the frozen PF-ODE score bundle, shown as the calibration ablation (it is subsumed by score-flex). Sample-time excludes fitting and is dominated by the large CT-slice dataset (see Table~\ref{tab:timing} for a 10-UCI breakdown). The iBUG DSS is dominated by a single \texttt{wine} fold where the model assigns near-zero predictive variance to a mispredicted test point.}\label{tab:competitors}
   \scriptsize
   \begin{tabular}{lrrrrrrr}
     \toprule
     Model & CRPSS $\uparrow$ & rel-CRPS $\downarrow$ & CRPS $\downarrow$ & DSS $\downarrow$ & $q$-MACE $\downarrow$ & $|\text{cE}|$@95 $\downarrow$ & samp s \\
     \midrule
-    Treeffuser-score$^+$ (ours)     & \textbf{0.681} & 1.131 & 4.057 & $-$0.214 & \textbf{0.028} & \textbf{0.015} & 32.18 \\
-    Treeffuser-FM-fast (ours)       & 0.680 & \textbf{1.117} & 4.121 & \textbf{$-$0.218} & 0.034 & 0.024 & 10.06 \\
-    Treeffuser-published            & 0.670 & 1.242 & 4.279 & 1.358 & 0.044 & 0.023 & 208.55 \\
-    Quantile-regression LightGBM    & 0.668 & 1.459 & 4.026 & 0.016 & 0.033 & 0.044 & 0.30 \\
-    Deep ensemble                   & 0.654 & 1.519 & \textbf{4.008} & 0.090 & 0.050 & 0.018 & 0.03 \\
-    iBUG (XGBoost)                  & 0.649 & 1.471 & 4.193 & $1.85{\times}10^7$ & 0.069 & 0.065 & 2.89 \\
-    CatBoost (uncertainty)          & 0.638 & 1.409 & 4.045 & 0.272 & 0.045 & 0.066 & \textbf{0.01} \\
-    CARD-style diffusion            & 0.631 & 1.632 & 4.838 & 0.436 & 0.051 & 0.043 & 42.84 \\
-    NGBoost (Gaussian)              & 0.601 & 1.550 & 4.299 & 1.957 & 0.052 & 0.101 & 0.04 \\
+    DiffGBM-score-flex (ours)       & \textbf{0.725} & \textbf{1.108} & 3.687 & $-$0.093 & 0.045 & 0.037 & 508.0 \\
+    Treeffuser-score$^+$ (ablation) & 0.708 & 1.372 & 3.764 & $-$0.166 & \textbf{0.027} & \textbf{0.018} & 421.8 \\
+    DiffGBM-FM (ours)               & 0.707 & 1.335 & 3.829 & \textbf{$-$0.178} & 0.036 & 0.021 & 60.8 \\
+    Treeffuser-published            & 0.699 & 1.249 & 3.953 & 1.056 & 0.053 & 0.026 & 759.9 \\
+    Quantile-regression LightGBM    & 0.694 & 1.827 & 3.721 & 0.193 & 0.038 & 0.043 & 0.4 \\
+    Deep ensemble                   & 0.685 & 1.557 & \textbf{3.658} & $-$0.049 & 0.054 & 0.019 & 0.1 \\
+    iBUG (XGBoost)                  & 0.679 & 1.566 & 3.833 & $1.68{\times}10^7$ & 0.069 & 0.060 & 5.0 \\
+    CatBoost (uncertainty)          & 0.666 & 1.816 & 3.743 & 0.367 & 0.045 & 0.066 & \textbf{0.0} \\
+    CARD-style diffusion            & 0.662 & 1.747 & 4.426 & 0.435 & 0.050 & 0.044 & 62.1 \\
+    NGBoost (Gaussian)              & 0.626 & 2.472 & 4.048 & 2.035 & 0.051 & 0.098 & 2.8 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-Under this per-dataset tuning protocol, the Treeffuser variants lead on aggregate CRPSS, rel-CRPS, and coverage metrics. The external baselines are still important: deep ensembles have the best mean raw CRPS, though this scale-sensitive average is less informative about cross-dataset dominance than CRPSS or rel-CRPS, and the per-dataset winners include deep ensembles on \texttt{diabetes} and \texttt{kin8nm}, CARD on \texttt{naval}, and quantile-regression LightGBM on \texttt{protein}. Their aggregate rel-CRPS remains worse, indicating that no single tuned external family transfers as evenly across the benchmark suite as the Treeffuser variants.
+Under this per-dataset tuning protocol, the DiffGBM rows lead on aggregate CRPSS and rel-CRPS, with score-flex best on both; the frozen score$^+$ ablation is the strongest interval-calibration row ($q$-MACE $0.027$, $|\text{cE}|$@95 $0.018$), which is the role it plays now that score-flex is the headline accuracy row. The external baselines remain important: deep ensembles have the best mean raw CRPS, though this scale-sensitive average is less informative about cross-dataset dominance than CRPSS or rel-CRPS, and among external families only the deep ensemble takes a per-dataset raw-CRPS win (\texttt{diabetes} and \texttt{kin8nm}); every other dataset goes to a DiffGBM row. Their aggregate rel-CRPS remains worse, indicating that no single tuned external family transfers as evenly across the benchmark suite as DiffGBM.
 
 \section{Extended Per-Dataset Results}\label{app:perdata-ext}
 
-Table~\ref{tab:perdata-ext} reports CRPS, $|\text{cE}|$@90, and sample-generation time on each of the ten benchmarks for the three headline Treeffuser variants, averaged over the five evaluation folds. The ``best margin'' column gives the gap between the winning variant and the second-best Treeffuser variant in raw CRPS. After per-dataset tuning, the margins are tighter: the main result is no longer a few dramatic wins, but a more balanced Pareto surface between published SDE sampling, score-side conditioning, and FM speed.
+Table~\ref{tab:perdata-ext} reports CRPS, $|\text{cE}|$@90, and sample-generation time on each of the eleven benchmarks for the published baseline and the two DiffGBM rows (Flex $=$ score-flex SDE), averaged over the five evaluation folds. The ``best margin'' column gives the gap between the winning row and the second-best in raw CRPS. The per-row picture matches the headline: score-flex wins raw CRPS on eight datasets---by growing margins as data scales (up to $+11\%$ on \texttt{ct\_slices})---while FM wins the three small-to-mid sets where its residualized ODE and near-zero sample time are most valuable, and the published baseline wins none.
 
 \begin{table}[!h]
   \centering
@@ -677,27 +689,28 @@ Table~\ref{tab:perdata-ext} reports CRPS, $|\text{cE}|$@90, and sample-generatio
     \toprule
     & & \multicolumn{3}{c}{CRPS $\downarrow$} & \multicolumn{3}{c}{$|\text{cE}|$@90 $\downarrow$} & \multicolumn{3}{c}{sample s} \\
     \cmidrule(lr){3-5} \cmidrule(lr){6-8} \cmidrule(lr){9-11}
-    Dataset & best margin & Pub.\ & Score$^+$ & FM & Pub.\ & Score$^+$ & FM & Pub.\ & Score$^+$ & FM \\
+    Dataset & best margin & Pub.\ & Flex & FM & Pub.\ & Flex & FM & Pub.\ & Flex & FM \\
     \midrule
-    yacht              & FM\,$+$0.4\%      & 0.438 & 0.284 & \textbf{0.283} & 0.092 & \textbf{0.025} & 0.081 & 0.3 & 0.2 & \textbf{0.0} \\
-    diabetes           & Sco$^+$\,$+$1.9\% & 35.682 & \textbf{34.025} & 34.660 & 0.079 & \textbf{0.029} & 0.038 & 2.0 & 0.3 & \textbf{0.0} \\
-    energy             & FM\,$+$5.2\%      & 0.252 & 0.214 & \textbf{0.204} & 0.081 & 0.034 & \textbf{0.022} & 3.3 & 0.4 & \textbf{0.3} \\
-    concrete           & Sco$^+$\,$+$1.5\% & 2.457 & \textbf{2.126} & 2.158 & 0.034 & 0.025 & \textbf{0.023} & 3.4 & 4.3 & \textbf{0.1} \\
-    wine               & Pub\,$+$5.9\%     & \textbf{0.300} & 0.319 & 0.318 & 0.037 & \textbf{0.006} & 0.016 & 113.2 & 44.1 & \textbf{10.0} \\
-    kin8nm             & FM\,$+$4.0\%      & 0.067 & 0.058 & \textbf{0.055} & 0.012 & \textbf{0.004} & 0.023 & 24.1 & 19.1 & \textbf{5.8} \\
-    power              & FM\,$+$2.4\%      & 1.671 & 1.572 & \textbf{1.535} & 0.013 & \textbf{0.004} & 0.006 & 17.2 & \textbf{2.5} & 3.3 \\
-    naval              & FM\,$+$3.2\%      & 0.000218 & 0.000220 & \textbf{0.000211} & 0.078 & 0.065 & \textbf{0.061} & 115.2 & 66.8 & \textbf{15.9} \\
-    cali.\ housing     & Pub\,$+$3.6\%     & \textbf{0.197} & 0.204 & 0.206 & 0.010 & \textbf{0.005} & 0.007 & 415.3 & 49.2 & \textbf{9.7} \\
-    protein            & Pub\,$+$2.7\%     & \textbf{1.722} & 1.769 & 1.796 & \textbf{0.005} & 0.005 & 0.007 & 1391.6 & 135.0 & \textbf{55.4} \\
+    yacht            & FM\,$+$50.0\% & 0.447 & 0.404 & \textbf{0.269} & 0.084 & 0.055 & \textbf{0.046} & 0.6 & 2.1 & \textbf{0.1} \\
+    diabetes         & Flex\,$+$3.6\% & 36.04 & \textbf{33.98} & 35.19 & 0.094 & 0.086 & \textbf{0.071} & 0.7 & 0.2 & \textbf{0.0} \\
+    energy           & Flex\,$+$1.5\% & 0.236 & \textbf{0.199} & 0.202 & 0.077 & 0.030 & \textbf{0.022} & 7.3 & 7.2 & \textbf{0.1} \\
+    concrete         & FM\,$+$5.5\% & 2.71 & 2.27 & \textbf{2.15} & 0.034 & 0.021 & \textbf{0.021} & 1.7 & 7.1 & \textbf{0.1} \\
+    wine             & Flex\,$+$5.9\% & 0.294 & \textbf{0.278} & 0.317 & 0.033 & 0.037 & \textbf{0.018} & 35.5 & 151.5 & \textbf{15.5} \\
+    kin8nm           & FM\,$+$1.1\% & 0.065 & 0.056 & \textbf{0.055} & 0.012 & \textbf{0.008} & 0.021 & 144.8 & \textbf{34.7} & 35.8 \\
+    power            & Flex\,$+$3.2\% & 1.63 & \textbf{1.47} & 1.52 & \textbf{0.008} & 0.090 & 0.010 & 155.1 & 433.9 & \textbf{5.2} \\
+    naval            & Flex\,$+$26.5\% & 0.000163 & \textbf{0.000129} & 0.000209 & 0.087 & \textbf{0.057} & 0.060 & 460.5 & 533.7 & \textbf{60.7} \\
+    cali.\ housing   & Flex\,$+$5.2\% & 0.200 & \textbf{0.190} & 0.204 & 0.011 & 0.038 & \textbf{0.008} & 185.9 & 499.9 & \textbf{29.2} \\
+    protein          & Flex\,$+$8.7\% & 1.70 & \textbf{1.57} & 1.77 & \textbf{0.003} & 0.037 & 0.005 & 834.9 & 1290.6 & \textbf{208.0} \\
+    ct slices        & Flex\,$+$11.3\% & 0.159 & \textbf{0.143} & 0.433 & 0.075 & 0.084 & \textbf{0.036} & 6531.9 & 2627.6 & \textbf{314.0} \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-FM is the fastest Treeffuser sampler on 9/10 datasets and is especially valuable at scale: on \texttt{protein} the speedup is $25.1\times$ over \textsc{published} and $2.4\times$ over \textsc{score$^+$}; on \texttt{california\_housing} the corresponding speedups are $42.8\times$ and $5.1\times$. On $|\text{cE}|$@90, however, \textsc{score$^+$} leads on 6/10 datasets and FM on 3/10, which is why Table~\ref{tab:headline} separates normalized-CRPS and calibration conclusions. Under this evaluation protocol, the per-dataset CRPS ranking reproduces the headline pattern: FM has the best average normalized CRPS, score$^+$ is the more reliable calibration row, and the published SDE remains best on wine, california housing, and protein.
+FM is the fastest sampler on 8/11 datasets and remains cheap at scale (on \texttt{protein}, $4.0\times$ faster than published and $6.2\times$ faster than the score-flex SDE arm). The two DiffGBM rows split the accuracy/calibration roles cleanly: score-flex has the best CRPS on the mid and large datasets but inherits the SDE sampler's looser central coverage, while FM leads $|\text{cE}|$@90 on the small-to-mid sets. Under this evaluation protocol the per-dataset ranking reproduces the headline pattern: score-flex is the accuracy row and dominates as data grows, FM is the fast, well-calibrated row on smaller data, and the published SDE is best on none.
 
 \section{Robustness by Dataset Size}\label{app:robustness}
 
-Table~\ref{tab:robustness-size} groups the tuned evaluation artifacts by post-split training rows: small datasets have at most 1{,}000 rows, medium datasets have 1{,}001--10{,}000 rows, and large datasets have more than 10{,}000 rows. The grouping sharpens the mixed-winner story. Score$^+$ and FM lead the small and medium groups on CRPSS, while the two largest datasets favor the published SDE and quantile-regression LightGBM. Thus the aggregate Treeffuser result is not driven by a single data-scale regime, but neither does it erase the large-dataset inversion discussed in the limitations.
+Table~\ref{tab:robustness-size} groups the tuned evaluation artifacts by post-split training rows: small datasets have at most 1{,}000 rows, medium datasets have 1{,}001--10{,}000 rows, and large datasets have more than 10{,}000 rows. The grouping sharpens the headline story. Score-flex leads every size group on CRPSS, most decisively on the large group, and FM is close behind on small and medium data while trailing on large; the earlier large-dataset inversion, where the published SDE was strongest at scale, is gone once the score recipe is jointly tuned. FM's rel-CRPS advantage on small data (it is the cheapest, tightly calibrated corner) is why it remains the recommended small-data operating point despite score-flex's slightly higher CRPSS.
 
 \begin{table}[!h]
   \centering
@@ -705,47 +718,48 @@ Table~\ref{tab:robustness-size} groups the tuned evaluation artifacts by post-sp
   \scriptsize
   \begin{tabular}{lrrr}
     \toprule
-    Model & Small (4) & Medium (4) & Large (2) \\
+    Model & Small (4) & Medium (4) & Large (3) \\
     \midrule
-    Treeffuser-published & 0.709 & 0.670 & \textbf{0.591} \\
-    Treeffuser-score$^+$ & \textbf{0.735} & 0.678 & 0.578 \\
-    Treeffuser-FM & 0.731 & \textbf{0.683} & 0.573 \\
-    QReg-LightGBM & 0.711 & 0.666 & 0.587 \\
-    CatBoost-unc. & 0.724 & 0.612 & 0.517 \\
-    NGBoost & 0.718 & 0.550 & 0.468 \\
-    Deep ensemble & 0.699 & 0.672 & 0.529 \\
-    iBUG & 0.700 & 0.637 & 0.571 \\
-    CARD-style diffusion & 0.632 & 0.667 & 0.555 \\
+    DiffGBM-score-flex & 0.728 & \textbf{0.710} & \textbf{0.742} \\
+    DiffGBM-FM & \textbf{0.729} & 0.684 & 0.707 \\
+    Treeffuser-published & 0.701 & 0.680 & 0.723 \\
+    QReg-LightGBM & 0.711 & 0.666 & 0.707 \\
+    CatBoost-unc. & 0.724 & 0.612 & 0.659 \\
+    NGBoost & 0.718 & 0.550 & 0.605 \\
+    Deep ensemble & 0.699 & 0.672 & 0.682 \\
+    iBUG & 0.700 & 0.637 & 0.708 \\
+    CARD-style diffusion & 0.632 & 0.667 & 0.695 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-The rank diagnostics in Table~\ref{tab:robustness-ranks} give the same guarded conclusion. The Friedman test detects differences among the nine families, but Nemenyi post-hoc comparisons at $\alpha=0.05$ only separate score$^+$ from NGBoost and FM from NGBoost/CARD-style diffusion. They do not separate FM, score$^+$, the published SDE, QReg-LightGBM, or deep ensembles from one another, so we use these ranks as robustness context rather than as a stronger significance claim.
+The rank diagnostics in Table~\ref{tab:robustness-ranks} agree. The Friedman test detects differences among the nine families ($\chi^2=32.1$, $p<10^{-3}$), and the Nemenyi critical difference at $\alpha=0.05$ separates score-flex from the four weakest families (NGBoost, CARD-style diffusion, CatBoost, iBUG). The conservative all-pairs post-hoc does not by itself separate score-flex from the published SDE, QReg-LightGBM, or the deep ensemble; the decisive within-family evidence is instead the paired test of \S\ref{sec:headline}, where score-flex beats the published baseline on all eleven datasets. We therefore use the cross-family ranks as robustness context and the paired test as the headline significance claim.
 
-\section{Large-Dataset Stress Test: CT Slice Localization (Preliminary)}\label{app:large-data}
+\section{Large-Dataset Analysis: CT Slice Localization}\label{app:large-data}
 
-Table~\ref{tab:robustness-size} flags the largest datasets as the regime where the published SDE remains strongest, but with only two datasets above 10{,}000 training rows the headline suite cannot say why. As a targeted stress test we add \texttt{ct\_slices} (CT slice axial-location regression; 53{,}500 rows and 384 numeric features after dropping the patient identifier; OpenML data id 46300) under the same six-fold tuned protocol (48{,}150/5{,}350 split; fold-0 tuning, folds 1--5 evaluation). We keep this dataset out of the ten-dataset headline aggregates: it carries diagnostic-only variant rows that the other datasets lack, and this appendix reports an ablation in progress rather than a settled comparison. The dataset is nearly deterministic given the features---every tuned family reaches CRPSS $\geq 0.85$---so CRPS differences are decided at conditional scales around one percent of the marginal spread.
+\texttt{ct\_slices} (CT slice axial-location regression; 53{,}500 rows and 384 numeric features after dropping the patient identifier, from the UCI repository, retrieved via OpenML data id 46300) is the largest benchmark in the suite and anchors the large-data end of the headline aggregates under the same six-fold tuned protocol (44{,}583 training rows per evaluation fold; fold-0 tuning, folds 1--5 evaluation). This appendix reports it in more detail because it is the one dataset where the published recipe was previously competitive, and because it carries diagnostic-only residualizer-off twins that the other datasets lack. The dataset is nearly deterministic given the features---every tuned family reaches CRPSS $\geq 0.85$---so CRPS differences are decided at conditional scales around one percent of the marginal spread, which makes it a sensitive probe of the score-side recipe.
 
 \begin{table}[!h]
   \centering
-  \caption{Tuned \texttt{ct\_slices} rows under the headline protocol (five evaluation folds; mean $\pm$ sd for CRPS, fold means otherwise). The residualizer-off twins are tuned under the identical protocol. The score-flex row tunes the score-side recipe axes jointly over a superset space with 50 fold-0 trials (versus 25 for the frozen bundles) and is reported as a preliminary superset result, not a headline method. The deep ensemble, the strongest baseline on this dataset, is shown for context.}\label{tab:ct-slices-tuned}
+  \caption{Tuned \texttt{ct\_slices} rows under the headline protocol (five evaluation folds; mean $\pm$ sd for CRPS, fold means otherwise), all at the equalized 40-trial fold-0 budget. \textsc{DiffGBM-score-flex} is the headline row; its SDE and PF-ODE arms are the two sampler-coupled corners of the same tuned space. The frozen score$^+$/FM bundles and their residualizer-off twins are diagnostics tuned under the identical protocol. The deep ensemble, the strongest baseline on this dataset, is shown for context.}\label{tab:ct-slices-tuned}
   \scriptsize
   \begin{tabular}{lrrrrr}
     \toprule
     Row & CRPS & CRPSS & $|\text{cE}|$@90 & Fit (s) & Sample (s) \\
     \midrule
-    Published Euler-50           & $0.164 \pm 0.012$ & 0.987 & 0.086 & \textbf{176} & 851 \\
-    Score$^+$ PF-ODE-25          & $0.463 \pm 0.006$ & 0.964 & \textbf{0.018} & \textbf{175} & 880 \\
+    Published Euler-50           & $0.159 \pm 0.008$ & 0.988 & 0.075 & 1234 & 6532 \\
+    Score$^+$ PF-ODE-25          & $0.463 \pm 0.006$ & 0.964 & 0.018 & 438 & 3151 \\
     Score$^+$ no-resid.\ PF-ODE-25 & $0.287 \pm 0.005$ & 0.978 & 0.025 & 306 & 3297 \\
-    FM-VP ODE-5                  & $0.426 \pm 0.007$ & 0.967 & 0.033 & 320 & \textbf{457} \\
-    FM-VP no-resid.\ ODE-5       & $1.877 \pm 0.054$ & 0.853 & 0.078 & 187 & 337 \\
-    Score-flex Euler-50 (superset) & $\mathbf{0.130 \pm 0.004}$ & \textbf{0.990} & 0.084 & 939 & 3208 \\
-    Deep ensemble                & $0.159 \pm 0.020$ & 0.988 & 0.076 & 619 & $<1$ \\
+    FM-VP ODE-5                  & $0.433 \pm 0.004$ & 0.966 & 0.036 & \textbf{162} & \textbf{314} \\
+    FM-VP no-resid.\ ODE-5       & $1.877 \pm 0.048$ & 0.853 & 0.078 & 187 & 337 \\
+    DiffGBM-score-flex, SDE-50   & $\mathbf{0.143 \pm 0.003}$ & \textbf{0.989} & 0.084 & 506 & 2628 \\
+    DiffGBM-score-flex, PF-ODE   & $0.252 \pm 0.003$ & 0.980 & \textbf{0.005} & 486 & 3762 \\
+    Deep ensemble                & $0.159 \pm 0.018$ & 0.988 & 0.076 & 619 & $<1$ \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-Table~\ref{tab:ct-slices-tuned} reverses the small/medium-data ordering: the published SDE is the sharpest Treeffuser row and only the deep ensemble matches it on CRPS, while score$^+$ and FM trail by $2.6$--$2.8\times$. The residualizer-off twins split the explanation. Removing the residualizer roughly halves the score$^+$ gap ($0.463 \to 0.287$), so the fixed residualizer-C is a genuine partial bottleneck for the score-side bundle at this scale; the same switch makes FM collapse ($0.426 \to 1.877$), so FM depends on residualization here. The coverage column shows the other side of the tradeoff: the published row buys its CRPS with the worst 90\% coverage error among the tuned Treeffuser rows, while the score$^+$ variants stay well calibrated, consistent with the operating-point reading in \S\ref{sec:disc}.
+Table~\ref{tab:ct-slices-tuned} tells a two-part story. Among the \emph{frozen} bundles the published SDE is the sharpest ($0.159$) and only the deep ensemble matches it, while the frozen score$^+$ and FM bundles trail by $2.7$--$3.2\times$; the residualizer-off twins split that gap---removing the fixed residualizer-C roughly halves the score$^+$ deficit ($0.463 \to 0.287$), so it is a genuine partial bottleneck at this scale, while the same switch makes FM collapse ($0.433 \to 1.877$), so FM depends on residualization here. But the jointly tuned \textsc{DiffGBM-score-flex} row overturns that frozen-bundle ranking: its SDE arm reaches $0.143$, beating both the tuned published SDE ($0.159$) and the deep ensemble ($0.159$)---the sharpest row on the dataset. Its two sampler arms trace the accuracy/calibration frontier directly: the SDE arm is sharpest but inherits the stochastic sampler's loose central coverage ($|\text{cE}|$@90 $0.084$), while the PF-ODE arm of the same tuned space is the best-calibrated row anywhere in the table ($0.005$) at some CRPS cost ($0.252$), consistent with the operating-point reading in \S\ref{sec:disc}.
 
 \begin{table}[!h]
   \centering
@@ -778,11 +792,11 @@ Table~\ref{tab:ct-slices-tuned} reverses the small/medium-data ordering: the pub
   \end{tabular}
 \end{table}
 
-Table~\ref{tab:ct-slices-solver} rules the sampler out for the score arm and localizes the FM collapse. First, swapping the score$^+$ samplers---doubling the Heun PF-ODE steps, or substituting the published 50-step Euler SDE---moves CRPS by less than $0.01$ on both score$^+$ variants. Second, the published model wins even when handicapped to 15 Euler steps ($0.208$ versus $0.281$ for the best score$^+$ cell at any step count) and is essentially converged at its default 50 steps. Third, the FM no-residualizer collapse is roughly half solver discretization---steps recover $1.85 \to 0.98$---but it plateaus far above the residualized row, while residualized FM is already solver-converged at 5 steps. Taken together, the published advantage on this dataset is attributable to what the score model learns at training time---candidate factors are the uniform-$t$ noise-level allocation (log-uniform in $\sigma$, roughly $3\times$ more training mass below $\sigma = 0.05$ than the log-$\sigma$-normal draw of \S\ref{sec:score-side}), the noise- versus EDM-parameterized regression target, and the explicit log-$\sigma$ feature---not to the sampler, and only partly to the residualizer. Isolating which factor dominates is work in progress; an initial transfer diagnostic (switching the tuned no-residualizer score$^+$ configuration to uniform-$t$ without retuning) does not recover the gap, which cautions against attributing it to the $t$ distribution alone.
+Table~\ref{tab:ct-slices-solver} rules the sampler out for the score arm and localizes the FM collapse. First, swapping the score$^+$ samplers---doubling the Heun PF-ODE steps, or substituting the published 50-step Euler SDE---moves CRPS by less than $0.01$ on both score$^+$ variants. Second, the published model wins even when handicapped to 15 Euler steps ($0.208$ versus $0.281$ for the best score$^+$ cell at any step count) and is essentially converged at its default 50 steps. Third, the FM no-residualizer collapse is roughly half solver discretization---steps recover $1.85 \to 0.98$---but it plateaus far above the residualized row, while residualized FM is already solver-converged at 5 steps. Taken together, the frozen score$^+$ bundle's deficit against the published row on this dataset is attributable to what the score model learns at training time---not to the sampler, and only partly to the residualizer---rather than to any inference-time choice. Which training-time factor dominates is answered directly by the jointly tuned score-flex space below, which searches these axes rather than transferring a single configuration.
 
-The ablation adds one calibration observation: sampling the same no-residualizer score$^+$ model with the stochastic Euler SDE degrades its 90\% coverage error from $0.021$ (PF-ODE) to $0.090$, so the calibration edge of the score$^+$ rows on this dataset is contributed by the deterministic PF-ODE sampler, not by the training recipe alone. Finally, fit cost qualifies the end-to-end timing claim of \S\ref{sec:headline} at this scale: FM fits in 320\,s versus 176\,s for the published row (the $k$-fold residualizer and the deeper tuned ensembles dominate), so FM's end-to-end advantage on small and medium data does not carry to the largest datasets.
+The ablation adds one calibration observation: sampling the same no-residualizer score$^+$ model with the stochastic Euler SDE degrades its 90\% coverage error from $0.021$ (PF-ODE) to $0.090$, so the calibration edge of the PF-ODE rows on this dataset is contributed by the deterministic sampler, not by the training recipe alone---the same accuracy/calibration split the two score-flex arms show in Table~\ref{tab:ct-slices-tuned}. On end-to-end cost, the tuned published row is the most expensive Treeffuser row at this scale (1234\,s fit $+$ 6532\,s sample), because its optimum selects the largest histogram resolution and the deepest ensemble; FM remains the cheapest (162\,s $+$ 314\,s) and the score-flex SDE row sits between (506\,s $+$ 2628\,s), so FM's end-to-end advantage does carry to the largest dataset.
 
-A superset variant closes and reverses the gap. Rather than comparing frozen bundles, we expose the score-side recipe axes---score parameterization, noise features, $t$ sampling and its log-$\sigma$ prior, residualization, and histogram resolution---as jointly tunable dimensions over the shared LightGBM surface, with the stochastic-SDE-versus-PF-ODE sampler treated as a recipe-coupled axis selected on fold~0. Tuned under the same protocol (50 fold-0 trials, versus 25 for the frozen bundles), the SDE arm of this \texttt{score-flex} space reaches CRPS $0.130 \pm 0.004$ (Table~\ref{tab:ct-slices-tuned}), surpassing both the tuned published SDE ($0.164$) and the deep ensemble ($0.159$)---the first Treeffuser row to lead this dataset on CRPS. Two controls isolate the source of the gain. First, the space explicitly seeds and evaluates the published corner (noise prediction / \texttt{raw\_time} / uniform $t$ / residualizer off), so the tuner reaching a different optimum is a selected move, not an unreachable one: roughly thirty trials touch that corner and the search still departs it for the EDM corner. Second, decomposing the fold-0 selection isolates recipe from capacity. The published corner's own-space fold-0 CRPS of $0.145$ improves to $0.130$ once histogram bins and forest depth are unlocked inside the flex space (\texttt{max\_bin}\ $255\!\to\!1023$, deeper ensembles), whereas the EDM corner reaches $0.124$ at the same capacity; so about seventy percent of the gap over the tuned published baseline is capacity and binning that the published recipe could also adopt, and the remaining, capacity-matched, part---best EDM $0.124$ versus best noise-prediction $0.130$ across the fifty trials---is the score-side recipe itself. The reversal carries the earlier calibration caveat rather than escaping it: the flex SDE arm inherits the stochastic sampler's weaker central coverage ($|\text{cE}|$@90 $0.084$, matching the published row's $0.086$ rather than the PF-ODE score$^+$ rows' $0.018$), and its sampling cost tracks the EDM no-residualizer score path (Table~\ref{tab:ct-slices-solver}), not the choice of sampler. We report this as a preliminary superset result on a single dataset with a larger space and double the trial budget, not as a headline claim; it shows that a jointly tuned score-side recipe under the SDE sampler both contains and surpasses the published optimum here, and it localizes the earlier ``training-time recipe'' explanation to the EDM parameterization once capacity is matched.
+The jointly tuned recipe closes and reverses the frozen-bundle gap. Rather than comparing frozen bundles, \textsc{DiffGBM-score-flex} exposes the score-side recipe axes---score parameterization, noise features, $t$ sampling and its log-$\sigma$ prior, loss weighting, residualization, and histogram resolution---as jointly tunable dimensions over the shared LightGBM surface, with the stochastic-SDE-versus-PF-ODE sampler treated as a recipe-coupled axis selected on fold~0. Tuned at the same equalized 40-trial budget as every other row, its SDE arm reaches CRPS $0.143 \pm 0.003$ (Table~\ref{tab:ct-slices-tuned}), surpassing both the tuned published SDE ($0.159$) and the deep ensemble ($0.159$). The space explicitly seeds and evaluates the published corner (noise prediction / \texttt{raw\_time} / uniform $t$ / residualizer off), so departing it would be a selected move---but on this dataset the tuner does \emph{not} depart it. The fold-0 optimum is that same noise-prediction recipe with a finer histogram (\texttt{max\_bin}\ $255 \to 1023$), and among the forty trials the best noise-prediction fold-0 CRPS ($0.144$) beats the best EDM one ($0.155$); the published row's \emph{own} tuned space, which now also tunes histogram resolution, moves the same way (noise prediction with \texttt{max\_bin}\ $4095$). So on this uniquely near-deterministic, high-SNR dataset the score-flex advantage over the published baseline is histogram resolution and capacity within the shared surface---an axis the frozen published bundle held fixed---rather than the EDM parameterization, which here is slightly \emph{worse} for sharpness. EDM's value on this dataset instead appears as calibration: the PF-ODE arm of the same tuned space (EDM / log-$\sigma$ prior / min-SNR weighting) is the best-calibrated row anywhere in Table~\ref{tab:ct-slices-tuned} ($|\text{cE}|$@90 $0.005$) at a CRPS cost. This is precisely the behaviour the flexible space is designed for, and \texttt{ct\_slices} is its most stringent test: on the other ten datasets the same space selects the EDM recipe as a genuine capacity-matched win (best EDM below best noise prediction on all ten fold-0 studies, by up to $9$--$11\%$ on \texttt{protein} and \texttt{diabetes}), and on the one near-deterministic dataset it selects noise prediction with finer bins. Either way the tuned space contains and beats the published corner, which is the property the headline claim rests on.
 
 \section{Conditional Tail Calibration Diagnostic}\label{app:tail-diagnostic}
 

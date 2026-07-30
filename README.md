@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/diffgbm_logo.png" width="80%" alt="DiffGBM logo">
+  <img src="https://raw.githubusercontent.com/silaskoemen/diffgbm/main/assets/diffgbm_logo.png" width="80%" alt="DiffGBM logo">
 </p>
 
 # DiffGBM
@@ -59,7 +59,7 @@ plt.scatter(x, y, s=1, label="observed data")
 plt.scatter(x, y_samples[0, :], s=1, alpha=0.7, label="DiffGBM samples")
 ```
 
-![DiffGBM on heteroscedastic data](assets/readme_example.png)
+![DiffGBM on heteroscedastic data](https://raw.githubusercontent.com/silaskoemen/diffgbm/main/assets/readme_example.png)
 
 The samples recover both modes and the growing noise scale. Any downstream
 quantity is then a Monte Carlo estimate:

@@ -4,6 +4,21 @@ All notable changes to this project are documented in this file. The format is
 based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.2
+
+### Fixed
+
+- `diffgbm.__version__` is now read from the installed distribution metadata
+  instead of being hardcoded, so it can no longer drift from the version in
+  `pyproject.toml` (0.1.1 shipped reporting `0.1.0`).
+- README images now use absolute URLs, so the logo and example plot render on
+  the PyPI project page rather than only on GitHub.
+
+## 0.1.1
+
+First published release on PyPI. Identical in functionality to 0.1.0, which was
+tagged before the release workflow existed and was never published.
+
 ## 0.1.0
 
 First release of `diffgbm`.

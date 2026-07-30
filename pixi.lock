@@ -5344,8 +5344,8 @@ packages:
   timestamp: 1764536047944
 - pypi: ./
   name: diffgbm
-  version: 0.1.0
-  sha256: 13ac892812775511278ea8e1b4655c0f61f14816a17ddd1c13593c033076848f
+  version: 0.1.2
+  sha256: 54ed35c6d5e97786a2e54ea1c2e8cf93484f8dc060808eccf1c40c4e2eedd922
   requires_dist:
   - numpy
   - jaxtyping

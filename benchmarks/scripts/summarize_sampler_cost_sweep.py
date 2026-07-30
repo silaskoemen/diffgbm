@@ -15,6 +15,10 @@ from typing import Any
 import matplotlib
 
 matplotlib.use("Agg")
+# Embed TrueType (type 42) rather than matplotlib's default Type 3 fonts, which
+# arXiv flags and which some PDF viewers render poorly.
+matplotlib.rcParams["pdf.fonttype"] = 42
+matplotlib.rcParams["ps.fonttype"] = 42
 import matplotlib.pyplot as plt
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -167,7 +171,7 @@ def render_markdown(rows: list[dict[str, Any]], n_raw_rows: int) -> str:
 
 
 def plot(rows: list[dict[str, Any]]) -> None:
-    fig, axes = plt.subplots(1, 2, figsize=(11.0, 4.6), constrained_layout=True)
+    fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.9), constrained_layout=True)
     panels = [
         ("rel_crps", "rel-CRPS (lower is better)"),
         ("interval_95_abs_coverage_error", "|cE|@95 (lower is better)"),
@@ -195,7 +199,7 @@ def plot(rows: list[dict[str, Any]]) -> None:
                     (row["sample_time"], row[metric]),
                     textcoords="offset points",
                     xytext=(5, 6),
-                    fontsize=10.5,
+                    fontsize=12.0,
                     fontweight="bold",
                     color=COLORS[family],
                     zorder=4,
@@ -211,21 +215,31 @@ def plot(rows: list[dict[str, Any]]) -> None:
                     color=COLORS[family],
                     zorder=4,
                 )
+                # Drop the SDE label below-left and stagger it by family, so it
+                # clears both the ODE step labels (placed up-right) and the other
+                # family's SDE label, which sits at a very similar cost/metric.
+                stagger = -14 - 13 * FAMILY_ORDER[family]
                 ax.annotate(
                     "SDE25",
                     (row["sample_time"], row[metric]),
                     textcoords="offset points",
-                    xytext=(6, -13),
-                    fontsize=9.5,
+                    xytext=(-7, stagger),
+                    ha="right",
+                    fontsize=11.0,
                     color=COLORS[family],
-                    zorder=4,
+                    zorder=5,
+                    bbox=dict(boxstyle="round,pad=0.12", fc="white", ec="none", alpha=0.75),
                 )
         ax.set_xscale("log")
-        ax.set_xlabel("Sample-generation time (s, log scale)", fontsize=12)
-        ax.set_ylabel(ylabel, fontsize=12)
-        ax.tick_params(axis="both", labelsize=10.5)
+        ax.set_xlabel("Sample-generation time (s, log scale)", fontsize=14)
+        ax.set_ylabel(ylabel, fontsize=14)
+        ax.tick_params(axis="both", labelsize=12)
         ax.grid(True, which="both", linewidth=0.4, alpha=0.35)
-    axes[0].legend(frameon=False, fontsize=11, loc="best")
+        # The SDE labels hang below their markers, and the FM rows sit right at the
+        # bottom of both panels; open up headroom so the labels stay inside the axes.
+        low, high = ax.get_ylim()
+        ax.set_ylim(low - 0.16 * (high - low), high)
+    axes[0].legend(frameon=False, fontsize=12.5, loc="best")
     FIGURE_PATH.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(FIGURE_PATH)
     fig.savefig(PNG_PATH, dpi=200)

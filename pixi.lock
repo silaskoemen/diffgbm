@@ -5345,7 +5345,7 @@ packages:
 - pypi: ./
   name: diffgbm
   version: 0.1.0
-  sha256: b0b70804f3566069ec73cf4c0a80f64ff8a899b74e1eef1b63487ff39c987f29
+  sha256: 13ac892812775511278ea8e1b4655c0f61f14816a17ddd1c13593c033076848f
   requires_dist:
   - numpy
   - jaxtyping

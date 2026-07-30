@@ -27,6 +27,10 @@ import numpy as np
 import pandas as pd
 
 matplotlib.use("Agg")
+# Embed TrueType (type 42) rather than matplotlib's default Type 3 fonts, which
+# arXiv flags and which some PDF viewers render poorly.
+matplotlib.rcParams["pdf.fonttype"] = 42
+matplotlib.rcParams["ps.fonttype"] = 42
 import matplotlib.pyplot as plt  # noqa: E402
 
 

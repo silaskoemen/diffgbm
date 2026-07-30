@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "diffgbm"
 version = "0.1.0"
 description = "Probabilistic predictions for tabular data with gradient-boosted diffusion and flow-matching models."
-authors = [{ name = "Silas Koemen", email = "kpsilas@gmail.com" }]
+authors = [{ name = "Silas Koemen", email = "research@silaskoemen.com" }]
 license = { text = "MIT" }
 license-files = ["LICENSE"]
 readme = "README.md"

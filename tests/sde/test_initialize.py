@@ -9,8 +9,8 @@ import pytest
 from jaxtyping import Float
 from numpy import ndarray
 
-from treeffuser.sde import get_diffusion_sde
-from treeffuser.sde import sdeint
+from diffgbm.sde import get_diffusion_sde
+from diffgbm.sde import sdeint
 
 
 def _score_linear_vesde(

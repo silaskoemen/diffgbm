@@ -28,7 +28,7 @@ def main() -> None:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run Treeffuser development benchmarks.")
+    parser = argparse.ArgumentParser(description="Run DiffGBM development benchmarks.")
     parser.add_argument("--config", required=True, help="Path to a benchmark YAML config.")
     parser.add_argument("--output", default=None, help="Optional output path. The suffix can be .jsonl or .csv.")
     parser.add_argument(

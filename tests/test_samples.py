@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from treeffuser.samples import Samples
+from diffgbm.samples import Samples
 
 
 ###################################################

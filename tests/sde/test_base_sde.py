@@ -5,8 +5,8 @@ import pytest
 from jaxtyping import Float
 from numpy import ndarray
 
-from treeffuser.sde.base_sde import BaseSDE
-from treeffuser.sde.base_sde import ReverseSDE
+from diffgbm.sde.base_sde import BaseSDE
+from diffgbm.sde.base_sde import ReverseSDE
 
 
 class ConcreteBaseSDE(BaseSDE):

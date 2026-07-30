@@ -1,4 +1,4 @@
-"""Summarize the tuned Treeffuser mechanism ablation.
+"""Summarize the tuned DiffGBM mechanism ablation.
 
 Reads the fold-level JSONL files emitted by
 `benchmarks/configs/mechanism_ablation_manifest.yaml` and writes a compact
@@ -121,7 +121,7 @@ def aggregate_row(
 
 def render_markdown(datasets: list[str], means: dict[tuple[str, str], dict[str, float]]) -> str:
     lines: list[str] = []
-    lines.append("# Treeffuser mechanism ablation\n")
+    lines.append("# DiffGBM mechanism ablation\n")
     lines.append(
         "Source: `benchmarks/results/mechanism_ablation/eval/*.jsonl`. "
         "Each cell averages the five evaluation folds from the fold-0 tuning / "

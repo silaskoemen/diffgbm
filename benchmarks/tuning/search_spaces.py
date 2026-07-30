@@ -9,7 +9,7 @@ Contract:
 - The model is instantiated with `{**fixed, **trial_params}`. Keys in `tunable` and
   `fixed` must be disjoint; this is asserted at registration time.
 
-For the Treeffuser family, all three headline variants (published, score+, FM-VP-ODE)
+For the DiffGBM family, all three headline variants (published, score+, FM-VP-ODE)
 share an identical tunable LightGBM surface so the comparison is on the method, not
 the search budget. Variant-specific design choices live in `fixed` and `sampler`.
 """
@@ -64,7 +64,7 @@ class _DryRunTrial:
 
 
 # ---------------------------------------------------------------------------
-# Shared Treeffuser LightGBM tunable surface
+# Shared DiffGBM LightGBM tunable surface
 # ---------------------------------------------------------------------------
 
 
@@ -77,7 +77,7 @@ def _treeffuser_lgbm_tunable(trial: optuna.Trial) -> TrialParams:
         "min_child_samples": trial.suggest_int("min_child_samples", 5, 100),
         "subsample": trial.suggest_float("subsample", 0.5, 1.0),
         # Histogram resolution is a first-class conditioning axis (not a generic
-        # capacity knob): it is shared by every Treeffuser variant so the surface
+        # capacity knob): it is shared by every DiffGBM variant so the surface
         # stays identical across recipes, and the recipe x max_bin interaction is
         # itself evidence for the preconditioning thesis (raw-input recipes need
         # finer bins to resolve their expanded feature scale; preconditioned EDM/FM
@@ -138,11 +138,11 @@ _FM_ODE5_SAMPLER = {
 
 
 # ---------------------------------------------------------------------------
-# Treeffuser variants
+# DiffGBM variants
 # ---------------------------------------------------------------------------
 
 TREEFFUSER_PUBLISHED = SearchSpace(
-    model="treeffuser",
+    model="diffgbm",
     tunable=_treeffuser_lgbm_tunable,
     fixed={
         **_TREEFFUSER_LGBM_FIXED,
@@ -158,7 +158,7 @@ TREEFFUSER_PUBLISHED = SearchSpace(
 
 
 TREEFFUSER_SCORE_PLUS = SearchSpace(
-    model="treeffuser",
+    model="diffgbm",
     tunable=_treeffuser_lgbm_tunable,
     fixed={
         **_TREEFFUSER_LGBM_FIXED,
@@ -180,7 +180,7 @@ TREEFFUSER_SCORE_PLUS = SearchSpace(
 
 
 TREEFFUSER_FM = SearchSpace(
-    model="treeffuser",
+    model="diffgbm",
     tunable=_treeffuser_lgbm_tunable,
     fixed={
         **_TREEFFUSER_LGBM_FIXED,
@@ -203,7 +203,7 @@ TREEFFUSER_FM = SearchSpace(
 # TREEFFUSER_FM_NORESID matches ABLATE_FM_VP_NORESID_ODE5 by construction; it is
 # kept as a headline-named twin so the FM and score-plus arms stay symmetric.
 TREEFFUSER_SCORE_PLUS_NORESID = SearchSpace(
-    model="treeffuser",
+    model="diffgbm",
     tunable=_treeffuser_lgbm_tunable,
     fixed={
         **_TREEFFUSER_LGBM_FIXED,
@@ -239,7 +239,7 @@ def _treeffuser_score_flex_tunable(trial: optuna.Trial) -> TrialParams:
     """
     params = _treeffuser_lgbm_tunable(trial)
     # max_bin comes from the shared LightGBM surface (tuned identically for every
-    # Treeffuser variant), so the flex space adds only the score-side recipe axes.
+    # DiffGBM variant), so the flex space adds only the score-side recipe axes.
     params["score_parameterization"] = trial.suggest_categorical("score_parameterization", ["noise", "edm"])
     params["noise_features"] = trial.suggest_categorical("noise_features", ["raw_time", "raw_time_log_std"])
     t_sampling = trial.suggest_categorical("t_sampling", ["uniform", "log_sigma_normal"])
@@ -351,7 +351,7 @@ _SCORE_FLEX_SEED_TRIALS = (
 # sampler-invariant on the ablation; PF-ODE carries the coverage edge) while letting
 # the tuner choose the training recipe per dataset.
 TREEFFUSER_SCORE_FLEX = SearchSpace(
-    model="treeffuser",
+    model="diffgbm",
     tunable=_treeffuser_score_flex_tunable,
     fixed={
         **_TREEFFUSER_LGBM_FIXED,
@@ -370,7 +370,7 @@ TREEFFUSER_SCORE_FLEX = SearchSpace(
 # vs 0.154 with its Euler SDE), so the sampler is a recipe-coupled axis: this twin
 # lets fold-0 selection choose the sampler alongside the training recipe.
 TREEFFUSER_SCORE_FLEX_SDE = SearchSpace(
-    model="treeffuser",
+    model="diffgbm",
     tunable=_treeffuser_score_flex_tunable,
     fixed=TREEFFUSER_SCORE_FLEX.fixed,
     sampler=_SCORE_EULER50_SAMPLER,
@@ -386,7 +386,7 @@ TREEFFUSER_SCORE_FLEX_SDE = SearchSpace(
 # sampler swap moves CRPS by <0.01. An alternative (lower log_sigma_p_mean) would test
 # the same hypothesis less sharply.
 TREEFFUSER_SCORE_PLUS_NORESID_UNIFORM_T = SearchSpace(
-    model="treeffuser",
+    model="diffgbm",
     tunable=_treeffuser_lgbm_tunable,
     fixed={
         **_TREEFFUSER_LGBM_FIXED,
@@ -404,7 +404,7 @@ TREEFFUSER_SCORE_PLUS_NORESID_UNIFORM_T = SearchSpace(
 
 
 TREEFFUSER_FM_NORESID = SearchSpace(
-    model="treeffuser",
+    model="diffgbm",
     tunable=_treeffuser_lgbm_tunable,
     fixed={
         **_TREEFFUSER_LGBM_FIXED,
@@ -418,11 +418,11 @@ TREEFFUSER_FM_NORESID = SearchSpace(
 
 
 # ---------------------------------------------------------------------------
-# Treeffuser mechanism-ablation variants
+# DiffGBM mechanism-ablation variants
 # ---------------------------------------------------------------------------
 
 ABLATE_SCORE_NOISE_EULER50 = SearchSpace(
-    model="treeffuser",
+    model="diffgbm",
     tunable=_treeffuser_lgbm_tunable,
     fixed={
         **_TREEFFUSER_LGBM_FIXED,
@@ -438,7 +438,7 @@ ABLATE_SCORE_NOISE_EULER50 = SearchSpace(
 
 
 ABLATE_SCORE_NOISE_HEUN25 = SearchSpace(
-    model="treeffuser",
+    model="diffgbm",
     tunable=_treeffuser_lgbm_tunable,
     fixed={
         **_TREEFFUSER_LGBM_FIXED,
@@ -454,7 +454,7 @@ ABLATE_SCORE_NOISE_HEUN25 = SearchSpace(
 
 
 ABLATE_SCORE_RESID_NOISE_HEUN25 = SearchSpace(
-    model="treeffuser",
+    model="diffgbm",
     tunable=_treeffuser_lgbm_tunable,
     fixed={
         **_TREEFFUSER_LGBM_FIXED,
@@ -472,7 +472,7 @@ ABLATE_SCORE_RESID_NOISE_HEUN25 = SearchSpace(
 
 
 ABLATE_SCORE_RESID_EDM_RAWTIME_HEUN25 = SearchSpace(
-    model="treeffuser",
+    model="diffgbm",
     tunable=_treeffuser_lgbm_tunable,
     fixed={
         **_TREEFFUSER_LGBM_FIXED,
@@ -492,7 +492,7 @@ ABLATE_SCORE_RESID_EDM_RAWTIME_HEUN25 = SearchSpace(
 
 
 ABLATE_SCORE_RESID_EDM_LOGSTD_UNIFORM_HEUN25 = SearchSpace(
-    model="treeffuser",
+    model="diffgbm",
     tunable=_treeffuser_lgbm_tunable,
     fixed={
         **_TREEFFUSER_LGBM_FIXED,
@@ -512,7 +512,7 @@ ABLATE_SCORE_RESID_EDM_LOGSTD_UNIFORM_HEUN25 = SearchSpace(
 
 
 ABLATE_SCORE_PLUS_HEUN25 = SearchSpace(
-    model="treeffuser",
+    model="diffgbm",
     tunable=_treeffuser_lgbm_tunable,
     fixed={
         **_TREEFFUSER_LGBM_FIXED,
@@ -534,7 +534,7 @@ ABLATE_SCORE_PLUS_HEUN25 = SearchSpace(
 
 
 ABLATE_FM_LINEAR_RESID_ODE5 = SearchSpace(
-    model="treeffuser",
+    model="diffgbm",
     tunable=_treeffuser_lgbm_tunable,
     fixed={
         **_TREEFFUSER_LGBM_FIXED,
@@ -550,7 +550,7 @@ ABLATE_FM_LINEAR_RESID_ODE5 = SearchSpace(
 
 
 ABLATE_FM_TRIG_RESID_ODE5 = SearchSpace(
-    model="treeffuser",
+    model="diffgbm",
     tunable=_treeffuser_lgbm_tunable,
     fixed={
         **_TREEFFUSER_LGBM_FIXED,
@@ -566,7 +566,7 @@ ABLATE_FM_TRIG_RESID_ODE5 = SearchSpace(
 
 
 ABLATE_FM_VP_NORESID_ODE5 = SearchSpace(
-    model="treeffuser",
+    model="diffgbm",
     tunable=_treeffuser_lgbm_tunable,
     fixed={
         **_TREEFFUSER_LGBM_FIXED,
@@ -580,7 +580,7 @@ ABLATE_FM_VP_NORESID_ODE5 = SearchSpace(
 
 
 ABLATE_FM_VP_RESID_ODE5 = SearchSpace(
-    model="treeffuser",
+    model="diffgbm",
     tunable=_treeffuser_lgbm_tunable,
     fixed={
         **_TREEFFUSER_LGBM_FIXED,

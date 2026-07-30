@@ -24,7 +24,7 @@ from benchmarks.metrics import evaluate_samples
 from benchmarks.metrics import per_point_crps
 from benchmarks.variants import Variant
 from benchmarks.variants import make_variants
-from treeffuser._conformal import ConformalQuantileCalibrator
+from diffgbm._conformal import ConformalQuantileCalibrator
 
 
 @dataclass(frozen=True)
@@ -311,7 +311,7 @@ def get_provenance() -> dict[str, Any]:
     return {
         "git_sha": _run_git(["rev-parse", "HEAD"]),
         "git_dirty": bool(_run_git(["status", "--short"])),
-        "treeffuser_source_hash": _hash_treeffuser_source(),
+        "diffgbm_source_hash": _hash_diffgbm_source(),
     }
 
 
@@ -439,8 +439,10 @@ def _run_git(args: list[str]) -> str:
     return completed.stdout.strip()
 
 
-def _hash_treeffuser_source() -> str:
-    root = Path(__file__).resolve().parents[1] / "src" / "treeffuser"
+def _hash_diffgbm_source() -> str:
+    root = Path(__file__).resolve().parents[1] / "src" / "diffgbm"
+    if not root.is_dir():
+        raise FileNotFoundError(f"Cannot hash model source: {root} does not exist.")
     digest = hashlib.sha256()
     for path in sorted(root.rglob("*.py")):
         digest.update(str(path.relative_to(root)).encode("utf-8"))

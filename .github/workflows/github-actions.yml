@@ -1,131 +1,54 @@
 name: build
-on: [push, pull_request]
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
 jobs:
   test:
-    name: ${{ matrix.name }}
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 10
+    name: test (${{ matrix.environment }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - name: 'check'
-            python: '3.11'
-            toxpython: 'python3.11'
-            tox_env: 'check'
-            os: 'ubuntu-latest'
-          #- name: 'docs'
-          #  python: '3.11'
-          #  toxpython: 'python3.11'
-          #  tox_env: 'docs'
-          #  os: 'ubuntu-latest'
-          #- name: 'py38 (ubuntu)'
-          #  python: '3.8'
-          #  toxpython: 'python3.8'
-          #  python_arch: 'x64'
-          #  tox_env: 'py38'
-          #  os: 'ubuntu-latest'
-          #- name: 'py38 (windows)'
-          #  python: '3.8'
-          #  toxpython: 'python3.8'
-          #  python_arch: 'x64'
-          #  tox_env: 'py38'
-          #  os: 'windows-latest'
-          #- name: 'py38 (macos)'
-          #  python: '3.8'
-          #  toxpython: 'python3.8'
-          #  python_arch: 'x64'
-          #  tox_env: 'py38'
-          #  os: 'macos-latest'
-          #- name: 'py39 (ubuntu)'
-          #  python: '3.9'
-          #  toxpython: 'python3.9'
-          #  python_arch: 'x64'
-          #  tox_env: 'py39'
-          #  os: 'ubuntu-latest'
-          #- name: 'py39 (windows)'
-          #  python: '3.9'
-          #  toxpython: 'python3.9'
-          #  python_arch: 'x64'
-          #  tox_env: 'py39'
-          #  os: 'windows-latest'
-          #- name: 'py39 (macos)'
-          #  python: '3.9'
-          #  toxpython: 'python3.9'
-          #  python_arch: 'x64'
-          #  tox_env: 'py39'
-          #  os: 'macos-latest'
-          - name: 'py310 (ubuntu)'
-            python: '3.10'
-            toxpython: 'python3.10'
-            python_arch: 'x64'
-            tox_env: 'py310'
-            os: 'ubuntu-latest'
-          #- name: 'py310 (windows)'
-          #  python: '3.10'
-          #  toxpython: 'python3.10'
-          #  python_arch: 'x64'
-          #  tox_env: 'py310'
-          #  os: 'windows-latest'
-          #- name: 'py310 (macos)'
-          #  python: '3.10'
-          #  toxpython: 'python3.10'
-          #  python_arch: 'x64'
-          #  tox_env: 'py310'
-          #  os: 'macos-latest'
-          #- name: 'py311 (ubuntu)'
-          #  python: '3.11'
-          #  toxpython: 'python3.11'
-          #  python_arch: 'x64'
-          #  tox_env: 'py311'
-          #  os: 'ubuntu-latest'
-          #- name: 'py311 (windows)'
-          #  python: '3.11'
-          #  toxpython: 'python3.11'
-          #  python_arch: 'x64'
-          #  tox_env: 'py311'
-          #  os: 'windows-latest'
-          #- name: 'py311 (macos)'
-          #  python: '3.11'
-          #  toxpython: 'python3.11'
-          #  python_arch: 'x64'
-          #  tox_env: 'py311'
-          #  os: 'macos-latest'
-          #- name: 'py312 (ubuntu)'
-          #  python: '3.12'
-          #  toxpython: 'python3.12'
-          #  python_arch: 'x64'
-          #  tox_env: 'py312'
-          #  os: 'ubuntu-latest'
-          #- name: 'py312 (windows)'
-          #  python: '3.12'
-          #  toxpython: 'python3.12'
-          #  python_arch: 'x64'
-          #  tox_env: 'py312'
-          #  os: 'windows-latest'
-          #- name: 'py312 (macos)'
-          #  python: '3.12'
-          #  toxpython: 'python3.12'
-          #  python_arch: 'x64'
-          #  tox_env: 'py312'
-          #  os: 'macos-latest'
+        environment: [py310, py311, py312]
     steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    - uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python }}
-        architecture: ${{ matrix.python_arch }}
-    - name: install dependencies
-      run: |
-        python -mpip install --progress-bar=off -r ci/requirements.txt
-        virtualenv --version
-        pip --version
-        tox --version
-        pip list --format=freeze
-    - name: test
-      env:
-        TOXPYTHON: '${{ matrix.toxpython }}'
-      run: >
-        tox -e ${{ matrix.tox_env }} -v
+      - uses: actions/checkout@v4
+      - uses: prefix-dev/setup-pixi@v0.8.1
+        with:
+          environments: ${{ matrix.environment }}
+          locked: true
+      - name: test
+        run: pixi run -e ${{ matrix.environment }} test
+
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: prefix-dev/setup-pixi@v0.8.1
+        with:
+          environments: lint
+          locked: true
+      - name: lint
+        run: pixi run lint
+
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: prefix-dev/setup-pixi@v0.8.1
+        with:
+          environments: build
+          locked: true
+      - name: build distributions
+        run: pixi run -e build build-wheel
+      - name: check distributions
+        run: pixi run -e build check-wheel
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/

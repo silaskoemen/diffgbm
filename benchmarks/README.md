@@ -1,8 +1,7 @@
-# Treeffuser Benchmarks
+# DiffGBM Benchmarks
 
-This directory contains lightweight, implementation-focused benchmarks for comparing
-Treeffuser variants. It is separate from `testbed/`: `testbed/` is for broad model
-comparisons, while this harness is for paired diagnostics during Treeffuser development.
+This directory contains the implementation-focused benchmark harness used for the
+DiffGBM paper: paired diagnostics, tuning sweeps, and the tuned headline runs.
 
 The benchmark grain is one result row per:
 
@@ -61,7 +60,7 @@ not download external benchmark data.
 
 External probabilistic baselines are tuned in a separate workflow from the final paper
 performance run. This keeps parameter selection auditable and avoids rerunning
-Treeffuser when only non-Treeffuser baselines change.
+DiffGBM when only external baselines change.
 
 Generate one fixed-grid selection config per model family:
 
@@ -93,11 +92,11 @@ pixi run python -m benchmarks.select_probabilistic_baseline_hyperparams select \
 ```
 
 The selector ranks candidates by CRPS on the same small selection suite used for
-Treeffuser development (4 synthetic diagnostics + 4 small real datasets, 3 seeds),
+DiffGBM development (4 synthetic diagnostics + 4 small real datasets, 3 seeds),
 breaks near-ties by interval-90 absolute coverage error, and requires complete runs by
 default. The generated `paper_probabilistic_baselines_selected.yaml` intentionally
 contains only external baselines and should be joined with the already completed
-`paper_real_data_v2` Treeffuser results.
+`paper_real_data_v2` DiffGBM results.
 
 ## Seeding Policy
 
@@ -815,7 +814,7 @@ Every result row records:
 
 - `git_sha`
 - `git_dirty`
-- `treeffuser_source_hash`
+- `diffgbm_source_hash`
 
 Because `baseline_current` means "the current baseline behavior in this checkout", these
 columns are required to interpret old-vs-new comparisons later.

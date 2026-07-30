@@ -1,7 +1,7 @@
 import numpy as np
 
-from treeffuser.sde import sdeint
-from treeffuser.sde.base_sde import CustomSDE
+from diffgbm.sde import sdeint
+from diffgbm.sde.base_sde import CustomSDE
 
 
 def test_euler_maruyama():

@@ -8,24 +8,24 @@ import numpy as np
 import pytest
 from einops import repeat
 
-from treeffuser._score_models import EDMParameterization
-from treeffuser._score_models import LightGBMScoreModel
-from treeffuser._score_models import LogSigmaNormalTSampler
-from treeffuser._score_models import MinSNRLossWeighting
-from treeffuser._score_models import NoiseParameterization
-from treeffuser._score_models import RawTimeFeatureBuilder
-from treeffuser._score_models import RawTimeLogStdFeatureBuilder
-from treeffuser._score_models import UniformLossWeighting
-from treeffuser._score_models import UniformTSampler
-from treeffuser._score_models import X0Parameterization
-from treeffuser._score_models import _make_training_data
-from treeffuser._score_models import get_loss_weighting
-from treeffuser._score_models import get_noise_feature_builder
-from treeffuser._score_models import get_score_parameterization
-from treeffuser._score_models import get_t_sampler
-from treeffuser.sde.diffusion_sdes import VESDE
-from treeffuser.sde.diffusion_sdes import VPSDE
-from treeffuser.sde.diffusion_sdes import SubVPSDE
+from diffgbm._score_models import EDMParameterization
+from diffgbm._score_models import LightGBMScoreModel
+from diffgbm._score_models import LogSigmaNormalTSampler
+from diffgbm._score_models import MinSNRLossWeighting
+from diffgbm._score_models import NoiseParameterization
+from diffgbm._score_models import RawTimeFeatureBuilder
+from diffgbm._score_models import RawTimeLogStdFeatureBuilder
+from diffgbm._score_models import UniformLossWeighting
+from diffgbm._score_models import UniformTSampler
+from diffgbm._score_models import X0Parameterization
+from diffgbm._score_models import _make_training_data
+from diffgbm._score_models import get_loss_weighting
+from diffgbm._score_models import get_noise_feature_builder
+from diffgbm._score_models import get_score_parameterization
+from diffgbm._score_models import get_t_sampler
+from diffgbm.sde.diffusion_sdes import VESDE
+from diffgbm.sde.diffusion_sdes import VPSDE
+from diffgbm.sde.diffusion_sdes import SubVPSDE
 
 from .utils import generate_bimodal_linear_regression_data
 from .utils import r2_score

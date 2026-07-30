@@ -1,4 +1,4 @@
-"""Run an eval-only sampler cost sweep from already tuned Treeffuser YAMLs.
+"""Run an eval-only sampler cost sweep from already tuned DiffGBM YAMLs.
 
 This script does not retune hyperparameters. It loads per-dataset best-parameter
 YAMLs, refits the selected model on each evaluation fold, and evaluates multiple

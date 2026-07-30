@@ -103,7 +103,7 @@ def resolve_n_parallel(default: int) -> int:
 
 
 def _sample_kwargs(sampler: dict[str, Any] | None, n_samples: int, seed: int) -> dict[str, Any]:
-    """Sample-call kwargs. For Treeffuser variants, pull the bound sampler config
+    """Sample-call kwargs. For DiffGBM variants, pull the bound sampler config
     from the search space; for baselines (sampler=None), pass minimal args.
 
     Tuning uses n_samples from the call site (typically < the final eval count) but

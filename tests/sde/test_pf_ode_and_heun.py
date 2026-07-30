@@ -1,7 +1,7 @@
 """
 Tests for the probability-flow ODE wrapper and the Heun solver.
 
-The Treeffuser SDE module is purely numerical so we exercise the new code paths
+The DiffGBM SDE module is purely numerical so we exercise the new code paths
 against analytic OU/VESDE marginals where the reverse-time density is known.
 """
 
@@ -10,11 +10,11 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from treeffuser import Treeffuser
-from treeffuser.sde import sdeint
-from treeffuser.sde.base_sde import CustomSDE
-from treeffuser.sde.base_sde import ProbabilityFlowODE
-from treeffuser.sde.diffusion_sdes import VESDE
+from diffgbm import DiffGBM
+from diffgbm.sde import sdeint
+from diffgbm.sde.base_sde import CustomSDE
+from diffgbm.sde.base_sde import ProbabilityFlowODE
+from diffgbm.sde.diffusion_sdes import VESDE
 
 
 def test_heun_matches_analytical_solution_for_deterministic_drift():
@@ -94,12 +94,13 @@ def test_probability_flow_ode_drift_halves_score_term():
     assert np.allclose(diffusion, 0.0)
 
 
-def test_treeffuser_sample_accepts_heun_and_pf_ode():
-    """Integration smoke: a small Treeffuser fit followed by ODE-Heun sampling."""
+def test_diffgbm_sample_accepts_heun_and_pf_ode():
+    """Integration smoke: a small DiffGBM fit followed by ODE-Heun sampling."""
     rng = np.random.default_rng(0)
     X = rng.normal(size=(120, 2))
     y = (X[:, :1] + 0.3 * rng.normal(size=(120, 1))).astype(np.float64)
-    m = Treeffuser(
+    m = DiffGBM(
+        residualize="off",
         n_repeats=2,
         n_estimators=30,
         early_stopping_rounds=None,

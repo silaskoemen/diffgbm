@@ -349,7 +349,7 @@ def render_markdown(
     lines.extend(
         [
             "",
-            "## Paired Wilcoxon tests for Treeffuser headline rows",
+            "## Paired Wilcoxon tests for DiffGBM headline rows",
             "",
             "| Pair | Alt. | left wins | right wins | median delta CRPS | W | p |",
             "|---|---|---:|---:|---:|---:|---:|",
@@ -367,7 +367,7 @@ def render_markdown(
             "",
             "## Per-dataset winners",
             "",
-            "| Dataset | Raw-CRPS winner | CRPS | Treeffuser CRPSS winner | CRPSS |",
+            "| Dataset | Raw-CRPS winner | CRPS | DiffGBM CRPSS winner | CRPSS |",
             "|---|---|---:|---|---:|",
         ]
     )

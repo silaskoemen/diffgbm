@@ -1,4 +1,4 @@
-# Treeffuser mechanism ablation
+# DiffGBM mechanism ablation
 
 Source: `benchmarks/results/mechanism_ablation/eval/*.jsonl`. Each cell averages the five evaluation folds from the fold-0 tuning / folds-1..5 evaluation protocol. All rows use the same LightGBM hyperparameter search surface; fixed method choices and bound samplers differ by row. rel-CRPS is normalized by the best ablation row on each dataset.
 

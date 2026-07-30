@@ -1,1 +1,1 @@
-"""Treeffuser development benchmarks."""
+"""DiffGBM development benchmarks."""

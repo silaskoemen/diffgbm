@@ -5342,6 +5342,22 @@ packages:
   purls: []
   size: 447649
   timestamp: 1764536047944
+- pypi: ./
+  name: diffgbm
+  version: 0.1.0
+  sha256: b0b70804f3566069ec73cf4c0a80f64ff8a899b74e1eef1b63487ff39c987f29
+  requires_dist:
+  - numpy
+  - jaxtyping
+  - einops
+  - scipy
+  - tqdm
+  - lightgbm
+  - ml-collections
+  - scikit-learn
+  - pandas
+  requires_python: '>=3.10'
+  editable: true
 - conda: https://conda.anaconda.org/conda-forge/noarch/distlib-0.4.0-pyhd8ed1ab_0.conda
   sha256: 6d977f0b2fc24fee21a9554389ab83070db341af6d6f09285360b2e09ef8b26e
   md5: 003b8ba0a94e2f1e117d0bd46aebc901
@@ -14503,22 +14519,6 @@ packages:
   - pkg:pypi/tqdm?source=hash-mapping
   size: 93399
   timestamp: 1770153445242
-- pypi: ./
-  name: treeffuser
-  version: 0.1.3
-  sha256: 9a64b54cafe1be33a08a0c1610d9d5bac7a7bec601da0cff508fb8c283969baf
-  requires_dist:
-  - numpy
-  - jaxtyping
-  - einops
-  - scipy
-  - tqdm
-  - lightgbm
-  - ml-collections
-  - scikit-learn
-  - pandas
-  requires_python: '>=3.10'
-  editable: true
 - conda: https://conda.anaconda.org/conda-forge/noarch/trove-classifiers-2026.5.7.17-pyhd8ed1ab_0.conda
   sha256: b06931edfab2f6bde64fae1e7323216b74389b5a27242bf2b54b401246efb04d
   md5: 58ad6f35e45eca7db0fd5da95aafc693

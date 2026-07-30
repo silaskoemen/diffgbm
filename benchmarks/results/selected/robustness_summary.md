@@ -41,7 +41,7 @@ Friedman test on per-dataset CRPS ranks over 9 families and 11 datasets: chi^2=3
 | DiffGBM (score-flex) vs iBUG | 4.00 |
 | DiffGBM (score-flex) vs CARD-style diffusion | 4.82 |
 
-## Paired Wilcoxon tests for Treeffuser headline rows
+## Paired Wilcoxon tests for DiffGBM headline rows
 
 | Pair | Alt. | left wins | right wins | median delta CRPS | W | p |
 |---|---|---:|---:|---:|---:|---:|
@@ -51,7 +51,7 @@ Friedman test on per-dataset CRPS ranks over 9 families and 11 datasets: chi^2=3
 
 ## Per-dataset winners
 
-| Dataset | Raw-CRPS winner | CRPS | Treeffuser CRPSS winner | CRPSS |
+| Dataset | Raw-CRPS winner | CRPS | DiffGBM CRPSS winner | CRPSS |
 |---|---|---:|---|---:|
 | california_housing | DiffGBM (score-flex) | 0.190435 | DiffGBM (score-flex) | 0.698 |
 | concrete | DiffGBM-FM | 2.15139 | DiffGBM-FM | 0.772 |

@@ -1,4 +1,4 @@
-"""Paired Wilcoxon signed-rank tests on the headline Treeffuser results.
+"""Paired Wilcoxon signed-rank tests on the headline DiffGBM results.
 
 Reads the fold-level CRPS values from `benchmarks/results/tuning/eval/*.jsonl`,
 averages over evaluation folds within each (variant, dataset), and runs paired

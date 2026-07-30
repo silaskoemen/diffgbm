@@ -3,18 +3,33 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "treeffuser"
-version = "0.1.3"
-description = "Probabilistic predictions for tabular data, using diffusion models and decision trees."
-authors = [
-    { name = "Nicolas Beltran-Velez", email = "nb2838@columbia.edu" },
-    { name = "Alessandro Antonio Grande", email = "alessandro.grande@columbia.edu" },
-    { name = "Achille Nazaret", email = "achille.nazaret@gmail.com" },
-]
+name = "diffgbm"
+version = "0.1.0"
+description = "Probabilistic predictions for tabular data with gradient-boosted diffusion and flow-matching models."
+authors = [{ name = "Silas Koemen", email = "kpsilas@gmail.com" }]
 license = { text = "MIT" }
 license-files = ["LICENSE"]
 readme = "README.md"
 requires-python = ">=3.10"
+keywords = [
+    "probabilistic-prediction",
+    "uncertainty-quantification",
+    "diffusion-models",
+    "flow-matching",
+    "gradient-boosting",
+    "tabular-data",
+    "lightgbm",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = [
     "numpy",
     "jaxtyping",
@@ -28,19 +43,23 @@ dependencies = [
 ]
 
 [project.urls]
-homepage = "https://blei-lab.github.io/treeffuser/"
-repository = "https://github.com/blei-lab/treeffuser"
+homepage = "https://github.com/silaskoemen/diffgbm"
+repository = "https://github.com/silaskoemen/diffgbm"
+issues = "https://github.com/silaskoemen/diffgbm/issues"
+changelog = "https://github.com/silaskoemen/diffgbm/blob/main/CHANGELOG.md"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/treeffuser"]
+packages = ["src/diffgbm"]
 
 [tool.hatch.build.targets.sdist]
 include = [
-    "src/treeffuser",
+    "src/diffgbm",
     "pyproject.toml",
     "AUTHORS.md",
+    "CHANGELOG.md",
     "README.md",
     "LICENSE",
+    "NOTICE",
 ]
 
 [tool.ruff.lint.per-file-ignores]

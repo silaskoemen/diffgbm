@@ -1,7 +1,7 @@
 """
 Tests for the split-CQR conformal calibrator. We avoid retraining a tabular diffusion
 inside the unit tests by feeding hand-crafted sample tensors directly into the
-calibrator's `_from_samples` API. End-to-end Treeffuser integration is covered by a
+calibrator's `_from_samples` API. End-to-end DiffGBM integration is covered by a
 short statistical regression test on a tiny synthetic dataset.
 """
 
@@ -10,9 +10,9 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from treeffuser import ConformalQuantileCalibrator
-from treeffuser import Treeffuser
-from treeffuser._conformal import empirical_quantile_band
+from diffgbm import ConformalQuantileCalibrator
+from diffgbm import DiffGBM
+from diffgbm._conformal import empirical_quantile_band
 
 
 def _make_normal_samples(means: np.ndarray, std: float, n_samples: int, seed: int) -> np.ndarray:
@@ -104,7 +104,7 @@ def test_conformal_calibration_restores_target_coverage_on_undercovered_model():
     assert cqr_coverage >= 0.85  # nominal 0.9 - finite-sample slack
 
 
-def test_treeffuser_can_be_calibrated_end_to_end_on_synthetic_data():
+def test_diffgbm_can_be_calibrated_end_to_end_on_synthetic_data():
     rng = np.random.default_rng(0)
     n_train, n_cal, n_eval = 200, 200, 200
     X_train = rng.normal(size=(n_train, 2))
@@ -114,7 +114,7 @@ def test_treeffuser_can_be_calibrated_end_to_end_on_synthetic_data():
     X_eval = rng.normal(size=(n_eval, 2))
     y_eval = (X_eval[:, :1] + 0.3 * rng.normal(size=(n_eval, 1))).astype(np.float64)
 
-    model = Treeffuser(
+    model = DiffGBM(
         n_repeats=3,
         n_estimators=40,
         early_stopping_rounds=None,

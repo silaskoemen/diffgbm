@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
 
-import treeffuser._residualizer as residualizer_module
-from treeffuser._residualizer import ConditionalResidualizer
-from treeffuser._residualizer import _winsorized_std
+import diffgbm._residualizer as residualizer_module
+from diffgbm._residualizer import ConditionalResidualizer
+from diffgbm._residualizer import _winsorized_std
 
 
 def _make_heteroscedastic_data(n=240, seed=0):

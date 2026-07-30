@@ -1,25 +1,27 @@
+import warnings
+
 import numpy as np
 import pytest
 
-from treeffuser import Treeffuser
-from treeffuser._flow_matching import LinearFlowPath
-from treeffuser._flow_matching import ReverseVelocityInterpolant
-from treeffuser._flow_matching import ReverseVelocityODE
-from treeffuser._flow_matching import TrigFlowPath
-from treeffuser._flow_matching import VPFlowPath
-from treeffuser._flow_matching import get_flow_path
-from treeffuser._flow_matching import get_stochasticity_schedule
-from treeffuser._flow_matching import linear_stochasticity_schedule
-from treeffuser._score_models import _FLOW_MATCHING_T_EPS
-from treeffuser._score_models import LightGBMVelocityModel
-from treeffuser._score_models import LogBetaNormalFlowMatchingTSampler
-from treeffuser._score_models import LogSNRNormalFlowMatchingTSampler
-from treeffuser._score_models import MinSNRFlowMatchingLossWeighting
-from treeffuser._score_models import UniformFlowMatchingLossWeighting
-from treeffuser._score_models import _make_flow_matching_training_data
-from treeffuser._score_models import get_flow_matching_loss_weighting
-from treeffuser._score_models import get_flow_matching_t_sampler
-from treeffuser.sde import sdeint
+from diffgbm import DiffGBM
+from diffgbm._flow_matching import LinearFlowPath
+from diffgbm._flow_matching import ReverseVelocityInterpolant
+from diffgbm._flow_matching import ReverseVelocityODE
+from diffgbm._flow_matching import TrigFlowPath
+from diffgbm._flow_matching import VPFlowPath
+from diffgbm._flow_matching import get_flow_path
+from diffgbm._flow_matching import get_stochasticity_schedule
+from diffgbm._flow_matching import linear_stochasticity_schedule
+from diffgbm._score_models import _FLOW_MATCHING_T_EPS
+from diffgbm._score_models import LightGBMVelocityModel
+from diffgbm._score_models import LogBetaNormalFlowMatchingTSampler
+from diffgbm._score_models import LogSNRNormalFlowMatchingTSampler
+from diffgbm._score_models import MinSNRFlowMatchingLossWeighting
+from diffgbm._score_models import UniformFlowMatchingLossWeighting
+from diffgbm._score_models import _make_flow_matching_training_data
+from diffgbm._score_models import get_flow_matching_loss_weighting
+from diffgbm._score_models import get_flow_matching_t_sampler
+from diffgbm.sde import sdeint
 
 
 def test_linear_flow_path_boundaries_and_velocity():
@@ -127,11 +129,12 @@ def test_lightgbm_velocity_model_runs_and_predicts_finite_velocity():
     assert np.all(np.isfinite(velocity))
 
 
-def test_treeffuser_flow_matching_end_to_end_and_chunk_seeds():
+def test_diffgbm_flow_matching_end_to_end_and_chunk_seeds():
     rng = np.random.default_rng(1)
     X = rng.normal(size=(160, 2))
     y = X[:, :1] + rng.normal(scale=0.2, size=(160, 1))
-    model = Treeffuser(
+    model = DiffGBM(
+        residualize="off",
         training_objective="flow_matching",
         flow_path="linear",
         n_repeats=2,
@@ -154,11 +157,11 @@ def test_treeffuser_flow_matching_end_to_end_and_chunk_seeds():
     assert model.n_estimators_true == model.velocity_model.n_estimators_true
 
 
-def test_treeffuser_flow_matching_residualization_end_to_end():
+def test_diffgbm_flow_matching_residualization_end_to_end():
     rng = np.random.default_rng(4)
     X = rng.normal(size=(120, 2))
     y = X[:, :1] - X[:, 1:] + rng.normal(scale=0.2, size=(120, 1))
-    model = Treeffuser(
+    model = DiffGBM(
         training_objective="flow_matching",
         residualize="mean",
         residualize_k_folds=3,
@@ -184,11 +187,12 @@ def test_treeffuser_flow_matching_residualization_end_to_end():
     assert np.all(np.isfinite(samples))
 
 
-def test_treeffuser_flow_matching_rejects_pf_ode_flag():
+def test_diffgbm_flow_matching_rejects_pf_ode_flag():
     rng = np.random.default_rng(2)
     X = rng.normal(size=(80, 1))
     y = X + rng.normal(scale=0.1, size=(80, 1))
-    model = Treeffuser(
+    model = DiffGBM(
+        residualize="off",
         training_objective="flow_matching",
         n_repeats=1,
         n_estimators=5,
@@ -202,18 +206,22 @@ def test_treeffuser_flow_matching_rejects_pf_ode_flag():
         model.sample(X[:2], n_samples=2, n_steps=2, sampler_method="heun", pf_ode=True, seed=0)
 
 
-def test_treeffuser_flow_matching_warns_on_score_only_params():
-    # t_sampling is shared with FM (log-beta-normal sampler reuses the name),
-    # but score_parameterization and sde_hyperparam_max are still score-only.
+def test_diffgbm_flow_matching_warns_on_score_only_params():
+    # t_sampling is shared with FM (log-beta-normal sampler reuses the name), but
+    # score_parameterization, noise_features and sde_hyperparam_max are score-only.
+    # The values below must differ from the score-side defaults, since the warning
+    # reports knobs the caller deliberately set rather than ones left at default.
     with pytest.warns(UserWarning, match="ignores score/SDE-only parameters") as warnings_record:
-        Treeffuser(
+        DiffGBM(
             training_objective="flow_matching",
-            score_parameterization="edm",
+            score_parameterization="x0",
+            noise_features="raw_time",
             sde_hyperparam_max=20.0,
         )
 
     message = str(warnings_record[0].message)
     assert "score_parameterization" in message
+    assert "noise_features" in message
     assert "sde_hyperparam_max" in message
     assert "t_sampling" not in message
     # loss_weighting / min_snr_gamma are now FM-aware via FlowMatchingLossWeighting,
@@ -222,11 +230,18 @@ def test_treeffuser_flow_matching_warns_on_score_only_params():
     assert "min_snr_gamma" not in message
 
 
-def test_treeffuser_flow_matching_gaussian_smoke_distribution():
+def test_diffgbm_flow_matching_silent_on_default_score_params():
+    """Defaults are the score-side recipe, but selecting FM must not warn about them."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        DiffGBM(training_objective="flow_matching")
+
+
+def test_diffgbm_flow_matching_gaussian_smoke_distribution():
     rng = np.random.default_rng(3)
     X = np.zeros((700, 1))
     y = rng.normal(loc=0.0, scale=1.0, size=(700, 1))
-    model = Treeffuser(
+    model = DiffGBM(
         training_objective="flow_matching",
         n_repeats=3,
         n_estimators=80,
@@ -318,12 +333,12 @@ def test_reverse_velocity_interpolant_changes_samples_under_positive_stochastici
     assert np.all(np.isfinite(stoch))
 
 
-def test_treeffuser_stochastic_fm_recovers_unit_gaussian_marginal():
+def test_diffgbm_stochastic_fm_recovers_unit_gaussian_marginal():
     # ε > 0 should not destroy the smoke-test recovery of N(0, 1).
     rng = np.random.default_rng(11)
     X = np.zeros((700, 1))
     y = rng.normal(loc=0.0, scale=1.0, size=(700, 1))
-    model = Treeffuser(
+    model = DiffGBM(
         training_objective="flow_matching",
         n_repeats=3,
         n_estimators=80,
@@ -354,7 +369,8 @@ def test_velocity_stochasticity_rejected_for_score_training():
     rng = np.random.default_rng(13)
     X = rng.normal(size=(60, 1))
     y = X + rng.normal(scale=0.1, size=(60, 1))
-    model = Treeffuser(
+    model = DiffGBM(
+        residualize="off",
         n_repeats=1,
         n_estimators=10,
         early_stopping_rounds=None,
@@ -370,7 +386,8 @@ def test_velocity_stochasticity_rejected_when_negative():
     rng = np.random.default_rng(17)
     X = rng.normal(size=(60, 1))
     y = X + rng.normal(scale=0.1, size=(60, 1))
-    model = Treeffuser(
+    model = DiffGBM(
+        residualize="off",
         training_objective="flow_matching",
         n_repeats=1,
         n_estimators=10,
@@ -407,11 +424,12 @@ def test_stochasticity_schedule_shapes_have_correct_endpoints_and_peaks():
         get_stochasticity_schedule("bogus", 1.0)
 
 
-def test_stochasticity_schedule_threaded_through_treeffuser_sample():
+def test_stochasticity_schedule_threaded_through_diffgbm_sample():
     rng = np.random.default_rng(23)
     X = rng.normal(size=(80, 1))
     y = X + rng.normal(scale=0.1, size=(80, 1))
-    model = Treeffuser(
+    model = DiffGBM(
+        residualize="off",
         training_objective="flow_matching",
         n_repeats=2,
         n_estimators=15,
@@ -545,11 +563,11 @@ def test_get_flow_path_recognises_new_names():
     assert get_flow_path(p) is p
 
 
-def test_treeffuser_trig_path_end_to_end_gaussian_smoke():
+def test_diffgbm_trig_path_end_to_end_gaussian_smoke():
     rng = np.random.default_rng(101)
     X = np.zeros((700, 1))
     y = rng.normal(loc=0.0, scale=1.0, size=(700, 1))
-    model = Treeffuser(
+    model = DiffGBM(
         training_objective="flow_matching",
         flow_path="trig",
         n_repeats=3,
@@ -574,11 +592,11 @@ def test_treeffuser_trig_path_end_to_end_gaussian_smoke():
     assert 0.6 < float(flat.std()) < 1.4
 
 
-def test_treeffuser_vp_path_end_to_end_gaussian_smoke():
+def test_diffgbm_vp_path_end_to_end_gaussian_smoke():
     rng = np.random.default_rng(103)
     X = np.zeros((700, 1))
     y = rng.normal(loc=0.0, scale=1.0, size=(700, 1))
-    model = Treeffuser(
+    model = DiffGBM(
         training_objective="flow_matching",
         flow_path="vp",
         n_repeats=3,
@@ -636,11 +654,11 @@ def test_log_beta_normal_fm_t_sampler_concentrates_mass_per_p_mean():
     assert np.all(np.isfinite(t_vp))
 
 
-def test_treeffuser_fm_with_log_sigma_t_sampling_runs_end_to_end():
+def test_diffgbm_fm_with_log_sigma_t_sampling_runs_end_to_end():
     rng = np.random.default_rng(11)
     X = np.zeros((400, 1))
     y = rng.normal(loc=0.0, scale=1.0, size=(400, 1))
-    model = Treeffuser(
+    model = DiffGBM(
         training_objective="flow_matching",
         flow_path="vp",
         t_sampling="log_sigma_normal",
@@ -674,9 +692,9 @@ def test_log_snr_sampler_no_clipping_with_default_params():
     assert endpoint_fraction < 0.02
 
 
-def test_uniform_endpoint_fraction_threads_through_treeffuser():
+def test_uniform_endpoint_fraction_threads_through_diffgbm():
     # Endpoint fraction = 0.5 should make ~half of sampled t values equal to 1.0.
-    model = Treeffuser(
+    model = DiffGBM(
         training_objective="flow_matching",
         t_sampling="uniform",
         uniform_endpoint_fraction=0.5,
@@ -781,7 +799,7 @@ def test_make_flow_matching_training_data_emits_sample_weights_under_min_snr():
     assert sample_weight_val.max() <= 1.0 + 1e-12
 
 
-def test_treeffuser_fm_min_snr_threads_through_and_changes_models():
+def test_diffgbm_fm_min_snr_threads_through_and_changes_models():
     rng = np.random.default_rng(0)
     X = rng.normal(size=(120, 2))
     y = X[:, :1] - X[:, 1:] + rng.normal(scale=0.1, size=(120, 1))
@@ -789,6 +807,7 @@ def test_treeffuser_fm_min_snr_threads_through_and_changes_models():
     common = {
         "training_objective": "flow_matching",
         "flow_path": "linear",
+        "residualize": "off",
         "n_repeats": 2,
         "n_estimators": 30,
         "early_stopping_rounds": None,
@@ -797,8 +816,8 @@ def test_treeffuser_fm_min_snr_threads_through_and_changes_models():
         "seed": 0,
         "verbose": -1,
     }
-    uniform_model = Treeffuser(**common, loss_weighting="uniform")
-    minsnr_model = Treeffuser(**common, loss_weighting="min_snr", min_snr_gamma=1.0)
+    uniform_model = DiffGBM(**common, loss_weighting="uniform")
+    minsnr_model = DiffGBM(**common, loss_weighting="min_snr", min_snr_gamma=1.0)
 
     # The FM velocity model should carry the corresponding weighting instance.
     assert isinstance(

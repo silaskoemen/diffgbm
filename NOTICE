@@ -1,0 +1,26 @@
+DiffGBM
+Copyright (c) 2026, Silas Koemen
+
+This product is a derivative work of Treeffuser, and includes software
+developed by Nicolas Beltran-Velez, Alessandro Antonio Grande, and
+Achille Nazaret:
+
+    Treeffuser
+    Copyright (c) 2024, Nicolas Beltran, Alessandro Antonio Grande,
+    and Achille Nazaret
+    https://github.com/blei-lab/treeffuser
+    Licensed under the MIT License
+
+Treeffuser is described in:
+
+    Beltran-Velez, N., Grande, A. A., Nazaret, A., Kucukelbir, A., and
+    Blei, D. (2024). Treeffuser: Probabilistic Predictions via Conditional
+    Diffusions with Gradient-Boosted Trees. Advances in Neural Information
+    Processing Systems 37. arXiv:2406.07658.
+
+DiffGBM retains Treeffuser's gradient-boosted-tree backbone, SDE module,
+feature pipeline, and sample-handling utilities, and extends them with
+flow matching on Gaussian paths, conditional-mean residualization,
+EDM-style preconditioning, log-sigma time sampling and noise-level
+features, loss weighting, and additional samplers. The original MIT
+license terms continue to apply to the inherited portions.

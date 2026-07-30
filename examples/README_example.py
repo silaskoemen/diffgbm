@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from treeffuser import Treeffuser
+from diffgbm import DiffGBM
 
 # Generate the data
 seed = 0
@@ -12,14 +12,14 @@ z = rng.integers(0, 2, size=n)
 y = z * np.sin(x - np.pi / 2) + (1 - z) * np.cos(x) + rng.laplace(scale=x / 30, size=n)
 
 # Fit the model
-model = Treeffuser(sde_initialize_from_data=True, seed=seed)
+model = DiffGBM(sde_initialize_from_data=True, seed=seed)
 model.fit(x, y)
 
 # Generate and plot samples
 y_samples = model.sample(x, n_samples=1, seed=seed, verbose=True)
 
 plt.scatter(x, y, s=1, label="observed data")
-plt.scatter(x, y_samples[0, :], s=1, alpha=0.7, label="Treeffuser samples")
+plt.scatter(x, y_samples[0, :], s=1, alpha=0.7, label="DiffGBM samples")
 
 plt.xlabel("$x$")
 plt.ylabel("$y$")
@@ -30,4 +30,4 @@ for legend_handle in legend.legend_handles:
 
 plt.tight_layout()
 
-plt.savefig("README_example.png", dpi=120)
+plt.savefig("assets/readme_example.png", dpi=120)

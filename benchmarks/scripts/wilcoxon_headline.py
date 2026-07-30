@@ -2,13 +2,13 @@
 
 Reads the fold-level CRPS values from `benchmarks/results/tuning/eval/*.jsonl`,
 averages over evaluation folds within each (variant, dataset), and runs paired
-Wilcoxon tests across the ten UCI datasets for the three pairs of interest:
+Wilcoxon tests across the eleven benchmark datasets for the three pairs of interest:
 
-    score+ vs published    (one-sided: score+ < published expected)
-    FM     vs published    (one-sided: FM     < published expected)
-    FM     vs score+       (two-sided: tie hypothesis)
+    score-flex vs published    (one-sided: score-flex < published expected)
+    FM         vs published    (one-sided: FM         < published expected)
+    FM         vs score-flex   (two-sided: tie hypothesis)
 
-The test unit is the dataset (n=10), not the fold. Evaluation folds tighten
+The test unit is the dataset (n=11), not the fold. Evaluation folds tighten
 per-dataset means but do not change the degrees of freedom of the test.
 
 Writes a markdown table to benchmarks/results/selected/wilcoxon_headline.md.

@@ -2,7 +2,7 @@
 #
 # This complements paper_real_data_v2.yaml. It intentionally does NOT rerun
 # Treeffuser: join these rows with the already-completed paper_real_data_v2
-# results when making the paper table. It keeps the same 10 UCI datasets, seeds,
+# results when making the paper table. It keeps the same 10 non-CT datasets, seeds,
 # split policy, metrics, and sample count, but adds non-Treeffuser probabilistic
 # regressors from the original testbed benchmark family:
 # NGBoost, iBUG, distributional random forests, LightGBM quantile regression,

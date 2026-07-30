@@ -139,7 +139,7 @@ in a pandas DataFrame and LightGBM's categorical splits are used directly.
 
 ## Results
 
-Across eleven benchmarks (ten UCI regression tasks plus CT-slice localization),
+Across eleven tabular benchmarks (nine UCI, including CT-slice localization, and two from scikit-learn),
 with fold-0 tuning, folds-1–5 evaluation, and an equalized 40-trial budget:
 
 | Variant | CRPSS ↑ | rel-CRPS ↓ | \|cE\|@90 ↓ | sample (s) ↓ |

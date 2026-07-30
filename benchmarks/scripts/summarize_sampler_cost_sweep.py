@@ -134,7 +134,7 @@ def render_markdown(rows: list[dict[str, Any]], n_raw_rows: int) -> str:
         "# Sampler cost sweep",
         "",
         f"Source: `{INPUT_PATH.relative_to(REPO_ROOT)}` ({n_raw_rows} fold-level rows). "
-        "Each displayed row averages folds 1--5 within each dataset, then averages over the ten UCI datasets. "
+        "Each displayed row averages folds 1--5 within each dataset, then averages over the ten non-CT datasets. "
         "rel-CRPS is normalized by the best sampler-cost row on each dataset.",
         "",
         "## Aggregate metrics",

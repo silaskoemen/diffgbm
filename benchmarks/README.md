@@ -363,7 +363,7 @@ under matched residualizer-C across stochasticity ∈ {0.25, 0.5, 1.0} and
 schedule ∈ {linear, sqrt}, plus residualizer-E at stoch=1.0. See
 `results/raw/sde_lower_stoch_sweep__all_20260513_203445.jsonl`.
 
-Headline (mean over 10 UCI datasets × 3 seeds; full 9-variant table including
+Headline (mean over the 10 non-CT datasets × 3 seeds; full 9-variant table including
 the SDE ablation):
 
 | Variant                    | CRPSS↑ | relCRPS↓ |   DSS↓ | KS p>.05↑ | `|cE|@50`↓ | `|cE|@90`↓ | `|cE|@95`↓ | samp_t |

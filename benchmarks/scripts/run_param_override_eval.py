@@ -36,6 +36,8 @@ from benchmarks.harness import get_provenance
 from benchmarks.metrics import crps_climatology
 from benchmarks.metrics import crps_skill_score
 from benchmarks.metrics import evaluate_samples
+from benchmarks.per_point import per_point_path
+from benchmarks.per_point import save_per_point
 from benchmarks.tuning.evaluate import _json_safe
 from benchmarks.tuning.evaluate import _sample_kwargs
 from benchmarks.tuning.search_spaces import SPACES
@@ -103,8 +105,11 @@ def evaluate_with_overrides(
     provenance = get_provenance()
     results_dir.mkdir(parents=True, exist_ok=True)
     out_path = results_dir / f"{dataset_name}__{space_name}__{label}.jsonl"
+    pp_path = per_point_path(results_dir, f"{dataset_name}__{space_name}__{label}")
     if not append:
         out_path.unlink(missing_ok=True)
+        pp_path.unlink(missing_ok=True)
+    per_point: dict[int, dict[str, Any]] = {}
 
     sample_kwargs = _sample_kwargs(sampler)
     eval_fold_ids = [k for k in range(protocol["n_folds"]) if k != 0]
@@ -135,7 +140,9 @@ def evaluate_with_overrides(
             )
             sample_time = time.perf_counter() - t0
 
-            metrics = evaluate_samples(y_samples=y_samples, y_true=y_test, X_test=X_test)
+            metrics = evaluate_samples(y_samples=y_samples, y_true=y_test, X_test=X_test, return_per_point=True)
+            arrays = metrics.pop("_per_point")
+            per_point[eval_fold] = {**arrays, "test_idx": fold.test_idx}
             clim = crps_climatology(y_train=y_train, y_true=y_test)
 
             row: dict[str, Any] = {
@@ -157,6 +164,7 @@ def evaluate_with_overrides(
                 "sample_time": sample_time,
                 "crps_climatology": clim,
                 "crps_skill_score": crps_skill_score(crps_model=metrics["crps"], crps_climatology_val=clim),
+                "per_point_path": str(pp_path),
                 "source_protocol_fingerprint": payload["protocol_fingerprint"],
                 "source_best_value_crps_tuning": payload["best_value_crps"],
                 "sampler": sampler,
@@ -176,7 +184,9 @@ def evaluate_with_overrides(
                 sample_time,
             )
 
-    bound.success("Wrote {} rows to {}", rows_written, out_path)
+    if per_point:
+        save_per_point(pp_path, per_point, merge=append)
+    bound.success("Wrote {} rows to {} (per-point arrays: {})", rows_written, out_path, pp_path)
     return out_path
 
 

@@ -79,3 +79,4 @@ spaces:
   - name: deep_ensemble
   - name: card
   - name: catboost_uncertainty
+  - name: quantile_forest

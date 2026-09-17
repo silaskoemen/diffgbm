@@ -20,7 +20,14 @@ def evaluate_samples(
     coverage_levels: tuple[float, ...] = DEFAULT_COVERAGE_LEVELS,
     n_x_bins: int = 5,
     n_difficulty_bins: int = 5,
+    return_per_point: bool = False,
 ) -> dict[str, Any]:
+    """Scalar evaluation metrics for one (model, fold).
+
+    With `return_per_point`, the result also carries a `_per_point` entry holding
+    the unreduced CRPS and PIT arrays behind `crps` and `pit_ks_stat`. Callers
+    that serialise the result to JSON must pop that key first.
+    """
     if y_true.ndim == 1:
         y_true = y_true.reshape(-1, 1)
     if y_samples.ndim == 2:
@@ -29,7 +36,8 @@ def evaluate_samples(
     y_mean = y_samples.mean(axis=0)
     residual = y_mean - y_true
     per_point_crps_vec = per_point_crps(y_samples, y_true)
-    pit_stats = pit_ks_test(y_samples, y_true)
+    pit_vec = pit_values(y_samples, y_true)
+    pit_stats = _ks_against_uniform(pit_vec)
 
     result = {
         "crps": float(np.mean(per_point_crps_vec)),
@@ -41,6 +49,9 @@ def evaluate_samples(
         "pit_ks_stat": pit_stats["pit_ks_stat"],
         "pit_ks_pvalue": pit_stats["pit_ks_pvalue"],
     }
+
+    if return_per_point:
+        result["_per_point"] = {"crps": per_point_crps_vec, "pit": pit_vec}
 
     bin_keys = difficulty_bin_keys(y_samples, per_point_crps_vec)
 
@@ -128,16 +139,27 @@ def pit_ks_test(
     before the KS test. Returns the (two-sided) KS statistic and p-value;
     larger p-values fail to reject the uniform null at standard levels.
     """
-    from scipy.stats import kstest
+    return _ks_against_uniform(pit_values(y_samples, y_true))
 
+
+def pit_values(
+    y_samples: Float[np.ndarray, "n_samples batch y_dim"],
+    y_true: Float[np.ndarray, "batch y_dim"],
+) -> Float[np.ndarray, "batch y_dim"]:
+    """Sample-based PIT values PIT_i = mean(y_samples_i <= y_i), one per (point, dim)."""
     samples = np.asarray(y_samples)
     truth = np.asarray(y_true)
     if truth.ndim == 1:
         truth = truth.reshape(-1, 1)
     if samples.ndim == 2:
         samples = samples[:, :, None]
-    pit = np.mean(samples <= truth[None, :, :], axis=0).reshape(-1)
-    result = kstest(pit, "uniform")
+    return np.mean(samples <= truth[None, :, :], axis=0)
+
+
+def _ks_against_uniform(pit: Float[np.ndarray, "batch y_dim"]) -> dict[str, float]:
+    from scipy.stats import kstest
+
+    result = kstest(np.asarray(pit).reshape(-1), "uniform")
     return {"pit_ks_stat": float(result.statistic), "pit_ks_pvalue": float(result.pvalue)}
 
 

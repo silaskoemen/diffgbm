@@ -11,22 +11,22 @@ protocol:
   space_fingerprint: cbaee7ef86e6cc43
 protocol_fingerprint: 38d4abd164e7c687
 model: deep_ensemble
-best_value_crps: 1.8646663778213035
+best_value_crps: 1.826960582106803
 best_tunable:
-  hidden_size: 256
-  n_layers: 4
-  learning_rate: 0.00035398562492735966
-  max_epochs: 100
+  hidden_size: 512
+  n_layers: 5
+  learning_rate: 0.0007473730336356753
+  max_epochs: 200
 params:
   n_ensembles: 5
   patience: 25
   batch_size: 256
-  hidden_size: 256
-  n_layers: 4
-  learning_rate: 0.00035398562492735966
-  max_epochs: 100
+  hidden_size: 512
+  n_layers: 5
+  learning_rate: 0.0007473730336356753
+  max_epochs: 200
 sampler: null
-n_trials_target: 25
-n_trials_finite: 25
+n_trials_target: 40
+n_trials_finite: 40
 n_trials_failed: 0
 storage: /Users/silaskoemen/Documents/Projects/treeffuser/benchmarks/results/tuning/studies/protein__deep_ensemble__38d4abd164e7c687.db

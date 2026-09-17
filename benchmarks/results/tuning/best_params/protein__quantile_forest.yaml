@@ -1,0 +1,33 @@
+protocol:
+  dataset: protein
+  space_name: quantile_forest
+  protocol_version: tune-fold0-eval-folds1-5-v1
+  n_train: 41157
+  n_test: 4573
+  x_dim: 3
+  master_seed: 0
+  n_folds: 6
+  n_samples: 100
+  space_fingerprint: c08072ab50d6ea48
+protocol_fingerprint: cdf5e0247abacf91
+model: quantile_forest
+best_value_crps: 1.4341251990895856
+best_tunable:
+  n_estimators: 425
+  min_samples_leaf: 1
+  max_features: 0.5
+  max_samples_leaf: 1
+params:
+  quantile_count: 99
+  n_jobs: -1
+  weighted_quantile: true
+  weighted_leaves: false
+  n_estimators: 425
+  min_samples_leaf: 1
+  max_features: 0.5
+  max_samples_leaf: 1
+sampler: null
+n_trials_target: 40
+n_trials_finite: 40
+n_trials_failed: 0
+storage: /Users/silaskoemen/Documents/Projects/treeffuser/benchmarks/results/tuning/studies/protein__quantile_forest__cdf5e0247abacf91.db

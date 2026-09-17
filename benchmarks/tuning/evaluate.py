@@ -18,6 +18,8 @@ from benchmarks.harness import get_provenance
 from benchmarks.metrics import crps_climatology
 from benchmarks.metrics import crps_skill_score
 from benchmarks.metrics import evaluate_samples
+from benchmarks.per_point import per_point_path
+from benchmarks.per_point import save_per_point
 from benchmarks.tuning.objective import resolve_n_parallel
 from benchmarks.tuning.search_spaces import SPACES
 from benchmarks.tuning.splits import build_splits
@@ -87,6 +89,9 @@ def evaluate_tuned_yaml(
     results_dir.mkdir(parents=True, exist_ok=True)
     out_path = results_dir / f"{dataset_name}__{space_name}.jsonl"
     out_path.unlink(missing_ok=True)
+    pp_path = per_point_path(results_dir, f"{dataset_name}__{space_name}")
+    pp_path.unlink(missing_ok=True)
+    per_point: dict[int, dict[str, Any]] = {}
 
     base_sample_kwargs = _sample_kwargs(sampler)
     fold_indices = list(range(protocol["n_folds"]))
@@ -119,7 +124,9 @@ def evaluate_tuned_yaml(
             )
             sample_time = time.perf_counter() - t0
 
-            metrics = evaluate_samples(y_samples=y_samples, y_true=y_test, X_test=X_test)
+            metrics = evaluate_samples(y_samples=y_samples, y_true=y_test, X_test=X_test, return_per_point=True)
+            arrays = metrics.pop("_per_point")
+            per_point[eval_fold] = {**arrays, "test_idx": fold.test_idx}
             clim = crps_climatology(y_train=y_train, y_true=y_test)
 
             row: dict[str, Any] = {
@@ -136,6 +143,7 @@ def evaluate_tuned_yaml(
                 "sample_time": sample_time,
                 "crps_climatology": clim,
                 "crps_skill_score": crps_skill_score(crps_model=metrics["crps"], crps_climatology_val=clim),
+                "per_point_path": str(pp_path),
                 "protocol_fingerprint": payload["protocol_fingerprint"],
                 "best_value_crps_tuning": payload["best_value_crps"],
                 "sampler": sampler,
@@ -154,7 +162,8 @@ def evaluate_tuned_yaml(
                 sample_time,
             )
 
-    bound.success("Wrote {} eval rows to {}", len(eval_fold_ids), out_path)
+    save_per_point(pp_path, per_point)
+    bound.success("Wrote {} eval rows to {} (per-point arrays: {})", len(eval_fold_ids), out_path, pp_path)
     return out_path
 
 

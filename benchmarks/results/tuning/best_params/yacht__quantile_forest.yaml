@@ -1,0 +1,33 @@
+protocol:
+  dataset: yacht
+  space_name: quantile_forest
+  protocol_version: tune-fold0-eval-folds1-5-v1
+  n_train: 277
+  n_test: 31
+  x_dim: 3
+  master_seed: 0
+  n_folds: 6
+  n_samples: 100
+  space_fingerprint: c08072ab50d6ea48
+protocol_fingerprint: e805aac3cf041838
+model: quantile_forest
+best_value_crps: 0.2526277955836692
+best_tunable:
+  n_estimators: 457
+  min_samples_leaf: 2
+  max_features: 1.0
+  max_samples_leaf: 5
+params:
+  quantile_count: 99
+  n_jobs: -1
+  weighted_quantile: true
+  weighted_leaves: false
+  n_estimators: 457
+  min_samples_leaf: 2
+  max_features: 1.0
+  max_samples_leaf: 5
+sampler: null
+n_trials_target: 40
+n_trials_finite: 40
+n_trials_failed: 0
+storage: /Users/silaskoemen/Documents/Projects/treeffuser/benchmarks/results/tuning/studies/yacht__quantile_forest__e805aac3cf041838.db

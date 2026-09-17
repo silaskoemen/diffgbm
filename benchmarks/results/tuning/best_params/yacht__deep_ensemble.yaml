@@ -11,22 +11,22 @@ protocol:
   space_fingerprint: cbaee7ef86e6cc43
 protocol_fingerprint: 616361c22eb9c9a9
 model: deep_ensemble
-best_value_crps: 0.5041303588381177
+best_value_crps: 0.4842039454551843
 best_tunable:
-  hidden_size: 64
-  n_layers: 5
-  learning_rate: 0.0008171478915115864
+  hidden_size: 256
+  n_layers: 3
+  learning_rate: 0.0004727782995583675
   max_epochs: 400
 params:
   n_ensembles: 5
   patience: 25
   batch_size: 256
-  hidden_size: 64
-  n_layers: 5
-  learning_rate: 0.0008171478915115864
+  hidden_size: 256
+  n_layers: 3
+  learning_rate: 0.0004727782995583675
   max_epochs: 400
 sampler: null
-n_trials_target: 25
-n_trials_finite: 25
+n_trials_target: 40
+n_trials_finite: 40
 n_trials_failed: 0
 storage: /Users/silaskoemen/Documents/Projects/treeffuser/benchmarks/results/tuning/studies/yacht__deep_ensemble__616361c22eb9c9a9.db

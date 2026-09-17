@@ -101,3 +101,6 @@ examples/m5/*
 *.out
 *.dvi
 *.gz
+
+# Per-point eval arrays (regenerable from tuned YAMLs)
+**/per_point/*.npz

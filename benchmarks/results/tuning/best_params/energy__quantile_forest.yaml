@@ -1,0 +1,33 @@
+protocol:
+  dataset: energy
+  space_name: quantile_forest
+  protocol_version: tune-fold0-eval-folds1-5-v1
+  n_train: 691
+  n_test: 77
+  x_dim: 3
+  master_seed: 0
+  n_folds: 6
+  n_samples: 100
+  space_fingerprint: c08072ab50d6ea48
+protocol_fingerprint: 8c486dd4fc35bb02
+model: quantile_forest
+best_value_crps: 0.22068777609776746
+best_tunable:
+  n_estimators: 610
+  min_samples_leaf: 2
+  max_features: 1.0
+  max_samples_leaf: 1
+params:
+  quantile_count: 99
+  n_jobs: -1
+  weighted_quantile: true
+  weighted_leaves: false
+  n_estimators: 610
+  min_samples_leaf: 2
+  max_features: 1.0
+  max_samples_leaf: 1
+sampler: null
+n_trials_target: 40
+n_trials_finite: 40
+n_trials_failed: 0
+storage: /Users/silaskoemen/Documents/Projects/treeffuser/benchmarks/results/tuning/studies/energy__quantile_forest__8c486dd4fc35bb02.db
